@@ -1,0 +1,949 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+
+    <Script file="Rinse.lua"/>
+
+    <!-- Templates -->
+    <Button name="RinseListButtonTemplate" virtual="true" hidden="true" toplevel="true">
+        <Size x="160" y="16"/>
+        <ButtonText name="$parentText">
+            <Anchors>
+                <Anchor point="LEFT"/>
+            </Anchors>
+        </ButtonText>
+        <NormalFont inherits="GameFontNormal">
+            <Shadow/>
+        </NormalFont>
+		<DisabledFont inherits="GameFontDisable"/>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
+            </Layer>
+        </Layers>
+        <Scripts>
+            <OnClick>
+                RinseListButton_OnClick()
+            </OnClick>
+            <OnEnter>
+                getglobal(this:GetName().."Highlight"):Show()
+            </OnEnter>
+            <OnLeave>
+                getglobal(this:GetName().."Highlight"):Hide()
+            </OnLeave>
+        </Scripts>
+    </Button>
+    <Button name="RinseDebuffButtonTemplate" virtual="true" hidden="true" toplevel="true">
+        <Size x="200" y="50"/>
+        <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" tile="true">
+            <TileSize val="16"/>
+            <BackgroundInsets left="5" right="5" top="1" bottom="1"/>
+            <Color r="0" g="0" b="0"/>
+        </Backdrop>
+		<Layers>
+			<Layer level="BORDER">
+				<Texture name="$parentIcon">
+					<Size x="32" y="32"/>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset>
+								<AbsDimension x="10" y="0"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<FontString name="$parentPlayer" inherits="GameFontNormalLarge" justifyH="LEFT">
+					<Size x="200" y="20"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parentIcon" relativePoint="TOPRIGHT">
+							<Offset>
+								<AbsDimension x="5" y="3"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT">
+					<Size x="200" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentIcon" relativePoint="RIGHT">
+							<Offset>
+								<AbsDimension x="5" y="-8"/>
+							</Offset>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+            <Layer level="ARTWORK">
+                <FontString name="$parentCount" inherits="NumberFontNormalLarge" justifyH="RIGHT" hidden="false" outline="THICK">
+                    <Anchors>
+                        <Anchor point="BOTTOMRIGHT" relativeTo="$parentIcon"/>
+                    </Anchors>
+                    <Color r="1" g="0" b="0"/>
+                    <Shadow/>
+                </FontString>
+            </Layer>
+            <Layer level="OVERLAY">
+				<Texture name="$parentBorder" file="Interface\Buttons\UI-Debuff-Overlays">
+					<Size x="34" y="32"/>
+					<Anchors>
+						<Anchor point="CENTER" relativeTo="$parentIcon"/>
+					</Anchors>
+					<TexCoords left="0.296875" right="0.5703125" top="0" bottom="0.515625"/>
+				</Texture>
+                <Texture name="$parentOutOfRange">
+					<Size x="190" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+                    <Color r="0" g="0" b="0" a="0.3"/>
+				</Texture>
+                <Texture name="$parentOnCooldown">
+					<Size x="190" y="40"/>
+					<Anchors>
+						<Anchor point="CENTER"/>
+					</Anchors>
+                    <Color r="0" g="0" b="0" a="0.2"/>
+				</Texture>	
+			</Layer>
+        </Layers>
+        <HighlightTexture inherits="DialogButtonHighlightTexture"/>
+        <Scripts>
+            <OnLoad>
+                this:RegisterForClicks("LeftButtonDown")
+            </OnLoad>
+            <OnClick>
+                Rinse_Cleanse(this)
+            </OnClick>
+            <OnEnter>
+                if this.unit then
+                    GameTooltip:SetOwner(this, "ANCHOR_TOPLEFT")
+                    GameTooltip:SetUnitDebuff(this.unit, this.debuffIndex)
+                    GameTooltip:Show()
+                end
+            </OnEnter>
+            <OnLeave>
+                GameTooltip:Hide()
+            </OnLeave>
+            <OnShow>
+                this:SetAlpha(1)
+            </OnShow>
+        </Scripts>
+    </Button>
+
+    <!-- Main Frame -->
+    <Frame name="RinseFrame" frameStrata="LOW" toplevel="true" parent="UIParent" movable="true" enableMouse="true" clampedToScreen="true">
+        <Size x="200" y="250"/>
+        <Anchors>
+            <Anchor point="CENTER">
+                <Offset x="0" y="0"/>
+            </Anchor>
+        </Anchors>
+        <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+            <EdgeSize>
+                <AbsValue val="16"/>
+            </EdgeSize>
+            <TileSize>
+                <AbsValue val="16"/>
+            </TileSize>
+            <BackgroundInsets>
+                <AbsInset left="5" right="5" top="5" bottom="5"/>
+            </BackgroundInsets>
+        </Backdrop>
+		<HitRectInsets>
+			<AbsInset left="-10" right="-10" top="-10" bottom="-10"/>
+		</HitRectInsets>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture>
+                    <Size x="190" y="30"/>
+                    <Anchors> 
+                        <Anchor point="TOP">
+                            <Offset x="0" y="-5"/>
+                        </Anchor>
+                    </Anchors>
+                    <Color r="0" g="0" b="0"/>
+                </Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <FontString name="$parentTitle" inherits="GameFontNormal">
+                    <Anchors> 
+                        <Anchor point="TOPLEFT">
+                            <Offset x="13" y="-13"/>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="RinseFramePrioListButton">
+                <Size x="20" y="20"/>
+                <Anchors>
+                    <Anchor point="TOP">
+                        <Offset x="10" y="-10"/>
+                    </Anchor>
+                </Anchors>
+                <NormalTexture file="Interface\Buttons\UI-GuildButton-OfficerNote-Up"/>
+                <HighlightTexture file="Interface\Buttons\GlowStar" alphaMode="ADD"/>
+                <Scripts>
+                    <OnClick>
+                        RinseFramePrioList_OnClick()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                        GameTooltip:SetText("Priority List")
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+            <Button name="RinseFrameSkipListButton">
+                <Size x="20" y="20"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="RinseFramePrioListButton" relativePoint="RIGHT">
+                        <Offset x="10" y="0"/>
+                    </Anchor>
+                </Anchors>
+                <NormalTexture file="Interface\Buttons\UI-GuildButton-PublicNote-Up"/>
+                <HighlightTexture file="Interface\Buttons\GlowStar" alphaMode="ADD"/>
+                <Scripts>
+                    <OnClick>
+                        RinseFrameSkipList_OnClick()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                        GameTooltip:SetText("Skip List")
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+            <Button name="RinseFrameOptionsButton">
+                <Size x="20" y="20"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="RinseFrameSkipListButton" relativePoint="RIGHT">
+                        <Offset x="10" y="0"/>
+                    </Anchor>
+                </Anchors>
+                <NormalTexture file="Interface\GossipFrame\BinderGossipIcon"/>
+                <HighlightTexture file="Interface\Buttons\GlowStar" alphaMode="ADD"/>
+                <Scripts>
+                    <OnClick>
+                        RinseFrameOptions_OnClick()
+                    </OnClick>
+                    <OnEnter>
+                        GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                        GameTooltip:SetText("Options")
+                        GameTooltip:Show()
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Button>
+            <Button name="RinseFrameDebuff1" inherits="RinseDebuffButtonTemplate" id="1">
+                <Anchors>
+                    <Anchor point="TOP">
+                        <Offset x="0" y="-30"/>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="RinseFrameDebuff2" inherits="RinseDebuffButtonTemplate" id="2">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff1" relativePoint="BOTTOM">
+                        <Offset x="0" y="8"/>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="RinseFrameDebuff3" inherits="RinseDebuffButtonTemplate" id="3">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff2" relativePoint="BOTTOM">
+                        <Offset x="0" y="8"/>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="RinseFrameDebuff4" inherits="RinseDebuffButtonTemplate" id="4">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff3" relativePoint="BOTTOM">
+                        <Offset x="0" y="8"/>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="RinseFrameDebuff5" inherits="RinseDebuffButtonTemplate" id="5">
+                <Anchors>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff4" relativePoint="BOTTOM">
+                        <Offset x="0" y="8"/>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <!-- Skip List Frame -->
+            <Frame name="RinseSkipListFrame" hidden="true" movable="true" enableMouse="true" clampedToScreen="true" toplevel="true">
+                <Size x="200" y="250"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="RinseFrame" relativePoint="RIGHT"/>
+                </Anchors>
+                <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+                    <EdgeSize>
+                        <AbsValue val="16"/>
+                    </EdgeSize>
+                    <TileSize>
+                        <AbsValue val="16"/>
+                    </TileSize>
+                    <BackgroundInsets>
+                        <AbsInset left="5" right="5" top="5" bottom="5"/>
+                    </BackgroundInsets>
+                    <Color r="0" g="0" b="0" a="0.5"/>
+                </Backdrop>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture>
+                            <Size x="190" y="60"/>
+                            <Anchors> 
+                                    <Anchor point="TOP">
+                                        <Offset x="0" y="-5"/>
+                                    </Anchor>
+                                </Anchors>
+                            <Color r="0" g="0" b="0"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="BORDER">
+                        <FontString inherits="GameFontNormalLarge" text="Skip List">
+                            <Anchors>
+                                <Anchor point="TOP">
+                                    <Offset x="0" y="-10"/>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="RinseSkipListClose" inherits="UIPanelCloseButton">
+                        <Anchors>
+                            <Anchor point="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-3" y="-3"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                HideUIPanel(this:GetParent())
+                                DropDownList1:Hide()
+                            </OnClick>
+                        </Scripts>
+                    </Button>
+                    <Button name="RinseSkipListAddTarget" inherits="UIPanelButtonTemplate2" text="Target">
+                        <Size x="64" y="32"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset>
+                                    <AbsDimension x="5" y="-30"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                Rinse_AddUnitToList(RINSE_CONFIG.SKIP_ARRAY, "target")
+                            </OnClick>
+                            <OnEnter>
+                                GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                                GameTooltip:SetText("Add your current target to the list")
+                                GameTooltip:Show()
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+                    <Button name="RinseSkipListAddGroup" inherits="UIPanelButtonTemplate2" text="Group">
+                        <Size x="64" y="32"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListAddTarget" relativePoint="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                RinseSkipListAddGroup_OnClick()
+                            </OnClick>
+                            <OnEnter>
+                                GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                                GameTooltip:SetText("Add members based on their group")
+                                GameTooltip:Show()
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+                    <Button name="RinseSkipListAddClass" inherits="UIPanelButtonTemplate2" text="Class">
+                        <Size x="64" y="32"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListAddGroup" relativePoint="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                RinseSkipListAddClass_OnClick()
+                            </OnClick>
+                            <OnEnter>
+                                GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                                GameTooltip:SetText("Add members based on their class")
+                                GameTooltip:Show()
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+                    <ScrollFrame name="RinseSkipListScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
+                        <Size x="150" y="160"/>
+                        <Anchors>
+                            <Anchor point="TOPRIGHT" relativeTo="RinseSkipListFrame" relativePoint="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-30" y="-76"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnVerticalScroll>
+                                FauxScrollFrame_OnVerticalScroll(16, RinseSkipListFrame_Update)
+                            </OnVerticalScroll>
+                        </Scripts>
+                    </ScrollFrame>
+                    <Button name="RinseSkipListFrameButton1" inherits="RinseListButtonTemplate" id="1">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListScrollFrame"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton2" inherits="RinseListButtonTemplate" id="2">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton1" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton3" inherits="RinseListButtonTemplate" id="3">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton2" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton4" inherits="RinseListButtonTemplate" id="4">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton3" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton5" inherits="RinseListButtonTemplate" id="5">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton4" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton6" inherits="RinseListButtonTemplate" id="6">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton5" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton7" inherits="RinseListButtonTemplate" id="7">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton6" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton8" inherits="RinseListButtonTemplate" id="8">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton7" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton9" inherits="RinseListButtonTemplate" id="9">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton8" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinseSkipListFrameButton10" inherits="RinseListButtonTemplate" id="10">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton9" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                </Frames>
+                <Scripts>
+                    <OnMouseDown>
+                        this:StartMoving()
+                    </OnMouseDown>
+                    <OnMouseUp>
+                        this:StopMovingOrSizing()
+                    </OnMouseUp>
+                    <OnShow>
+                        this:SetAlpha(1)
+                    </OnShow>
+                </Scripts>
+            </Frame>
+            <!-- Priority List Frame -->
+            <Frame name="RinsePrioListFrame" hidden="true" movable="true" enableMouse="true" clampedToScreen="true" toplevel="true">
+                <Size x="200" y="250"/>
+                <Anchors>
+                    <Anchor point="RIGHT" relativeTo="RinseFrame" relativePoint="LEFT"/>
+                </Anchors>
+                <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+                    <EdgeSize>
+                        <AbsValue val="16"/>
+                    </EdgeSize>
+                    <TileSize>
+                        <AbsValue val="16"/>
+                    </TileSize>
+                    <BackgroundInsets>
+                        <AbsInset left="5" right="5" top="5" bottom="5"/>
+                    </BackgroundInsets>
+                    <Color r="0" g="0" b="0" a="0.5"/>
+                </Backdrop>
+                <Layers>
+                    <Layer level="BACKGROUND">
+                        <Texture>
+                            <Size x="190" y="60"/>
+                                <Anchors> 
+                                    <Anchor point="TOP">
+                                        <Offset x="0" y="-5"/>
+                                    </Anchor>
+                                </Anchors>
+                            <Color r="0" g="0" b="0"/>
+                        </Texture>
+                    </Layer>
+                    <Layer level="BORDER">
+                        <FontString inherits="GameFontNormalLarge" text="Priority List">
+                            <Anchors>
+                                <Anchor point="TOP">
+                                    <Offset x="0" y="-10"/>
+                                </Anchor>
+                            </Anchors>
+                        </FontString>
+                    </Layer>
+                </Layers>
+                <Frames>
+                    <Button name="RinsePrioListClose" inherits="UIPanelCloseButton">
+                        <Anchors>
+                            <Anchor point="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-3" y="-3"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                HideUIPanel(this:GetParent())
+                                DropDownList1:Hide()
+                            </OnClick>
+                        </Scripts>
+                    </Button>
+                    <Button name="RinsePrioListAddTarget" inherits="UIPanelButtonTemplate2" text="Target">
+                        <Size x="64" y="32"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT">
+                                <Offset>
+                                    <AbsDimension x="5" y="-30"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                Rinse_AddUnitToList(RINSE_CONFIG.PRIO_ARRAY, "target")
+                            </OnClick>
+                            <OnEnter>
+                                GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                                GameTooltip:SetText("Add your current target to the list")
+                                GameTooltip:Show()
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+                    <Button name="RinsePrioListAddGroup" inherits="UIPanelButtonTemplate2" text="Group">
+                        <Size x="64" y="32"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListAddTarget" relativePoint="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                RinsePrioListAddGroup_OnClick()
+                            </OnClick>
+                            <OnEnter>
+                                GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                                GameTooltip:SetText("Add members based on their group")
+                                GameTooltip:Show()
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+                    <Button name="RinsePrioListAddClass" inherits="UIPanelButtonTemplate2" text="Class">
+                        <Size x="64" y="32"/>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListAddGroup" relativePoint="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-2" y="0"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnClick>
+                                RinsePrioListAddClass_OnClick()
+                            </OnClick>
+                            <OnEnter>
+                                GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
+                                GameTooltip:SetText("Add members based on their class")
+                                GameTooltip:Show()
+                            </OnEnter>
+                            <OnLeave>
+                                GameTooltip:Hide()
+                            </OnLeave>
+                        </Scripts>
+                    </Button>
+                    <ScrollFrame name="RinsePrioListScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
+                        <Size x="150" y="160"/>
+                        <Anchors>
+                            <Anchor point="TOPRIGHT" relativeTo="RinsePrioListFrame" relativePoint="TOPRIGHT">
+                                <Offset>
+                                    <AbsDimension x="-30" y="-76"/>
+                                </Offset>
+                            </Anchor>
+                        </Anchors>
+                        <Scripts>
+                            <OnVerticalScroll>
+                                FauxScrollFrame_OnVerticalScroll(16, RinsePrioListFrame_Update)
+                            </OnVerticalScroll>
+                        </Scripts>
+                    </ScrollFrame>
+                    <Button name="RinsePrioListFrameButton1" inherits="RinseListButtonTemplate" id="1">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListScrollFrame"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton2" inherits="RinseListButtonTemplate" id="2">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton1" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton3" inherits="RinseListButtonTemplate" id="3">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton2" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton4" inherits="RinseListButtonTemplate" id="4">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton3" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton5" inherits="RinseListButtonTemplate" id="5">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton4" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton6" inherits="RinseListButtonTemplate" id="6">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton5" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton7" inherits="RinseListButtonTemplate" id="7">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton6" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton8" inherits="RinseListButtonTemplate" id="8">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton7" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton9" inherits="RinseListButtonTemplate" id="9">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton8" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                    <Button name="RinsePrioListFrameButton10" inherits="RinseListButtonTemplate" id="10">
+                        <Anchors>
+                            <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton9" relativePoint="BOTTOMLEFT"/>
+                        </Anchors>
+                    </Button>
+                </Frames>
+                <Scripts>
+                    <OnMouseDown>
+                        this:StartMoving()
+                    </OnMouseDown>
+                    <OnMouseUp>
+                        this:StopMovingOrSizing()
+                    </OnMouseUp>
+                    <OnShow>
+                        this:SetAlpha(1)
+                    </OnShow>
+                </Scripts>
+            </Frame>
+        </Frames>
+        <Scripts>
+            <OnLoad>
+                RinseFrame_OnLoad()
+                RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
+            </OnLoad>
+            <OnEvent>
+                RinseFrame_OnEvent()
+            </OnEvent>
+            <OnMouseDown>
+                if this:IsMovable() then
+                    this:StartMoving()
+                end
+            </OnMouseDown>
+            <OnMouseUp>
+                this:StopMovingOrSizing()
+                local x, y = this:GetCenter()
+                RINSE_CONFIG.POSITION.x = x or 0
+                RINSE_CONFIG.POSITION.y = y or 0
+            </OnMouseUp>
+            <OnUpdate>
+                RinseFrame_OnUpdate()
+            </OnUpdate>
+        </Scripts>
+    </Frame>
+
+    <!-- Options Frame -->
+    <Frame name="RinseOptionsFrame" parent="UIParent" movable="true" enableMouse="true" toplevel="true" frameStrata="DIALOG" hidden="true">
+        <Size x="200" y="280"/>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+        <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+            <EdgeSize>
+                <AbsValue val="16"/>
+            </EdgeSize>
+            <TileSize>
+                <AbsValue val="16"/>
+            </TileSize>
+            <BackgroundInsets>
+                <AbsInset left="5" right="5" top="5" bottom="5"/>
+            </BackgroundInsets>
+            <Color r="0" g="0" b="0" a="0.5"/>
+        </Backdrop>
+        <Layers>
+            <Layer level="BACKGROUND">
+                <Texture>
+                    <Size x="192" y="30"/>
+                        <Anchors> 
+                            <Anchor point="TOP">
+                                <Offset x="0" y="-5"/>
+                            </Anchor>
+                        </Anchors>
+                    <Color r="0" g="0" b="0"/>
+                </Texture>
+            </Layer>
+            <Layer level="BORDER">
+                <FontString inherits="GameFontNormalLarge" text="Rinse Options">
+                    <Anchors>
+                        <Anchor point="TOP">
+                            <Offset x="0" y="-10"/>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+                <Anchors>
+                    <Anchor point="TOPRIGHT">
+                        <Offset>
+                            <AbsDimension x="-3" y="-3"/>
+                        </Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Slider name="$parentScaleSlider" inherits="OptionsSliderTemplate">
+                <Size x="160" y="16"/>
+                <Anchors>
+					<Anchor point="TOP">
+						<Offset x="0" y="-50"/>
+					</Anchor>
+				</Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Scale (0.85)")
+                        getglobal(this:GetName().."Low"):SetText("0.25")
+                        getglobal(this:GetName().."High"):SetText("2")
+                        this:SetMinMaxValues(0.25, 2)
+                        this:SetValueStep(0.01)
+                    </OnLoad>
+                    <OnValueChanged>
+                        local scale = format("%.2f", this:GetValue())
+                        RINSE_CONFIG.SCALE = tonumber(scale)
+                        RinseFrame:SetScale(scale)
+                        getglobal(this:GetName().."Text"):SetText("Scale ("..scale..")")
+                    </OnValueChanged>
+                    <OnShow>
+                        this:SetValue(RINSE_CONFIG.SCALE)
+                    </OnShow>
+                </Scripts>
+            </Slider>
+            <Slider name="$parentOpacitySlider" inherits="OptionsSliderTemplate">
+                <Size x="160" y="16"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentScaleSlider" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="-16"/>
+                    </Anchor>
+				</Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Opacity (1.00)")
+                        getglobal(this:GetName().."Low"):SetText("0")
+                        getglobal(this:GetName().."High"):SetText("1")
+                        this:SetMinMaxValues(0, 1)
+                        this:SetValueStep(0.01)
+                    </OnLoad>
+                    <OnValueChanged>
+                        local alpha = format("%.2f", this:GetValue())
+                        RINSE_CONFIG.OPACITY = tonumber(alpha)
+                        RinseFrame:SetAlpha(alpha)
+                        getglobal(this:GetName().."Text"):SetText("Opacity ("..alpha..")")
+                    </OnValueChanged>
+                    <OnShow>
+                        this:SetValue(RINSE_CONFIG.OPACITY)
+                    </OnShow>
+                </Scripts>
+            </Slider>
+            <CheckButton name="$parentWyvernSting" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets>
+                    <AbsInset left="0" right="-100" top="0" bottom="0"/>
+                </HitRectInsets>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentOpacitySlider" relativePoint="BOTTOMLEFT">
+                        <Offset x="-5" y="-16"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Cure Wyvern Sting")
+                        this.tooltipText = "Cure Wyvern Sting"
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_ToggleWyvernSting()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                    <OnShow>
+                        this:SetChecked(RINSE_CONFIG.WYVERN_STING)
+                    </OnShow>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="$parentMutatingInjection" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets>
+                    <AbsInset left="0" right="-100" top="0" bottom="0"/>
+                </HitRectInsets>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentWyvernSting" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="-4"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Cure Mutating Injection")
+                        this.tooltipText = "Cure Mutating Injection"
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_ToggleMutatingInjection()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                    <OnShow>
+                        this:SetChecked(RINSE_CONFIG.MUTATING_INJECTION)
+                    </OnShow>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="$parentPrint" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets>
+                    <AbsInset left="0" right="-100" top="0" bottom="0"/>
+                </HitRectInsets>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentMutatingInjection" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="-4"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Print Messages In Chat")
+                        this.tooltipText = "Print Messages In Chat"
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_TogglePrint()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                    <OnShow>
+                        this:SetChecked(RINSE_CONFIG.PRINT)
+                    </OnShow>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets>
+                    <AbsInset left="0" right="-100" top="0" bottom="0"/>
+                </HitRectInsets>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentPrint" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="-4"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Lock Frame Position")
+                        this.tooltipText = "Prevent Window From Moving"
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_ToggleLock()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                    <OnShow>
+                        this:SetChecked(RINSE_CONFIG.LOCK)
+                    </OnShow>
+                </Scripts>
+            </CheckButton>
+        </Frames>
+        <Scripts>
+            <OnMouseDown>
+                this:StartMoving()
+            </OnMouseDown>
+            <OnMouseUp>
+                this:StopMovingOrSizing()
+            </OnMouseUp>
+        </Scripts>
+    </Frame>
+
+    <!-- Other Frames -->
+    <GameTooltip name="RinseScanTooltip" inherits="GameTooltipTemplate">
+	<Scripts>
+	    <Onload>
+		    this:SetOwner(this, "ANCHOR_NONE")
+	    </Onload>
+	</Scripts>
+    </GameTooltip>
+    <Frame name="RinseClassesDropDown" inherits="UIDropDownMenuTemplate" id="1" hidden="true"/>
+    <Frame name="RinseGroupsDropDown" inherits="UIDropDownMenuTemplate" id="2" hidden="true"/>
+</Ui>
