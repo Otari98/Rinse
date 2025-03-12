@@ -48,8 +48,9 @@ curingSpells["SHAMAN"]  = { Poison = {"Cure Poison"}, Disease = {"Cure Disease"}
 curingSpells["MAGE"]    = { Curse = {"Remove Lesser Curse"} }
 curingSpells["WARLOCK"] = { Magic = {"Devour Magic"} }
 
+local DEBUFFS_MAX = 32
 local debuffs = {}
-for i = 1, 16 do
+for i = 1, DEBUFFS_MAX do
     debuffs[i] = { name = "", type = "", texture = "", stacks = 0, debuffIndex = 0, unit = "", unitName = "", unitClass = "", shown = 0 }
 end
 
@@ -173,6 +174,21 @@ local function tounitid(name, index)
     end
 end
 
+local function UpdatePrio()
+    if RINSE_CONFIG.PRIO_ARRAY[1] then
+        for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
+            tinsert(prio, i, tounitid(RINSE_CONFIG.PRIO_ARRAY[i], i))
+        end
+        for i = getn(prio), getn(RINSE_CONFIG.PRIO_ARRAY) + 1, -1 do
+            if arrcontains(RINSE_CONFIG.PRIO_ARRAY, UnitName(prio[i])) then
+                tremove(prio, i)
+            end
+        end
+    else
+        prio = defaultPrio
+    end
+end
+
 function RinseSkipListFrame_Update()
     local offset = FauxScrollFrame_GetOffset(RinseSkipListScrollFrame)
     local arrayIndex = 1
@@ -220,6 +236,7 @@ function RinseListButton_OnClick()
         tremove(RINSE_CONFIG.PRIO_ARRAY, this:GetID())
         RinsePrioListFrame_Update()
     end
+    UpdatePrio()
 end
 
 function Rinse_AddUnitToList(array, unit)
@@ -233,6 +250,7 @@ function Rinse_AddUnitToList(array, unit)
     elseif array == RINSE_CONFIG.PRIO_ARRAY then
         RinsePrioListFrame_Update()
     end
+    UpdatePrio()
 end
 
 local function AddGroupOrClass()
@@ -500,18 +518,7 @@ function RinseFrame_OnEvent()
         RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
         UpdateSpells()
     elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
-        if RINSE_CONFIG.PRIO_ARRAY[1] then
-            for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
-                tinsert(prio, i, tounitid(RINSE_CONFIG.PRIO_ARRAY[i], i))
-            end
-            for i = getn(prio), getn(RINSE_CONFIG.PRIO_ARRAY) + 1, -1 do
-                if arrcontains(RINSE_CONFIG.PRIO_ARRAY, UnitName(prio[i])) then
-                    tremove(prio, i)
-                end
-            end
-        else
-            prio = defaultPrio
-        end
+        UpdatePrio()
     elseif event == "SPELLS_CHANGED" then
         UpdateSpells()
     end
@@ -537,7 +544,7 @@ function RinseFrame_OnUpdate()
     else
         tick = GetTime() + updateInterval
     end
-    for i = 1, 16 do
+    for i = 1, DEBUFFS_MAX do
         debuffs[i].name = ""
         debuffs[i].type = ""
         debuffs[i].texture = ""
@@ -551,7 +558,7 @@ function RinseFrame_OnUpdate()
     local debuffIndex = 1
     if UnitExists("target") and UnitIsFriend("target", "player") and not arrcontains(skipArray, UnitName("target")) and UnitIsVisible("target") then
         local i = 1
-        while debuffIndex < 16 and UnitDebuff("target", i) do
+        while debuffIndex < DEBUFFS_MAX and UnitDebuff("target", i) do
             RinseScanTooltipTextLeft1:SetText("")
             RinseScanTooltipTextRight1:SetText("")
             RinseScanTooltip:SetUnitDebuff("target", i)
@@ -581,7 +588,7 @@ function RinseFrame_OnUpdate()
         if UnitExists(unit) and UnitIsFriend(unit, "player") and not (UnitExists("target") and UnitIsUnit("target", unit))
                 and not arrcontains(skipArray, UnitName(unit)) and UnitIsVisible(unit) then
             local i = 1
-            while debuffIndex < 16 and UnitDebuff(unit, i) do
+            while debuffIndex < DEBUFFS_MAX and UnitDebuff(unit, i) do
                 RinseScanTooltipTextLeft1:SetText("")
                 RinseScanTooltipTextRight1:SetText("")
                 RinseScanTooltip:SetUnitDebuff(unit, i)
@@ -614,7 +621,7 @@ function RinseFrame_OnUpdate()
     end
     debuffIndex = 1
     for buttonIndex = 1, 5 do
-        while debuffIndex < 16 and debuffs[debuffIndex].shown ~= 0 do
+        while debuffIndex < DEBUFFS_MAX and debuffs[debuffIndex].shown ~= 0 do
             debuffIndex = debuffIndex + 1
         end
         if debuffs[debuffIndex].name ~= "" then
@@ -638,7 +645,7 @@ function RinseFrame_OnUpdate()
             button.debuffIndex = debuffs[debuffIndex].debuffIndex
             button:Show()
             debuffs[debuffIndex].shown = 1
-            for i = debuffIndex, 16 do
+            for i = debuffIndex, DEBUFFS_MAX do
                 if  debuffs[i].unitName == debuffs[debuffIndex].unitName then
                     debuffs[i].shown = 1
                 end

@@ -1,7 +1,7 @@
 ## Interface: 11200
 ## Title: Rinse |cffc79c6e-Spit-|r
 ## Author: Otari98
-## Version: 0.1
+## Version: 0.2
 ## Notes: 
 ## SavedVariables: RINSE_CONFIG
 
