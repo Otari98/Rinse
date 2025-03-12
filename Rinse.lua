@@ -13,6 +13,8 @@ local _, playerClass = UnitClass("player")
 local superwow = SUPERWOW_VERSION
 local canRemove = {}
 
+local getn = table.getn
+
 local classColors = {}
 classColors["WARRIOR"] = "|cffc79c6e"
 classColors["DRUID"]   = "|cffff7d0a"
@@ -177,7 +179,7 @@ end
 local function UpdatePrio()
     if RINSE_CONFIG.PRIO_ARRAY[1] then
         for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
-            tinsert(prio, i, tounitid(RINSE_CONFIG.PRIO_ARRAY[i], i))
+            tinsert(prio, i, tounitid(RINSE_CONFIG.PRIO_ARRAY[i].name, i))
         end
         for i = getn(prio), getn(RINSE_CONFIG.PRIO_ARRAY) + 1, -1 do
             if arrcontains(RINSE_CONFIG.PRIO_ARRAY, UnitName(prio[i])) then
@@ -433,9 +435,9 @@ local function UpdateSpells()
         for s = offset + 1, offset + numSpells do
             local spell = GetSpellName(s, bookType)
             if spell then
-                for dispellType, v in pairs(curingSpells[playerClass]) do
+                for dispelType, v in pairs(curingSpells[playerClass]) do
                     if v[1] == spell then
-                        canRemove[dispellType] = spell
+                        canRemove[dispelType] = spell
                         found = true
                         spellBookIndex = s
                     end
@@ -451,9 +453,9 @@ local function UpdateSpells()
         for s = offset + 1, offset + numSpells do
             local spell = GetSpellName(s, bookType)
             if spell then
-                for dispellType, v in pairs(curingSpells[playerClass]) do
+                for dispelType, v in pairs(curingSpells[playerClass]) do
                     if v[2] and v[2] == spell then
-                        canRemove[dispellType] = spell
+                        canRemove[dispelType] = spell
                         spellBookIndex = s
                     end
                 end
@@ -535,8 +537,35 @@ local GetTime = GetTime
 local GetSpellCooldown = GetSpellCooldown
 local CheckInteractDistance = CheckInteractDistance
 local skipArray = RINSE_CONFIG.SKIP_ARRAY
-local updateInterval = 0.15
+local updateInterval = 0.1
 local tick = updateInterval
+
+local function HasAbolish(unit, debuffType)
+    if not UnitExists(unit) or not debuffType then
+        return
+    end
+    if not canRemove[debuffType] then
+        return
+    end
+    if not (debuffType == "Poison" or debuffType == "Disease") then
+        return
+    end
+	local i = 1
+    local buff
+    local icon
+    if debuffType == "Poison" then
+        icon = "Interface\\Icons\\Spell_Nature_NullifyPoison_02"
+    elseif debuffType == "Disease" then
+        icon = "Interface\\Icons\\Spell_Nature_NullifyDisease"
+    end
+	repeat
+		buff = UnitBuff(unit, i)
+		if buff == icon then
+			return 1
+		end
+		i = i + 1
+	until not buff
+end
 
 function RinseFrame_OnUpdate()
     if tick > GetTime() then
@@ -568,7 +597,7 @@ function RinseFrame_OnUpdate()
             local _, class = UnitClass("target")
             if debuffType and debuffName and class then
                 if canRemove[debuffType] and not (blacklist[debuffType] and blacklist[debuffType][debuffName]) and
-                        not (classBlacklist[class] and classBlacklist[class][debuffName]) then
+                        not (classBlacklist[class] and classBlacklist[class][debuffName]) and not HasAbolish("target", debuffType) then
                     debuffs[debuffIndex].name = debuffName or ""
                     debuffs[debuffIndex].type = debuffType or ""
                     debuffs[debuffIndex].texture = texture or ""
@@ -598,7 +627,7 @@ function RinseFrame_OnUpdate()
                 local _, class = UnitClass(unit)
                 if debuffType and debuffName and class then
                     if canRemove[debuffType] and not (blacklist[debuffType] and blacklist[debuffType][debuffName]) and
-                            not (classBlacklist[class] and classBlacklist[class][debuffName]) then
+                            not (classBlacklist[class] and classBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
                         debuffs[debuffIndex].name = debuffName or ""
                         debuffs[debuffIndex].type = debuffType or ""
                         debuffs[debuffIndex].texture = texture or ""
@@ -646,15 +675,15 @@ function RinseFrame_OnUpdate()
             button:Show()
             debuffs[debuffIndex].shown = 1
             for i = debuffIndex, DEBUFFS_MAX do
-                if  debuffs[i].unitName == debuffs[debuffIndex].unitName then
+                if debuffs[i].unitName == debuffs[debuffIndex].unitName then
                     debuffs[i].shown = 1
                 end
             end
             onCooldown:Hide()
             outOfRange:Hide()
-            if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
-                onCooldown:Show()
-            end
+            -- if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
+            --     onCooldown:Show()
+            -- end
             if not CheckInteractDistance(debuffs[debuffIndex].unit, 4) then
                 outOfRange:Show()
             end
