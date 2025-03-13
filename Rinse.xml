@@ -415,7 +415,7 @@
                         </Anchors>
                         <Scripts>
                             <OnVerticalScroll>
-                                FauxScrollFrame_OnVerticalScroll(16, RinseSkipListFrame_Update)
+                                FauxScrollFrame_OnVerticalScroll(16, RinseSkipListScrollFrame_Update)
                             </OnVerticalScroll>
                         </Scripts>
                     </ScrollFrame>
@@ -618,7 +618,7 @@
                         </Anchors>
                         <Scripts>
                             <OnVerticalScroll>
-                                FauxScrollFrame_OnVerticalScroll(16, RinsePrioListFrame_Update)
+                                FauxScrollFrame_OnVerticalScroll(16, RinsePrioListScrollFrame_Update)
                             </OnVerticalScroll>
                         </Scripts>
                     </ScrollFrame>
@@ -921,7 +921,7 @@
                         end
                     </OnClick>
                     <OnShow>
-                        this:SetChecked(RINSE_CONFIG.LOCK)
+                        this:SetChecked(not RINSE_CONFIG.LOCK)
                     </OnShow>
                 </Scripts>
             </CheckButton>

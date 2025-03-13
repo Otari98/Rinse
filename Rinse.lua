@@ -14,6 +14,24 @@ local superwow = SUPERWOW_VERSION
 local canRemove = {}
 
 local getn = table.getn
+local UnitExists = UnitExists
+local UnitIsFriend = UnitIsFriend
+local UnitIsVisible = UnitIsVisible
+local UnitDebuff = UnitDebuff
+local UnitClass = UnitClass
+local UnitIsUnit = UnitIsUnit
+local UnitIsPlayer = UnitIsPlayer
+local UnitIsCharmed = UnitIsCharmed
+local UnitName = UnitName
+local GetTime = GetTime
+local GetSpellCooldown = GetSpellCooldown
+local CheckInteractDistance = CheckInteractDistance
+local updateInterval = 0.1
+local tick = updateInterval
+local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
+local errorSound = "Sound\\Interface\\Error.wav"
+local noticePlayed = nil
+local errorCooldown = 0
 
 local classColors = {}
 classColors["WARRIOR"] = "|cffc79c6e"
@@ -146,7 +164,23 @@ end
 
 local function print(msg)
     if RINSE_CONFIG.PRINT then
-        ChatFrame1:AddMessage(BLUE.."[Rinse]"..WHITE..(msg or "nil")..FONT_COLOR_CODE_CLOSE)
+        ChatFrame1:AddMessage(BLUE.."[Rinse] "..WHITE..(msg or "nil")..FONT_COLOR_CODE_CLOSE)
+    end
+end
+
+local function debug(msg)
+    ChatFrame1:AddMessage(BLUE.."[Rinse]["..GetTime().."]"..WHITE..(msg or "nil")..FONT_COLOR_CODE_CLOSE)
+end
+
+local function PlaySound(file)
+    local cd
+    if file == noticeSound then
+        cd = noticePlayed
+    elseif file == errorSound then
+        cd = errorCooldown
+    end
+    if not cd or cd == 0 then
+        PlaySoundFile(file)
     end
 end
 
@@ -176,6 +210,33 @@ local function tounitid(name, index)
     end
 end
 
+local function HasAbolish(unit, debuffType)
+    if not UnitExists(unit) or not debuffType then
+        return
+    end
+    if not canRemove[debuffType] then
+        return
+    end
+    if not (debuffType == "Poison" or debuffType == "Disease") then
+        return
+    end
+	local i = 1
+    local buff
+    local icon
+    if debuffType == "Poison" then
+        icon = "Interface\\Icons\\Spell_Nature_NullifyPoison_02"
+    elseif debuffType == "Disease" then
+        icon = "Interface\\Icons\\Spell_Nature_NullifyDisease"
+    end
+	repeat
+		buff = UnitBuff(unit, i)
+		if buff == icon then
+			return 1
+		end
+		i = i + 1
+	until not buff
+end
+
 local function UpdatePrio()
     if RINSE_CONFIG.PRIO_ARRAY[1] then
         for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
@@ -191,7 +252,7 @@ local function UpdatePrio()
     end
 end
 
-function RinseSkipListFrame_Update()
+function RinseSkipListScrollFrame_Update()
     local offset = FauxScrollFrame_GetOffset(RinseSkipListScrollFrame)
     local arrayIndex = 1
     local numPlayers = getn(RINSE_CONFIG.SKIP_ARRAY)
@@ -210,7 +271,7 @@ function RinseSkipListFrame_Update()
     end
 end
 
-function RinsePrioListFrame_Update()
+function RinsePrioListScrollFrame_Update()
     local offset = FauxScrollFrame_GetOffset(RinsePrioListScrollFrame)
     local arrayIndex = 1
     local numPlayers = getn(RINSE_CONFIG.PRIO_ARRAY)
@@ -233,12 +294,12 @@ function RinseListButton_OnClick()
     local parent = this:GetParent()
     if parent == RinseSkipListFrame then
         tremove(RINSE_CONFIG.SKIP_ARRAY, this:GetID())
-        RinseSkipListFrame_Update()
+        RinseSkipListScrollFrame_Update()
     elseif parent == RinsePrioListFrame then
         tremove(RINSE_CONFIG.PRIO_ARRAY, this:GetID())
-        RinsePrioListFrame_Update()
+        RinsePrioListScrollFrame_Update()
+        UpdatePrio()
     end
-    UpdatePrio()
 end
 
 function Rinse_AddUnitToList(array, unit)
@@ -248,11 +309,11 @@ function Rinse_AddUnitToList(array, unit)
         tinsert(array, {name = name, class = class})
     end
     if array == RINSE_CONFIG.SKIP_ARRAY then
-        RinseSkipListFrame_Update()
+        RinseSkipListScrollFrame_Update()
     elseif array == RINSE_CONFIG.PRIO_ARRAY then
-        RinsePrioListFrame_Update()
+        RinsePrioListScrollFrame_Update()
+        UpdatePrio()
     end
-    UpdatePrio()
 end
 
 local function AddGroupOrClass()
@@ -464,42 +525,49 @@ local function UpdateSpells()
     end
 end
 
-function Rinse_Cleanse(button)
-    local button = button or this
-    if not button.unit or button.unit == "" then
-        return
-    end
-
-    if not CheckInteractDistance(button.unit, 4) then
-        print(classColors[button.unitClass].." "..UnitName(button.unit)..CLOSE.." is out of range.")
-        -- PlaySoundFile("Sound\\Interface\\Error.wav")
-        return
-    end
-
-    local debuff = getglobal(button:GetName().."Name"):GetText()
-    if superwow then
-        print(" Trying To Remove "..debuffColor[button.type].hex..debuff..CLOSE.." from "..classColors[button.unitClass]..UnitName(button.unit)..CLOSE)
-        CastSpellByName(canRemove[button.type], button.unit)
+function RinseFramePrioList_OnClick()
+    if RinsePrioListFrame:IsShown() then
+        RinsePrioListFrame:Hide()
     else
-        local selfcast = false
-        if GetCVar("autoselfcast") == "1" then
-            selfcast = true
-        end
-        SetCVar("autoselfcast", 0)
-        TargetByName(button.unitName)
-        CastSpellByName(canRemove[button.type])
-        TargetLastTarget()
-        if selfcast then
-            SetCVar("autoselfcast", 1)
-        end
+        RinsePrioListFrame:Show()
+        RinsePrioListScrollFrame_Update()
     end
 end
 
-SLASH_RINSE1 = "/rinse"
-SlashCmdList["RINSE"] = function()
-    for i = 1, 5 do
-       Rinse_Cleanse(getglobal("RinseFrameDebuff"..i))
+function RinseFrameSkipList_OnClick()
+    if RinseSkipListFrame:IsShown() then
+        RinseSkipListFrame:Hide()
+    else
+        RinseSkipListFrame:Show()
+        RinseSkipListScrollFrame_Update()
     end
+end
+
+function RinseFrameOptions_OnClick()
+    if not RinseOptionsFrame:IsShown() then
+        RinseOptionsFrame:Show()
+    else
+        RinseOptionsFrame:Hide()
+    end
+end
+
+function Rinse_ToggleWyvernSting()
+    RINSE_CONFIG.WYVERN_STING = not RINSE_CONFIG.WYVERN_STING
+    blacklist["Poison"]["Wyvern Sting"] = RINSE_CONFIG.WYVERN_STING
+end
+
+function Rinse_ToggleMutatingInjection()
+    RINSE_CONFIG.MUTATING_INJECTION = not RINSE_CONFIG.MUTATING_INJECTION
+    blacklist["Disease"]["Mutating Injection"] = RINSE_CONFIG.MUTATING_INJECTION
+end
+
+function Rinse_TogglePrint()
+    RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
+end
+
+function Rinse_ToggleLock()
+    RINSE_CONFIG.LOCK = not RINSE_CONFIG.LOCK
+    RinseFrame:SetMovable(RINSE_CONFIG.LOCK)
 end
 
 function RinseFrame_OnLoad()
@@ -507,8 +575,21 @@ function RinseFrame_OnLoad()
     RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
     RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
     RinseFrame:RegisterEvent("SPELLS_CHANGED")
+    -- RinseFrame:RegisterEvent("UNIT_AURA")
     RinseFrame:SetBackdropBorderColor(1, 1, 1)
     RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
+end
+
+local function goodunit(unit)
+    if not (unit and UnitExists(unit) and UnitName(unit)) then
+        return nil
+    end
+    if UnitIsPlayer(unit) and UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) then
+        if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(prio, unit) or (unit == "target")) then
+            return 1
+        end
+    end
+    return nil
 end
 
 function RinseFrame_OnEvent()
@@ -518,55 +599,20 @@ function RinseFrame_OnEvent()
         RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
         RinseFrame:SetScale(RINSE_CONFIG.SCALE)
         RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
+        RinseFrame:SetMovable(RINSE_CONFIG.LOCK)
         UpdateSpells()
     elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
         UpdatePrio()
     elseif event == "SPELLS_CHANGED" then
         UpdateSpells()
+    -- elseif event == "UNIT_AURA" then
+    --     if arg1 and goodunit(arg1) then
+    --         debug(event..", "..arg1..", "..(UnitName(arg1)))
+    --     end
     end
 end
 
-local UnitExists = UnitExists
-local UnitIsFriend = UnitIsFriend
-local UnitIsVisible = UnitIsVisible
-local UnitDebuff = UnitDebuff
-local UnitClass = UnitClass
-local UnitIsUnit = UnitIsUnit
-local UnitName = UnitName
-local GetTime = GetTime
-local GetSpellCooldown = GetSpellCooldown
-local CheckInteractDistance = CheckInteractDistance
-local skipArray = RINSE_CONFIG.SKIP_ARRAY
-local updateInterval = 0.1
-local tick = updateInterval
-
-local function HasAbolish(unit, debuffType)
-    if not UnitExists(unit) or not debuffType then
-        return
-    end
-    if not canRemove[debuffType] then
-        return
-    end
-    if not (debuffType == "Poison" or debuffType == "Disease") then
-        return
-    end
-	local i = 1
-    local buff
-    local icon
-    if debuffType == "Poison" then
-        icon = "Interface\\Icons\\Spell_Nature_NullifyPoison_02"
-    elseif debuffType == "Disease" then
-        icon = "Interface\\Icons\\Spell_Nature_NullifyDisease"
-    end
-	repeat
-		buff = UnitBuff(unit, i)
-		if buff == icon then
-			return 1
-		end
-		i = i + 1
-	until not buff
-end
-
+-- TODO: move some of it to OnEvent maybe?
 function RinseFrame_OnUpdate()
     if tick > GetTime() then
         return
@@ -585,7 +631,7 @@ function RinseFrame_OnUpdate()
         debuffs[i].debuffIndex = 0
     end
     local debuffIndex = 1
-    if UnitExists("target") and UnitIsFriend("target", "player") and not arrcontains(skipArray, UnitName("target")) and UnitIsVisible("target") then
+    if goodunit("target") then
         local i = 1
         while debuffIndex < DEBUFFS_MAX and UnitDebuff("target", i) do
             RinseScanTooltipTextLeft1:SetText("")
@@ -614,8 +660,7 @@ function RinseFrame_OnUpdate()
     end
     for index = 1, getn(prio) do
         local unit = prio[index]
-        if UnitExists(unit) and UnitIsFriend(unit, "player") and not (UnitExists("target") and UnitIsUnit("target", unit))
-                and not arrcontains(skipArray, UnitName(unit)) and UnitIsVisible(unit) then
+        if goodunit(unit) and not (UnitExists("target") and UnitIsUnit("target", unit)) then
             local i = 1
             while debuffIndex < DEBUFFS_MAX and UnitDebuff(unit, i) do
                 RinseScanTooltipTextLeft1:SetText("")
@@ -673,6 +718,10 @@ function RinseFrame_OnUpdate()
             button.type = debuffs[debuffIndex].type
             button.debuffIndex = debuffs[debuffIndex].debuffIndex
             button:Show()
+            if buttonIndex == 1 then
+                PlaySound(noticeSound)
+                noticePlayed = 1
+            end
             debuffs[debuffIndex].shown = 1
             for i = debuffIndex, DEBUFFS_MAX do
                 if debuffs[i].unitName == debuffs[debuffIndex].unitName then
@@ -689,49 +738,54 @@ function RinseFrame_OnUpdate()
             end
         end
     end
-end
-
-function RinseFramePrioList_OnClick()
-    if RinsePrioListFrame:IsShown() then
-        RinsePrioListFrame:Hide()
-    else
-        RinsePrioListFrame:Show()
-        RinsePrioListFrame_Update()
+    if errorCooldown > 0 then
+        errorCooldown = errorCooldown - 1
+    end
+    if not RinseFrameDebuff1:IsShown() then
+        noticePlayed = nil
     end
 end
 
-function RinseFrameSkipList_OnClick()
-    if RinseSkipListFrame:IsShown() then
-        RinseSkipListFrame:Hide()
+
+function Rinse_Cleanse(button)
+    local button = button or this
+    if not button.unit or button.unit == "" then
+        return
+    end
+
+    if not CheckInteractDistance(button.unit, 4) then
+        print(classColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
+        PlaySound(errorSound)
+        errorCooldown = 2
+        return
+    end
+
+    local debuff = getglobal(button:GetName().."Name"):GetText()
+    if superwow then
+        print("Trying To Remove "..debuffColor[button.type].hex..debuff..CLOSE.." from "..classColors[button.unitClass]..UnitName(button.unit)..CLOSE)
+        CastSpellByName(canRemove[button.type], button.unit)
     else
-        RinseSkipListFrame:Show()
-        RinseSkipListFrame_Update()
+        local selfcast = false
+        if GetCVar("autoselfcast") == "1" then
+            selfcast = true
+        end
+        SetCVar("autoselfcast", 0)
+        TargetByName(button.unitName)
+        CastSpellByName(canRemove[button.type])
+        TargetLastTarget()
+        if selfcast then
+            SetCVar("autoselfcast", 1)
+        end
     end
 end
 
-function RinseFrameOptions_OnClick()
-    if not RinseOptionsFrame:IsShown() then
-        RinseOptionsFrame:Show()
-    else
-        RinseOptionsFrame:Hide()
+SLASH_RINSE1 = "/rinse"
+SlashCmdList["RINSE"] = function()
+    for i = 1, 5 do
+        local button = getglobal("RinseFrameDebuff"..i)
+        local outOfRange = getglobal("RinseFrameDebuff"..i.."OutOfRange"):IsShown()
+        if not outOfRange then
+            Rinse_Cleanse(button)
+        end
     end
-end
-
-function Rinse_ToggleWyvernSting()
-    RINSE_CONFIG.WYVERN_STING = not RINSE_CONFIG.WYVERN_STING
-    blacklist["Poison"]["Wyvern Sting"] = RINSE_CONFIG.WYVERN_STING
-end
-
-function Rinse_ToggleMutatingInjection()
-    RINSE_CONFIG.MUTATING_INJECTION = not RINSE_CONFIG.MUTATING_INJECTION
-    blacklist["Disease"]["Mutating Injection"] = RINSE_CONFIG.MUTATING_INJECTION
-end
-
-function Rinse_TogglePrint()
-    RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
-end
-
-function Rinse_ToggleLock()
-    RINSE_CONFIG.LOCK = not RINSE_CONFIG.LOCK
-    RinseFrame:SetMovable(not RinseFrame:IsMovable())
 end
