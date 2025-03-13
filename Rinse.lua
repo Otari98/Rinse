@@ -7,6 +7,7 @@ RINSE_CONFIG.PRIO_ARRAY = {}
 RINSE_CONFIG.WEVERN_STING = false
 RINSE_CONFIG.MUTATING_INJECTION = false
 RINSE_CONFIG.PRINT = true
+RINSE_CONFIG.SOUND = true
 RINSE_CONFIG.LOCK = false
 
 local _, playerClass = UnitClass("player")
@@ -173,14 +174,16 @@ local function debug(msg)
 end
 
 local function PlaySound(file)
-    local cd
-    if file == noticeSound then
-        cd = noticePlayed
-    elseif file == errorSound then
-        cd = errorCooldown
-    end
-    if not cd or cd == 0 then
-        PlaySoundFile(file)
+    if RINSE_CONFIG.SOUND then
+        local cd
+        if file == noticeSound then
+            cd = noticePlayed
+        elseif file == errorSound then
+            cd = errorCooldown
+        end
+        if not cd or cd == 0 then
+            PlaySoundFile(file)
+        end
     end
 end
 
@@ -565,6 +568,10 @@ function Rinse_TogglePrint()
     RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
 end
 
+function Rinse_ToggleSound()
+    RINSE_CONFIG.SOUND = not RINSE_CONFIG.SOUND
+end
+
 function Rinse_ToggleLock()
     RINSE_CONFIG.LOCK = not RINSE_CONFIG.LOCK
     RinseFrame:SetMovable(RINSE_CONFIG.LOCK)
@@ -584,7 +591,7 @@ local function goodunit(unit)
     if not (unit and UnitExists(unit) and UnitName(unit)) then
         return nil
     end
-    if UnitIsPlayer(unit) and UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) then
+    if UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) then
         if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(prio, unit) or (unit == "target")) then
             return 1
         end
@@ -720,7 +727,7 @@ function RinseFrame_OnUpdate()
             button:Show()
             if buttonIndex == 1 then
                 PlaySound(noticeSound)
-                noticePlayed = 1
+                noticePlayed = 32
             end
             debuffs[debuffIndex].shown = 1
             for i = debuffIndex, DEBUFFS_MAX do
@@ -756,11 +763,12 @@ function Rinse_Cleanse(button)
     if not CheckInteractDistance(button.unit, 4) then
         print(classColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
         PlaySound(errorSound)
-        errorCooldown = 2
+        errorCooldown = 12
         return
     end
 
     local debuff = getglobal(button:GetName().."Name"):GetText()
+    -- SpellStopCasting()
     if superwow then
         print("Trying To Remove "..debuffColor[button.type].hex..debuff..CLOSE.." from "..classColors[button.unitClass]..UnitName(button.unit)..CLOSE)
         CastSpellByName(canRemove[button.type], button.unit)
@@ -782,10 +790,6 @@ end
 SLASH_RINSE1 = "/rinse"
 SlashCmdList["RINSE"] = function()
     for i = 1, 5 do
-        local button = getglobal("RinseFrameDebuff"..i)
-        local outOfRange = getglobal("RinseFrameDebuff"..i.."OutOfRange"):IsShown()
-        if not outOfRange then
-            Rinse_Cleanse(button)
-        end
+        Rinse_Cleanse(getglobal("RinseFrameDebuff"..i))
     end
 end

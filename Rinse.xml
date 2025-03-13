@@ -713,7 +713,7 @@
 
     <!-- Options Frame -->
     <Frame name="RinseOptionsFrame" parent="UIParent" movable="true" enableMouse="true" toplevel="true" frameStrata="DIALOG" hidden="true">
-        <Size x="200" y="280"/>
+        <Size x="200" y="320"/>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
@@ -881,8 +881,8 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Print Messages In Chat")
-                        this.tooltipText = "Print Messages In Chat"
+                        getglobal(this:GetName().."Text"):SetText("Enable Error Messages")
+                        this.tooltipText = "Chat Error Messages"
                     </OnLoad>
                     <OnClick>
                         Rinse_TogglePrint()
@@ -897,13 +897,41 @@
                     </OnShow>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parentSound" inherits="OptionsCheckButtonTemplate">
                 <Size x="32" y="32"/>
                 <HitRectInsets>
                     <AbsInset left="0" right="-100" top="0" bottom="0"/>
                 </HitRectInsets>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentPrint" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="-4"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Enable Sounds")
+                        this.tooltipText = "Enable Notification And Error Sounds"
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_ToggleSound()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                    <OnShow>
+                        this:SetChecked(RINSE_CONFIG.SOUND)
+                    </OnShow>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets>
+                    <AbsInset left="0" right="-100" top="0" bottom="0"/>
+                </HitRectInsets>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentSound" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
                     </Anchor>
                 </Anchors>
