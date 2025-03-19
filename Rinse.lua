@@ -162,7 +162,7 @@ local function debug(msg)
     ChatFrame1:AddMessage(BLUE.."[Rinse]["..GetTime().."]"..WHITE..(msg or "nil")..FONT_COLOR_CODE_CLOSE)
 end
 
-local function PlaySound(file)
+local function playsound(file)
     if RINSE_CONFIG.SOUND then
         local cd
         if file == noticeSound then
@@ -571,7 +571,6 @@ function RinseFrame_OnLoad()
     RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
     RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
     RinseFrame:RegisterEvent("SPELLS_CHANGED")
-    -- RinseFrame:RegisterEvent("UNIT_AURA")
     RinseFrame:SetBackdropBorderColor(1, 1, 1)
     RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
 end
@@ -621,14 +620,9 @@ function RinseFrame_OnEvent()
         UpdatePrio()
     elseif event == "SPELLS_CHANGED" then
         UpdateSpells()
-    -- elseif event == "UNIT_AURA" then
-    --     if arg1 and goodunit(arg1) then
-    --         debug(event..", "..arg1..", "..(UnitName(arg1)))
-    --     end
     end
 end
 
--- TODO: move some of it to OnEvent maybe?
 function RinseFrame_OnUpdate()
     if tick > GetTime() then
         return
@@ -735,7 +729,7 @@ function RinseFrame_OnUpdate()
             button.debuffIndex = debuffs[debuffIndex].debuffIndex
             button:Show()
             if buttonIndex == 1 then
-                PlaySound(noticeSound)
+                playsound(noticeSound)
                 noticePlayed = 32
             end
             debuffs[debuffIndex].shown = 1
@@ -774,11 +768,10 @@ function Rinse_Cleanse(button)
 
     if not CheckInteractDistance(button.unit, 4) then
         print(classColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
-        PlaySound(errorSound)
+        playsound(errorSound)
         errorCooldown = 12
         return
     end
-
     local debuff = getglobal(button:GetName().."Name"):GetText()
     if stopCastCooldown == 0 then
         SpellStopCasting()

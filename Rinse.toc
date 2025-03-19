@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: Rinse |cffc79c6e-Spit-|r
 ## Author: Otari98
-## Version: 0.5
-## Notes: 
+## Version: 0.6
+## Notes: Remove debuffs from your mates with ease
 ## SavedVariables: RINSE_CONFIG
 
 Rinse.xml
