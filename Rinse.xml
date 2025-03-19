@@ -782,9 +782,6 @@
                         RinseFrame:SetScale(scale)
                         getglobal(this:GetName().."Text"):SetText("Scale ("..scale..")")
                     </OnValueChanged>
-                    <OnShow>
-                        this:SetValue(RINSE_CONFIG.SCALE)
-                    </OnShow>
                 </Scripts>
             </Slider>
             <Slider name="$parentOpacitySlider" inherits="OptionsSliderTemplate">
@@ -808,9 +805,6 @@
                         RinseFrame:SetAlpha(alpha)
                         getglobal(this:GetName().."Text"):SetText("Opacity ("..alpha..")")
                     </OnValueChanged>
-                    <OnShow>
-                        this:SetValue(RINSE_CONFIG.OPACITY)
-                    </OnShow>
                 </Scripts>
             </Slider>
             <CheckButton name="$parentWyvernSting" inherits="OptionsCheckButtonTemplate">
@@ -836,9 +830,6 @@
                             PlaySound("igMainMenuOptionCheckBoxOff")
                         end
                     </OnClick>
-                    <OnShow>
-                        this:SetChecked(RINSE_CONFIG.WYVERN_STING)
-                    </OnShow>
                 </Scripts>
             </CheckButton>
             <CheckButton name="$parentMutatingInjection" inherits="OptionsCheckButtonTemplate">
@@ -864,9 +855,6 @@
                             PlaySound("igMainMenuOptionCheckBoxOff")
                         end
                     </OnClick>
-                    <OnShow>
-                        this:SetChecked(RINSE_CONFIG.MUTATING_INJECTION)
-                    </OnShow>
                 </Scripts>
             </CheckButton>
             <CheckButton name="$parentPrint" inherits="OptionsCheckButtonTemplate">
@@ -892,9 +880,6 @@
                             PlaySound("igMainMenuOptionCheckBoxOff")
                         end
                     </OnClick>
-                    <OnShow>
-                        this:SetChecked(RINSE_CONFIG.PRINT)
-                    </OnShow>
                 </Scripts>
             </CheckButton>
             <CheckButton name="$parentSound" inherits="OptionsCheckButtonTemplate">
@@ -920,9 +905,6 @@
                             PlaySound("igMainMenuOptionCheckBoxOff")
                         end
                     </OnClick>
-                    <OnShow>
-                        this:SetChecked(RINSE_CONFIG.SOUND)
-                    </OnShow>
                 </Scripts>
             </CheckButton>
             <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
@@ -948,9 +930,6 @@
                             PlaySound("igMainMenuOptionCheckBoxOff")
                         end
                     </OnClick>
-                    <OnShow>
-                        this:SetChecked(not RINSE_CONFIG.LOCK)
-                    </OnShow>
                 </Scripts>
             </CheckButton>
         </Frames>

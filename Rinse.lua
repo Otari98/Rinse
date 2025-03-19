@@ -1,15 +1,3 @@
-RINSE_CONFIG = {}
-RINSE_CONFIG.SCALE = 0.85
-RINSE_CONFIG.OPACITY = 1.0
-RINSE_CONFIG.POSITION = {x = 0, y = 0}
-RINSE_CONFIG.SKIP_ARRAY = {}
-RINSE_CONFIG.PRIO_ARRAY = {}
-RINSE_CONFIG.WEVERN_STING = false
-RINSE_CONFIG.MUTATING_INJECTION = false
-RINSE_CONFIG.PRINT = true
-RINSE_CONFIG.SOUND = true
-RINSE_CONFIG.LOCK = false
-
 local _, playerClass = UnitClass("player")
 local superwow = SUPERWOW_VERSION
 local canRemove = {}
@@ -33,6 +21,7 @@ local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
 local errorSound = "Sound\\Interface\\Error.wav"
 local noticePlayed = nil
 local errorCooldown = 0
+local stopCastCooldown = 0
 
 local classColors = {}
 classColors["WARRIOR"] = "|cffc79c6e"
@@ -556,12 +545,12 @@ end
 
 function Rinse_ToggleWyvernSting()
     RINSE_CONFIG.WYVERN_STING = not RINSE_CONFIG.WYVERN_STING
-    blacklist["Poison"]["Wyvern Sting"] = RINSE_CONFIG.WYVERN_STING
+    blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
 end
 
 function Rinse_ToggleMutatingInjection()
     RINSE_CONFIG.MUTATING_INJECTION = not RINSE_CONFIG.MUTATING_INJECTION
-    blacklist["Disease"]["Mutating Injection"] = RINSE_CONFIG.MUTATING_INJECTION
+    blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
 end
 
 function Rinse_TogglePrint()
@@ -574,7 +563,7 @@ end
 
 function Rinse_ToggleLock()
     RINSE_CONFIG.LOCK = not RINSE_CONFIG.LOCK
-    RinseFrame:SetMovable(RINSE_CONFIG.LOCK)
+    RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
 end
 
 function RinseFrame_OnLoad()
@@ -602,11 +591,31 @@ end
 function RinseFrame_OnEvent()
     if event == "ADDON_LOADED" and arg1 == "Rinse" then
         RinseFrame:UnregisterEvent("ADDON_LOADED")
+        if not RINSE_CONFIG then
+            RINSE_CONFIG = {}
+            RINSE_CONFIG.SCALE = 0.85
+            RINSE_CONFIG.OPACITY = 1.0
+            RINSE_CONFIG.POSITION = {x = 0, y = 0}
+            RINSE_CONFIG.SKIP_ARRAY = {}
+            RINSE_CONFIG.PRIO_ARRAY = {}
+            RINSE_CONFIG.WEVERN_STING = false
+            RINSE_CONFIG.MUTATING_INJECTION = false
+            RINSE_CONFIG.PRINT = true
+            RINSE_CONFIG.SOUND = true
+            RINSE_CONFIG.LOCK = false
+        end
         RinseFrame:ClearAllPoints()
         RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
         RinseFrame:SetScale(RINSE_CONFIG.SCALE)
         RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
-        RinseFrame:SetMovable(RINSE_CONFIG.LOCK)
+        RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
+        RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
+        RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
+        RinseOptionsFrameWyvernSting:SetChecked(RINSE_CONFIG.WYVERN_STING)
+        RinseOptionsFrameMutatingInjection:SetChecked(RINSE_CONFIG.MUTATING_INJECTION)
+        RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
+        RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)
+        RinseOptionsFrameLock:SetChecked(RINSE_CONFIG.LOCK)
         UpdateSpells()
     elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
         UpdatePrio()
@@ -748,6 +757,9 @@ function RinseFrame_OnUpdate()
     if errorCooldown > 0 then
         errorCooldown = errorCooldown - 1
     end
+    if stopCastCooldown > 0 then
+        stopCastCooldown = stopCastCooldown - 1
+    end
     if not RinseFrameDebuff1:IsShown() then
         noticePlayed = nil
     end
@@ -768,7 +780,10 @@ function Rinse_Cleanse(button)
     end
 
     local debuff = getglobal(button:GetName().."Name"):GetText()
-    -- SpellStopCasting()
+    if stopCastCooldown == 0 then
+        SpellStopCasting()
+        stopCastCooldown = 6
+    end
     if superwow then
         print("Trying To Remove "..debuffColor[button.type].hex..debuff..CLOSE.." from "..classColors[button.unitClass]..UnitName(button.unit)..CLOSE)
         CastSpellByName(canRemove[button.type], button.unit)
