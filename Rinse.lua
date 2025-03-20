@@ -592,11 +592,11 @@ function RinseFrame_OnEvent()
         RinseFrame:UnregisterEvent("ADDON_LOADED")
         if not RINSE_CONFIG then
             RINSE_CONFIG = {}
-            RINSE_CONFIG.SCALE = 0.85
-            RINSE_CONFIG.OPACITY = 1.0
-            RINSE_CONFIG.POSITION = {x = 0, y = 0}
             RINSE_CONFIG.SKIP_ARRAY = {}
             RINSE_CONFIG.PRIO_ARRAY = {}
+            RINSE_CONFIG.POSITION = {x = 0, y = 0}
+            RINSE_CONFIG.SCALE = 0.85
+            RINSE_CONFIG.OPACITY = 1.0
             RINSE_CONFIG.WEVERN_STING = false
             RINSE_CONFIG.MUTATING_INJECTION = false
             RINSE_CONFIG.PRINT = true
