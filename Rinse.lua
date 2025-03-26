@@ -231,6 +231,22 @@ local function HasAbolish(unit, debuffType)
 	until not buff
 end
 
+local function InRange(unit)
+    if unit and UnitIsFriend(unit, "player") then
+        if superwow then
+            local myX, myY, myZ = UnitPosition("player")
+            local uX, uY, uZ = UnitPosition(unit)
+            local x = myX - uX
+            local y = myY - uY
+            local z = myZ - uZ
+            local dis = math.abs((x * x) + (y * y) + (z * z))
+            return dis <= 1089
+        else
+            return CheckInteractDistance(unit, 4)
+        end
+    end
+end
+
 local function UpdatePrio()
     if RINSE_CONFIG.PRIO_ARRAY[1] then
         for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
@@ -745,7 +761,7 @@ function RinseFrame_OnUpdate()
             -- if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
             --     onCooldown:Show()
             -- end
-            if not CheckInteractDistance(debuffs[debuffIndex].unit, 4) then
+            if not InRange(debuffs[debuffIndex].unit) then
                 outOfRange:Show()
             end
         end
@@ -768,7 +784,7 @@ function Rinse_Cleanse(button)
         return
     end
 
-    if not CheckInteractDistance(button.unit, 4) then
+    if not InRange(button.unit) then
         print(classColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
         playsound(errorSound)
         errorCooldown = 12
