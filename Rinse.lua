@@ -116,6 +116,7 @@ classBlacklist["ROGUE"] = {}
 classBlacklist["WARRIOR"]["Ancient Hysteria"] = true
 classBlacklist["WARRIOR"]["Ignite Mana"] = true
 classBlacklist["WARRIOR"]["Tainted Mind"] = true
+classBlacklist["WARRIOR"]["Moroes Curse"] = true
 
 classBlacklist["ROGUE"]["Silence"] = true
 classBlacklist["ROGUE"]["Ancient Hysteria"] = true
@@ -123,6 +124,7 @@ classBlacklist["ROGUE"]["Ignite Mana"] = true
 classBlacklist["ROGUE"]["Tainted Mind"] = true
 classBlacklist["ROGUE"]["Smoke Bomb"] = false -- not sure about this one
 classBlacklist["ROGUE"]["Screams of the Past"] = true
+classBlacklist["ROGUE"]["Moroes Curse"] = true
 
 local function twipe(tbl)
     for k in pairs(tbl) do
