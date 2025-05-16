@@ -1,7 +1,5 @@
 local _, playerClass = UnitClass("player")
 local superwow = SUPERWOW_VERSION
-local canRemove = {}
-
 local getn = table.getn
 local UnitExists = UnitExists
 local UnitIsFriend = UnitIsFriend
@@ -19,112 +17,129 @@ local updateInterval = 0.1
 local tick = updateInterval
 local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
 local errorSound = "Sound\\Interface\\Error.wav"
-local noticePlayed = nil
+local noticeCooldown = 0
 local errorCooldown = 0
 local stopCastCooldown = 0
 
-local classColors = {}
-classColors["WARRIOR"] = "|cffc79c6e"
-classColors["DRUID"]   = "|cffff7d0a"
-classColors["PALADIN"] = "|cfff58cba"
-classColors["WARLOCK"] = "|cff9482c9"
-classColors["MAGE"]    = "|cff69ccf0"
-classColors["PRIEST"]  = "|cffffffff"
-classColors["ROGUE"]   = "|cfffff569"
-classColors["HUNTER"]  = "|cffabd473"
-classColors["SHAMAN"]  = "|cff0070de"
+local ClassColors = {}
+ClassColors["WARRIOR"] = "|cffc79c6e"
+ClassColors["DRUID"]   = "|cffff7d0a"
+ClassColors["PALADIN"] = "|cfff58cba"
+ClassColors["WARLOCK"] = "|cff9482c9"
+ClassColors["MAGE"]    = "|cff69ccf0"
+ClassColors["PRIEST"]  = "|cffffffff"
+ClassColors["ROGUE"]   = "|cfffff569"
+ClassColors["HUNTER"]  = "|cffabd473"
+ClassColors["SHAMAN"]  = "|cff0070de"
 
-local debuffColor = {}
-debuffColor["none"]	   = { r = 0.8, g = 0.0, b = 0, hex = "|cffCC0000" }
-debuffColor["Magic"]   = { r = 0.2, g = 0.6, b = 1, hex = "|cff3399FF" }
-debuffColor["Curse"]   = { r = 0.6, g = 0.0, b = 1, hex = "|cff9900FF" }
-debuffColor["Disease"] = { r = 0.6, g = 0.4, b = 0, hex = "|cff996600" }
-debuffColor["Poison"]  = { r = 0.0, g = 0.6, b = 0, hex = "|cff009900" }
+local DebuffColor = {}
+DebuffColor["none"]	   = { r = 0.8, g = 0.0, b = 0.0, hex = "|cffCC0000" }
+DebuffColor["Magic"]   = { r = 0.2, g = 0.6, b = 1.0, hex = "|cff3399FF" }
+DebuffColor["Curse"]   = { r = 0.6, g = 0.0, b = 1.0, hex = "|cff9900FF" }
+DebuffColor["Disease"] = { r = 0.6, g = 0.4, b = 0.0, hex = "|cff996600" }
+DebuffColor["Poison"]  = { r = 0.0, g = 0.6, b = 0.0, hex = "|cff009900" }
 
-local RED = debuffColor["none"].hex
-local BLUE = debuffColor["Magic"].hex
-local PURPLE = debuffColor["Curse"].hex
-local BROWN = debuffColor["Disease"].hex
-local GREEN = debuffColor["Poison"].hex
+local RED = DebuffColor["none"].hex
+local BLUE = DebuffColor["Magic"].hex
+local PURPLE = DebuffColor["Curse"].hex
+local BROWN = DebuffColor["Disease"].hex
+local GREEN = DebuffColor["Poison"].hex
 local GREY = GRAY_FONT_COLOR_CODE
 local WHITE = HIGHLIGHT_FONT_COLOR_CODE
 local CLOSE = FONT_COLOR_CODE_CLOSE
 
-local curingSpells = {}
-curingSpells["PALADIN"] = { Magic = {"Cleanse"}, Poison = {"Cleanse", "Purify"}, Disease = {"Cleanse", "Purify"} }
-curingSpells["DRUID"]   = { Curse = {"Remove Curse"}, Poison = {"Abolish Poison", "Cure Poison"} }
-curingSpells["PRIEST"]  = { Magic = {"Dispel Magic"}, Disease = {"Abolish Disease", "Cure Disease"} }
-curingSpells["SHAMAN"]  = { Poison = {"Cure Poison"}, Disease = {"Cure Disease"} }
-curingSpells["MAGE"]    = { Curse = {"Remove Lesser Curse"} }
-curingSpells["WARLOCK"] = { Magic = {"Devour Magic"} }
+-- Spells that remove stuff, for each class
+local Spells = {}
+Spells["PALADIN"] = { Magic = {"Cleanse"}, Poison = {"Cleanse", "Purify"}, Disease = {"Cleanse", "Purify"} }
+Spells["DRUID"]   = { Curse = {"Remove Curse"}, Poison = {"Abolish Poison", "Cure Poison"} }
+Spells["PRIEST"]  = { Magic = {"Dispel Magic"}, Disease = {"Abolish Disease", "Cure Disease"} }
+Spells["SHAMAN"]  = { Poison = {"Cure Poison"}, Disease = {"Cure Disease"} }
+Spells["MAGE"]    = { Curse = {"Remove Lesser Curse"} }
+Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
 
-local DEBUFFS_MAX = 32
-local debuffs = {}
+-- Spells that we have
+-- CanRemove[debuffType] = "spellName"
+local CanRemove = {}
+
+-- Maximum number of debuffs that we hold on to
+local DEBUFFS_MAX = 40
+
+-- Number of buttons shown
+local BUTTONS_MAX = 5
+
+-- Debuff info
+local Debuffs = {}
 for i = 1, DEBUFFS_MAX do
-    debuffs[i] = { name = "", type = "", texture = "", stacks = 0, debuffIndex = 0, unit = "", unitName = "", unitClass = "", shown = 0 }
+    Debuffs[i] = { name = "", type = "", texture = "", stacks = 0, debuffIndex = 0, unit = "", unitName = "", unitClass = "", shown = 0 }
 end
 
-local defaultPrio = {}
-defaultPrio[1] = "player"
-defaultPrio[2] = "party1"
-defaultPrio[3] = "party2"
-defaultPrio[4] = "party3"
-defaultPrio[5] = "party4"
+-- Default scan order
+local DefaultPrio = {}
+DefaultPrio[1] = "player"
+DefaultPrio[2] = "party1"
+DefaultPrio[3] = "party2"
+DefaultPrio[4] = "party3"
+DefaultPrio[5] = "party4"
 for i = 1, 40 do
-    tinsert(defaultPrio, "raid"..i)
+    tinsert(DefaultPrio, "raid"..i)
 end
 
-local prio = {}
-prio[1] = "player"
-prio[2] = "party1"
-prio[3] = "party2"
-prio[4] = "party3"
-prio[5] = "party4"
+-- Scan order
+local Prio = {}
+Prio[1] = "player"
+Prio[2] = "party1"
+Prio[3] = "party2"
+Prio[4] = "party3"
+Prio[5] = "party4"
 for i = 1, 40 do
-    tinsert(prio, "raid"..i)
+    tinsert(Prio, "raid"..i)
 end
 
-local blacklist = {}
-blacklist["Curse"] = {}
-blacklist["Magic"] = {}
-blacklist["Disease"] = {}
-blacklist["Poison"] = {}
+-- Spells to ignore always
+local Blacklist = {}
+Blacklist["Curse"] = {}
+Blacklist["Magic"] = {}
+Blacklist["Disease"] = {}
+Blacklist["Poison"] = {}
+----------------------------------------------------
+Blacklist["Curse"]["Curse of Recklessness"] = true
+Blacklist["Curse"]["Delusions of Jin'do"] = true
+----------------------------------------------------
+Blacklist["Magic"]["Dreamless Sleep"] = true
+Blacklist["Magic"]["Greater Dreamless Sleep"] = true
+Blacklist["Magic"]["Songflower Serenade"] = true
+Blacklist["Magic"]["Mol'dar's Moxie"] = true
+Blacklist["Magic"]["Fengus' Ferocity"] = true
+Blacklist["Magic"]["Slip'kik's Savvy"] = true
+Blacklist["Magic"]["Thunderfury"] = true
+Blacklist["Magic"]["Magma Shackles"] = true
+Blacklist["Magic"]["Icicles"] = true
+----------------------------------------------------
+Blacklist["Disease"]["Mutating Injection"] = true
+Blacklist["Disease"]["Sanctum Mind Decay"] = true
+----------------------------------------------------
+Blacklist["Poison"]["Wyvern Sting"] = true
+Blacklist["Poison"]["Poison Mushroom"] = true
+----------------------------------------------------
 
-blacklist["Curse"]["Curse of Recklessness"] = true
-blacklist["Curse"]["Delusions of Jin'do"] = true
-
-blacklist["Magic"]["Dreamless Sleep"] = true
-blacklist["Magic"]["Greater Dreamless Sleep"] = true
-blacklist["Magic"]["Songflower Serenade"] = true
-blacklist["Magic"]["Mol'dar's Moxie"] = true
-blacklist["Magic"]["Fengus' Ferocity"] = true
-blacklist["Magic"]["Slip'kik's Savvy"] = true
-blacklist["Magic"]["Thunderfury"] = true
-blacklist["Magic"]["Magma Shackles"] = true
-blacklist["Magic"]["Icicles"] = true
-
-blacklist["Disease"]["Mutating Injection"] = true
-blacklist["Disease"]["Sanctum Mind Decay"] = true
-
-blacklist["Poison"]["Wyvern Sting"] = true
-blacklist["Poison"]["Poison Mushroom"] = true
-
-local classBlacklist = {}
-classBlacklist["WARRIOR"] = {}
-classBlacklist["ROGUE"] = {}
-
-classBlacklist["WARRIOR"]["Ancient Hysteria"] = true
-classBlacklist["WARRIOR"]["Ignite Mana"] = true
-classBlacklist["WARRIOR"]["Tainted Mind"] = true
-classBlacklist["WARRIOR"]["Moroes Curse"] = true
-
-classBlacklist["ROGUE"]["Silence"] = true
-classBlacklist["ROGUE"]["Ancient Hysteria"] = true
-classBlacklist["ROGUE"]["Ignite Mana"] = true
-classBlacklist["ROGUE"]["Tainted Mind"] = true
-classBlacklist["ROGUE"]["Smoke Bomb"] = false -- not sure about this one
-classBlacklist["ROGUE"]["Screams of the Past"] = true
-classBlacklist["ROGUE"]["Moroes Curse"] = true
+-- Spells to ignore on certain classes
+local ClassBlacklist = {}
+ClassBlacklist["WARRIOR"] = {}
+ClassBlacklist["ROGUE"] = {}
+----------------------------------------------------
+ClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
+ClassBlacklist["WARRIOR"]["Ignite Mana"] = true
+ClassBlacklist["WARRIOR"]["Tainted Mind"] = true
+ClassBlacklist["WARRIOR"]["Moroes Curse"] = true
+----------------------------------------------------
+ClassBlacklist["ROGUE"]["Silence"] = true
+ClassBlacklist["ROGUE"]["Ancient Hysteria"] = true
+ClassBlacklist["ROGUE"]["Ignite Mana"] = true
+ClassBlacklist["ROGUE"]["Tainted Mind"] = true
+ClassBlacklist["ROGUE"]["Smoke Bomb"] = true
+ClassBlacklist["ROGUE"]["Screams of the Past"] = true
+ClassBlacklist["ROGUE"]["Moroes Curse"] = true
+----------------------------------------------------
 
 local function twipe(tbl)
     for k in pairs(tbl) do
@@ -168,11 +183,11 @@ local function playsound(file)
     if RINSE_CONFIG.SOUND then
         local cd
         if file == noticeSound then
-            cd = noticePlayed
+            cd = noticeCooldown
         elseif file == errorSound then
             cd = errorCooldown
         end
-        if not cd or cd == 0 then
+        if cd == 0 then
             PlaySoundFile(file)
         end
     end
@@ -197,7 +212,7 @@ local function tounitid(name, index)
         end
     end
     if index then
-        return defaultPrio[index]
+        return DefaultPrio[index]
     end
     if UnitName("target") and UnitName("target") == name then
         return "target"
@@ -208,7 +223,7 @@ local function HasAbolish(unit, debuffType)
     if not UnitExists(unit) or not debuffType then
         return
     end
-    if not canRemove[debuffType] then
+    if not CanRemove[debuffType] then
         return
     end
     if not (debuffType == "Poison" or debuffType == "Disease") then
@@ -236,10 +251,11 @@ local function InRange(unit)
         if superwow then
             local myX, myY, myZ = UnitPosition("player")
             local uX, uY, uZ = UnitPosition(unit)
-            local x = myX - uX
-            local y = myY - uY
-            local z = myZ - uZ
-            local dis = math.abs((x * x) + (y * y) + (z * z))
+            local x = (myX - uX)^2
+            local y = (myY - uY)^2
+            local z = (myZ - uZ)^2
+            local dis = math.abs(x + y + z)
+            -- not sure why 1089 but seems to be accurate from my testing
             return dis <= 1089
         else
             return CheckInteractDistance(unit, 4)
@@ -249,16 +265,18 @@ end
 
 local function UpdatePrio()
     if RINSE_CONFIG.PRIO_ARRAY[1] then
+        -- Copy from user defined prio array into internal Prio
         for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
-            tinsert(prio, i, tounitid(RINSE_CONFIG.PRIO_ARRAY[i].name, i))
+            tinsert(Prio, i, tounitid(RINSE_CONFIG.PRIO_ARRAY[i].name, i))
         end
-        for i = getn(prio), getn(RINSE_CONFIG.PRIO_ARRAY) + 1, -1 do
-            if arrcontains(RINSE_CONFIG.PRIO_ARRAY, UnitName(prio[i])) then
-                tremove(prio, i)
+        -- Get rid of duplicates
+        for i = getn(Prio), getn(RINSE_CONFIG.PRIO_ARRAY) + 1, -1 do
+            if arrcontains(RINSE_CONFIG.PRIO_ARRAY, UnitName(Prio[i])) then
+                tremove(Prio, i)
             end
         end
     else
-        prio = defaultPrio
+        Prio = DefaultPrio
     end
 end
 
@@ -272,7 +290,7 @@ function RinseSkipListScrollFrame_Update()
         local buttonText = getglobal("RinseSkipListFrameButton"..i.."Text")
         arrayIndex = i + offset
         if RINSE_CONFIG.SKIP_ARRAY[arrayIndex] then
-            buttonText:SetText(arrayIndex.." - "..classColors[RINSE_CONFIG.SKIP_ARRAY[arrayIndex].class]..RINSE_CONFIG.SKIP_ARRAY[arrayIndex].name)
+            buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.SKIP_ARRAY[arrayIndex].class]..RINSE_CONFIG.SKIP_ARRAY[arrayIndex].name)
             button:SetID(arrayIndex)
             button:Show()
         else
@@ -291,7 +309,7 @@ function RinsePrioListScrollFrame_Update()
         local buttonText = getglobal("RinsePrioListFrameButton"..i.."Text")
         arrayIndex = i + offset
         if RINSE_CONFIG.PRIO_ARRAY[arrayIndex] then
-            buttonText:SetText(arrayIndex.." - "..classColors[RINSE_CONFIG.PRIO_ARRAY[arrayIndex].class]..RINSE_CONFIG.PRIO_ARRAY[arrayIndex].name)
+            buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.PRIO_ARRAY[arrayIndex].class]..RINSE_CONFIG.PRIO_ARRAY[arrayIndex].name)
             button:SetID(arrayIndex)
             button:Show()
         else
@@ -334,6 +352,7 @@ local function AddGroupOrClass()
         array = RINSE_CONFIG.PRIO_ARRAY
     end
     if type(this.value) == "number" then
+        -- This is group number
         if UnitInRaid("player") then
             for i = 1 , 40 do
                 local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
@@ -353,6 +372,7 @@ local function AddGroupOrClass()
             end
         end
     elseif type(this.value) == "string" then
+        -- This is class
         if UnitInRaid("player") then
             for i = 1 , 40 do
                 local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
@@ -376,80 +396,47 @@ local function AddGroupOrClass()
 end
 
 local info = {}
+info.textHeight = 12
+info.notCheckable = true
+info.hasArrow = false
+info.func = AddGroupOrClass
 
 local function ClassMenu()
     if UIDROPDOWNMENU_MENU_LEVEL == 1 then
-        twipe(info)
-        info.text = classColors["WARRIOR"] .. "Warriors"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+        info.text = ClassColors["WARRIOR"] .. "Warriors"
         info.value = "WARRIOR"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["DRUID"] .. "Druids"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["DRUID"] .. "Druids"
         info.value = "DRUID"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["PALADIN"] .. "Paladins"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["PALADIN"] .. "Paladins"
         info.value = "PALADIN"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["WARLOCK"] .. "Warlocks"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["WARLOCK"] .. "Warlocks"
         info.value = "WARLOCK"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["MAGE"] .. "Mages"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["MAGE"] .. "Mages"
         info.value = "MAGE"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["PRIEST"] .. "Priests"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["PRIEST"] .. "Priests"
         info.value = "PRIEST"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["ROGUE"] .. "Rogues"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["ROGUE"] .. "Rogues"
         info.value = "ROGUE"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["HUNTER"] .. "Hunters"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["HUNTER"] .. "Hunters"
         info.value = "HUNTER"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
-        twipe(info)
-        info.text = classColors["SHAMAN"] .. "Shamans"
-        info.textHeight = 12
-        info.notCheckable = true
-        info.hasArrow = false
+
+        info.text = ClassColors["SHAMAN"] .. "Shamans"
         info.value = "SHAMAN"
-        info.func = AddGroupOrClass
         UIDropDownMenu_AddButton(info)
     end
 end
@@ -457,13 +444,8 @@ end
 local function GroupMenu()
     if UIDROPDOWNMENU_MENU_LEVEL == 1 then
         for i = 1, 8 do
-            twipe(info)
             info.text = GROUP.." "..i
-            info.textHeight = 12
-            info.notCheckable = true
-            info.hasArrow = false
             info.value = i
-            info.func = AddGroupOrClass
             UIDropDownMenu_AddButton(info)
         end
     end
@@ -496,7 +478,7 @@ if playerClass == "WARLOCK" then
 end
 
 local function UpdateSpells()
-    if not curingSpells[playerClass] then
+    if not Spells[playerClass] then
         return
     end
     local found = false
@@ -506,9 +488,9 @@ local function UpdateSpells()
         for s = offset + 1, offset + numSpells do
             local spell = GetSpellName(s, bookType)
             if spell then
-                for dispelType, v in pairs(curingSpells[playerClass]) do
+                for dispelType, v in pairs(Spells[playerClass]) do
                     if v[1] == spell then
-                        canRemove[dispelType] = spell
+                        CanRemove[dispelType] = spell
                         found = true
                         spellBookIndex = s
                     end
@@ -524,9 +506,9 @@ local function UpdateSpells()
         for s = offset + 1, offset + numSpells do
             local spell = GetSpellName(s, bookType)
             if spell then
-                for dispelType, v in pairs(curingSpells[playerClass]) do
+                for dispelType, v in pairs(Spells[playerClass]) do
                     if v[2] and v[2] == spell then
-                        canRemove[dispelType] = spell
+                        CanRemove[dispelType] = spell
                         spellBookIndex = s
                     end
                 end
@@ -563,12 +545,12 @@ end
 
 function Rinse_ToggleWyvernSting()
     RINSE_CONFIG.WYVERN_STING = not RINSE_CONFIG.WYVERN_STING
-    blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
+    Blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
 end
 
 function Rinse_ToggleMutatingInjection()
     RINSE_CONFIG.MUTATING_INJECTION = not RINSE_CONFIG.MUTATING_INJECTION
-    blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
+    Blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
 end
 
 function Rinse_TogglePrint()
@@ -593,12 +575,12 @@ function RinseFrame_OnLoad()
     RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
 end
 
-local function goodunit(unit)
+local function GoodUnit(unit)
     if not (unit and UnitExists(unit) and UnitName(unit)) then
         return nil
     end
     if UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) then
-        if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(prio, unit) or (unit == "target")) then
+        if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(Prio, unit) or (unit == "target")) then
             return 1
         end
     end
@@ -647,19 +629,22 @@ function RinseFrame_OnUpdate()
     else
         tick = GetTime() + updateInterval
     end
+    -- Clear debuffs info
     for i = 1, DEBUFFS_MAX do
-        debuffs[i].name = ""
-        debuffs[i].type = ""
-        debuffs[i].texture = ""
-        debuffs[i].stacks = 0
-        debuffs[i].unit = ""
-        debuffs[i].unitName = ""
-        debuffs[i].unitClass = ""
-        debuffs[i].shown = 0
-        debuffs[i].debuffIndex = 0
+        Debuffs[i].name = ""
+        Debuffs[i].type = ""
+        Debuffs[i].texture = ""
+        Debuffs[i].stacks = 0
+        Debuffs[i].unit = ""
+        Debuffs[i].unitName = ""
+        Debuffs[i].unitClass = ""
+        Debuffs[i].shown = 0
+        Debuffs[i].debuffIndex = 0
     end
     local debuffIndex = 1
-    if goodunit("target") then
+    -- Get new info
+    -- Target is highest prio
+    if GoodUnit("target") then
         local i = 1
         while debuffIndex < DEBUFFS_MAX and UnitDebuff("target", i) do
             RinseScanTooltipTextLeft1:SetText("")
@@ -670,25 +655,26 @@ function RinseFrame_OnUpdate()
             local texture, applications = UnitDebuff("target", i)
             local _, class = UnitClass("target")
             if debuffType and debuffName and class then
-                if canRemove[debuffType] and not (blacklist[debuffType] and blacklist[debuffType][debuffName]) and
-                        not (classBlacklist[class] and classBlacklist[class][debuffName]) and not HasAbolish("target", debuffType) then
-                    debuffs[debuffIndex].name = debuffName or ""
-                    debuffs[debuffIndex].type = debuffType or ""
-                    debuffs[debuffIndex].texture = texture or ""
-                    debuffs[debuffIndex].stacks = applications or 0
-                    debuffs[debuffIndex].unit = "target"
-                    debuffs[debuffIndex].unitName = UnitName("target") or ""
-                    debuffs[debuffIndex].unitClass = class or ""
-                    debuffs[debuffIndex].debuffIndex = i
+                if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
+                        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish("target", debuffType) then
+                    Debuffs[debuffIndex].name = debuffName or ""
+                    Debuffs[debuffIndex].type = debuffType or ""
+                    Debuffs[debuffIndex].texture = texture or ""
+                    Debuffs[debuffIndex].stacks = applications or 0
+                    Debuffs[debuffIndex].unit = "target"
+                    Debuffs[debuffIndex].unitName = UnitName("target") or ""
+                    Debuffs[debuffIndex].unitClass = class or ""
+                    Debuffs[debuffIndex].debuffIndex = i
                     debuffIndex = debuffIndex + 1
                 end
             end
             i = i + 1
         end
     end
-    for index = 1, getn(prio) do
-        local unit = prio[index]
-        if goodunit(unit) and not (UnitExists("target") and UnitIsUnit("target", unit)) then
+    -- Scan units in Prio array
+    for index = 1, getn(Prio) do
+        local unit = Prio[index]
+        if GoodUnit(unit) and not (UnitExists("target") and UnitIsUnit("target", unit)) then
             local i = 1
             while debuffIndex < DEBUFFS_MAX and UnitDebuff(unit, i) do
                 RinseScanTooltipTextLeft1:SetText("")
@@ -699,16 +685,16 @@ function RinseFrame_OnUpdate()
                 local texture, applications = UnitDebuff(unit, i)
                 local _, class = UnitClass(unit)
                 if debuffType and debuffName and class then
-                    if canRemove[debuffType] and not (blacklist[debuffType] and blacklist[debuffType][debuffName]) and
-                            not (classBlacklist[class] and classBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
-                        debuffs[debuffIndex].name = debuffName or ""
-                        debuffs[debuffIndex].type = debuffType or ""
-                        debuffs[debuffIndex].texture = texture or ""
-                        debuffs[debuffIndex].stacks = applications or 0
-                        debuffs[debuffIndex].unit = unit or ""
-                        debuffs[debuffIndex].unitName = UnitName(unit) or ""
-                        debuffs[debuffIndex].unitClass = class or ""
-                        debuffs[debuffIndex].debuffIndex = i
+                    if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
+                            not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
+                        Debuffs[debuffIndex].name = debuffName or ""
+                        Debuffs[debuffIndex].type = debuffType or ""
+                        Debuffs[debuffIndex].texture = texture or ""
+                        Debuffs[debuffIndex].stacks = applications or 0
+                        Debuffs[debuffIndex].unit = unit or ""
+                        Debuffs[debuffIndex].unitName = UnitName(unit) or ""
+                        Debuffs[debuffIndex].unitClass = class or ""
+                        Debuffs[debuffIndex].debuffIndex = i
                         debuffIndex = debuffIndex + 1
                     end
                 end
@@ -716,17 +702,19 @@ function RinseFrame_OnUpdate()
             end
         end
     end
-    for i = 1, 5 do
+    -- Hide all buttons
+    for i = 1, BUTTONS_MAX do
         local btn = getglobal("RinseFrameDebuff"..i)
         btn:Hide()
         btn.unit = nil
     end
     debuffIndex = 1
-    for buttonIndex = 1, 5 do
-        while debuffIndex < DEBUFFS_MAX and debuffs[debuffIndex].shown ~= 0 do
+    for buttonIndex = 1, BUTTONS_MAX do
+        -- Find next debuff to show
+        while debuffIndex < DEBUFFS_MAX and Debuffs[debuffIndex].shown ~= 0 do
             debuffIndex = debuffIndex + 1
         end
-        if debuffs[debuffIndex].name ~= "" then
+        if Debuffs[debuffIndex].name ~= "" then
             local button = getglobal("RinseFrameDebuff"..buttonIndex)
             local icon = getglobal("RinseFrameDebuff"..buttonIndex.."Icon")
             local debuffName = getglobal("RinseFrameDebuff"..buttonIndex.."Name")
@@ -735,25 +723,25 @@ function RinseFrame_OnUpdate()
             local border = getglobal("RinseFrameDebuff"..buttonIndex.."Border")
             local outOfRange = getglobal("RinseFrameDebuff"..buttonIndex.."OutOfRange")
             local onCooldown = getglobal("RinseFrameDebuff"..buttonIndex.."OnCooldown")
-            icon:SetTexture(debuffs[debuffIndex].texture)
-            debuffName:SetText(debuffs[debuffIndex].name)
-            playerName:SetText(classColors[debuffs[debuffIndex].unitClass]..debuffs[debuffIndex].unitName)
-            count:SetText(debuffs[debuffIndex].stacks)
-            border:SetVertexColor(debuffColor[debuffs[debuffIndex].type].r, debuffColor[debuffs[debuffIndex].type].g, debuffColor[debuffs[debuffIndex].type].b)
-            button.unit = debuffs[debuffIndex].unit
-            button.unitName = debuffs[debuffIndex].unitName
-            button.unitClass = debuffs[debuffIndex].unitClass
-            button.type = debuffs[debuffIndex].type
-            button.debuffIndex = debuffs[debuffIndex].debuffIndex
+            icon:SetTexture(Debuffs[debuffIndex].texture)
+            debuffName:SetText(Debuffs[debuffIndex].name)
+            playerName:SetText(ClassColors[Debuffs[debuffIndex].unitClass]..Debuffs[debuffIndex].unitName)
+            count:SetText(Debuffs[debuffIndex].stacks)
+            border:SetVertexColor(DebuffColor[Debuffs[debuffIndex].type].r, DebuffColor[Debuffs[debuffIndex].type].g, DebuffColor[Debuffs[debuffIndex].type].b)
+            button.unit = Debuffs[debuffIndex].unit
+            button.unitName = Debuffs[debuffIndex].unitName
+            button.unitClass = Debuffs[debuffIndex].unitClass
+            button.type = Debuffs[debuffIndex].type
+            button.debuffIndex = Debuffs[debuffIndex].debuffIndex
             button:Show()
             if buttonIndex == 1 then
                 playsound(noticeSound)
-                noticePlayed = 32
+                noticeCooldown = 32
             end
-            debuffs[debuffIndex].shown = 1
+            Debuffs[debuffIndex].shown = 1
             for i = debuffIndex, DEBUFFS_MAX do
-                if debuffs[i].unitName == debuffs[debuffIndex].unitName then
-                    debuffs[i].shown = 1
+                if Debuffs[i].unitName == Debuffs[debuffIndex].unitName then
+                    Debuffs[i].shown = 1
                 end
             end
             onCooldown:Hide()
@@ -761,7 +749,7 @@ function RinseFrame_OnUpdate()
             -- if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
             --     onCooldown:Show()
             -- end
-            if not InRange(debuffs[debuffIndex].unit) then
+            if not InRange(Debuffs[debuffIndex].unit) then
                 outOfRange:Show()
             end
         end
@@ -773,7 +761,7 @@ function RinseFrame_OnUpdate()
         stopCastCooldown = stopCastCooldown - 1
     end
     if not RinseFrameDebuff1:IsShown() then
-        noticePlayed = nil
+        noticeCooldown = 0
     end
 end
 
@@ -785,27 +773,27 @@ function Rinse_Cleanse(button)
     end
 
     if not InRange(button.unit) then
-        print(classColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
+        print(ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
         playsound(errorSound)
-        errorCooldown = 12
+        errorCooldown = 2
         return
     end
     local debuff = getglobal(button:GetName().."Name"):GetText()
     if stopCastCooldown == 0 then
         SpellStopCasting()
-        stopCastCooldown = 6
+        stopCastCooldown = 3
     end
     if superwow then
-        print("Trying To Remove "..debuffColor[button.type].hex..debuff..CLOSE.." from "..classColors[button.unitClass]..UnitName(button.unit)..CLOSE)
-        CastSpellByName(canRemove[button.type], button.unit)
+        print("Trying To Remove "..DebuffColor[button.type].hex..debuff..CLOSE.." from "..ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE)
+        CastSpellByName(CanRemove[button.type], button.unit)
     else
         local selfcast = false
         if GetCVar("autoselfcast") == "1" then
             selfcast = true
         end
         SetCVar("autoselfcast", 0)
-        TargetByName(button.unitName)
-        CastSpellByName(canRemove[button.type])
+        TargetByName(button.unitName, 1)
+        CastSpellByName(CanRemove[button.type])
         TargetLastTarget()
         if selfcast then
             SetCVar("autoselfcast", 1)
@@ -815,7 +803,7 @@ end
 
 SLASH_RINSE1 = "/rinse"
 SlashCmdList["RINSE"] = function()
-    for i = 1, 5 do
+    for i = 1, BUTTONS_MAX do
         Rinse_Cleanse(getglobal("RinseFrameDebuff"..i))
     end
 end
