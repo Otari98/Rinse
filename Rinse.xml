@@ -786,9 +786,9 @@
                 <Scripts>
                     <OnLoad>
                         getglobal(this:GetName().."Text"):SetText("Scale (0.85)")
-                        getglobal(this:GetName().."Low"):SetText("0.25")
-                        getglobal(this:GetName().."High"):SetText("2")
-                        this:SetMinMaxValues(0.25, 2)
+                        getglobal(this:GetName().."Low"):SetText("0.5")
+                        getglobal(this:GetName().."High"):SetText("1.5")
+                        this:SetMinMaxValues(0.5, 1.5)
                         this:SetValueStep(0.01)
                     </OnLoad>
                     <OnValueChanged>
