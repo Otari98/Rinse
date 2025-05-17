@@ -131,13 +131,21 @@
     </Button>
 
     <!-- Main Frame -->
-    <Frame name="RinseFrame" frameStrata="LOW" toplevel="true" parent="UIParent" movable="true" enableMouse="true" clampedToScreen="true">
+    <Frame name="RinseFrame" toplevel="true" parent="UIParent" movable="true" enableMouse="true" clampedToScreen="true" resizable="false">
         <Size x="200" y="250"/>
         <Anchors>
             <Anchor point="CENTER">
                 <Offset x="0" y="0"/>
             </Anchor>
         </Anchors>
+        <ResizeBounds>
+			<minResize>
+				<AbsDimension x="200" y="250"/>
+			</minResize>
+			<maxResize>
+				<AbsDimension x="350" y="750"/>
+			</maxResize>
+		</ResizeBounds>
         <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
             <EdgeSize>
                 <AbsValue val="16"/>
@@ -157,8 +165,11 @@
                 <Texture>
                     <Size x="190" y="30"/>
                     <Anchors> 
-                        <Anchor point="TOP">
-                            <Offset x="0" y="-5"/>
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+                            <Offset x="5" y="-5"/>
+                        </Anchor>
+                        <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT">
+                            <Offset x="-5" y="-5"/>
                         </Anchor>
                     </Anchors>
                     <Color r="0" g="0" b="0"/>
@@ -178,7 +189,7 @@
             <Button name="RinseFramePrioListButton">
                 <Size x="20" y="20"/>
                 <Anchors>
-                    <Anchor point="TOP">
+                    <Anchor point="TOP" relativePoint="TOP">
                         <Offset x="10" y="-10"/>
                     </Anchor>
                 </Anchors>
@@ -201,8 +212,8 @@
             <Button name="RinseFrameSkipListButton">
                 <Size x="20" y="20"/>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="RinseFramePrioListButton" relativePoint="RIGHT">
-                        <Offset x="10" y="0"/>
+                    <Anchor point="TOP" relativePoint="TOP">
+                        <Offset x="40" y="-10"/>
                     </Anchor>
                 </Anchors>
                 <NormalTexture file="Interface\Buttons\UI-GuildButton-PublicNote-Up"/>
@@ -224,8 +235,8 @@
             <Button name="RinseFrameOptionsButton">
                 <Size x="20" y="20"/>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="RinseFrameSkipListButton" relativePoint="RIGHT">
-                        <Offset x="10" y="0"/>
+                    <Anchor point="TOP" relativePoint="TOP">
+                        <Offset x="70" y="-10"/>
                     </Anchor>
                 </Anchors>
                 <NormalTexture file="Interface\GossipFrame\BinderGossipIcon"/>
@@ -283,7 +294,9 @@
             <Frame name="RinseSkipListFrame" hidden="true" movable="true" enableMouse="true" clampedToScreen="true" toplevel="true">
                 <Size x="200" y="250"/>
                 <Anchors>
-                    <Anchor point="LEFT" relativeTo="RinseFrame" relativePoint="RIGHT"/>
+                    <Anchor point="TOPLEFT" relativeTo="RinseFrame" relativePoint="TOPLEFT">
+                        <Offset x="-24" y="24"/>
+                    </Anchor>
                 </Anchors>
                 <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
                     <EdgeSize>
@@ -486,7 +499,9 @@
             <Frame name="RinsePrioListFrame" hidden="true" movable="true" enableMouse="true" clampedToScreen="true" toplevel="true">
                 <Size x="200" y="250"/>
                 <Anchors>
-                    <Anchor point="RIGHT" relativeTo="RinseFrame" relativePoint="LEFT"/>
+                    <Anchor point="TOPLEFT" relativeTo="RinseFrame" relativePoint="TOPLEFT">
+                        <Offset x="-12" y="12"/>
+                    </Anchor>
                 </Anchors>
                 <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
                     <EdgeSize>
@@ -706,7 +721,7 @@
                 RINSE_CONFIG.POSITION.y = y or 0
             </OnMouseUp>
             <OnUpdate>
-                RinseFrame_OnUpdate()
+                RinseFrame_OnUpdate(arg1)
             </OnUpdate>
         </Scripts>
     </Frame>
@@ -794,9 +809,9 @@
                 <Scripts>
                     <OnLoad>
                         getglobal(this:GetName().."Text"):SetText("Opacity (1.00)")
-                        getglobal(this:GetName().."Low"):SetText("0")
+                        getglobal(this:GetName().."Low"):SetText("0.3")
                         getglobal(this:GetName().."High"):SetText("1")
-                        this:SetMinMaxValues(0, 1)
+                        this:SetMinMaxValues(0.3, 1)
                         this:SetValueStep(0.01)
                     </OnLoad>
                     <OnValueChanged>

@@ -14,7 +14,7 @@ local GetTime = GetTime
 local GetSpellCooldown = GetSpellCooldown
 local CheckInteractDistance = CheckInteractDistance
 local updateInterval = 0.1
-local tick = updateInterval
+local timeElapsed = 0
 local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
 local errorSound = "Sound\\Interface\\Error.wav"
 local noticeCooldown = 0
@@ -140,18 +140,6 @@ ClassBlacklist["ROGUE"]["Smoke Bomb"] = true
 ClassBlacklist["ROGUE"]["Screams of the Past"] = true
 ClassBlacklist["ROGUE"]["Moroes Curse"] = true
 ----------------------------------------------------
-
-local function twipe(tbl)
-    for k in pairs(tbl) do
-        tbl[k] = nil
-    end
-end
-
-local function arrwipe(tbl)
-    for i = getn(tbl), 1, -1 do
-        table.remove(tbl, i)
-    end
-end
 
 local function arrcontains(array, value)
     for i = 1, getn(array) do
@@ -623,12 +611,15 @@ function RinseFrame_OnEvent()
     end
 end
 
-function RinseFrame_OnUpdate()
-    if tick > GetTime() then
+function RinseFrame_OnUpdate(elapsed)
+    timeElapsed = GetTime() + elapsed
+    errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
+    stopCastCooldown = (stopCastCooldown > 0) and (stopCastCooldown - elapsed) or 0
+    noticeCooldown = (noticeCooldown > 0) and (noticeCooldown - elapsed) or 10
+    if timeElapsed < updateInterval then
         return
-    else
-        tick = GetTime() + updateInterval
     end
+    timeElapsed = 0
     -- Clear debuffs info
     for i = 1, DEBUFFS_MAX do
         Debuffs[i].name = ""
@@ -736,7 +727,7 @@ function RinseFrame_OnUpdate()
             button:Show()
             if buttonIndex == 1 then
                 playsound(noticeSound)
-                noticeCooldown = 32
+                noticeCooldown = 3
             end
             Debuffs[debuffIndex].shown = 1
             for i = debuffIndex, DEBUFFS_MAX do
@@ -754,15 +745,6 @@ function RinseFrame_OnUpdate()
             end
         end
     end
-    if errorCooldown > 0 then
-        errorCooldown = errorCooldown - 1
-    end
-    if stopCastCooldown > 0 then
-        stopCastCooldown = stopCastCooldown - 1
-    end
-    if not RinseFrameDebuff1:IsShown() then
-        noticeCooldown = 0
-    end
 end
 
 
@@ -771,20 +753,19 @@ function Rinse_Cleanse(button)
     if not button.unit or button.unit == "" then
         return
     end
-
+    local debuff = getglobal(button:GetName().."Name"):GetText()
+    print("Trying To Remove "..DebuffColor[button.type].hex..debuff..CLOSE.." from "..ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE)
     if not InRange(button.unit) then
         print(ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
         playsound(errorSound)
         errorCooldown = 2
         return
     end
-    local debuff = getglobal(button:GetName().."Name"):GetText()
     if stopCastCooldown == 0 then
         SpellStopCasting()
         stopCastCooldown = 3
     end
     if superwow then
-        print("Trying To Remove "..DebuffColor[button.type].hex..debuff..CLOSE.." from "..ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE)
         CastSpellByName(CanRemove[button.type], button.unit)
     else
         local selfcast = false
