@@ -791,9 +791,13 @@ function Rinse_Cleanse(button)
     end
 end
 
-SLASH_RINSE1 = "/rinse"
-SlashCmdList["RINSE"] = function()
+function Rinse()
     for i = 1, BUTTONS_MAX do
         Rinse_Cleanse(getglobal("RinseFrameDebuff"..i))
     end
+end
+
+SLASH_RINSE1 = "/rinse"
+SlashCmdList["RINSE"] = function()
+    Rinse()
 end
