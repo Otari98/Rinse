@@ -97,7 +97,7 @@
 					</Anchors>
                     <Color r="0" g="0" b="0" a="0.3"/>
 				</Texture>
-                <Texture name="$parentOnCooldown">
+                <Texture name="$parentOnCooldown" hidden="true">
 					<Size x="190" y="40"/>
 					<Anchors>
 						<Anchor point="CENTER"/>

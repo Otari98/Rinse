@@ -17,7 +17,7 @@ local updateInterval = 0.1
 local timeElapsed = 0
 local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
 local errorSound = "Sound\\Interface\\Error.wav"
-local noticeCooldown = 0
+local playNoticeSound = true
 local errorCooldown = 0
 local stopCastCooldown = 0
 
@@ -61,16 +61,26 @@ Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
 -- CanRemove[debuffType] = "spellName"
 local CanRemove = {}
 
--- Maximum number of debuffs that we hold on to
-local DEBUFFS_MAX = 40
-
 -- Number of buttons shown
 local BUTTONS_MAX = 5
+
+-- Maximum number of dispellable debuffs that we hold on to
+local DEBUFFS_MAX = 42
 
 -- Debuff info
 local Debuffs = {}
 for i = 1, DEBUFFS_MAX do
-    Debuffs[i] = { name = "", type = "", texture = "", stacks = 0, debuffIndex = 0, unit = "", unitName = "", unitClass = "", shown = 0 }
+    Debuffs[i] = {
+        name = "",
+        type = "",
+        texture = "",
+        stacks = 0,
+        debuffIndex = 0,
+        unit = "",
+        unitName = "",
+        unitClass = "",
+        shown = 0
+    }
 end
 
 -- Default scan order
@@ -164,20 +174,12 @@ local function print(msg)
 end
 
 local function debug(msg)
-    ChatFrame1:AddMessage(BLUE.."[Rinse]["..GetTime().."]"..WHITE..(msg or "nil")..FONT_COLOR_CODE_CLOSE)
+    ChatFrame1:AddMessage(BLUE.."[Rinse]["..GetTime().."]"..WHITE..(tostring(msg))..FONT_COLOR_CODE_CLOSE)
 end
 
 local function playsound(file)
     if RINSE_CONFIG.SOUND then
-        local cd
-        if file == noticeSound then
-            cd = noticeCooldown
-        elseif file == errorSound then
-            cd = errorCooldown
-        end
-        if cd == 0 then
-            PlaySoundFile(file)
-        end
+        PlaySoundFile(file)
     end
 end
 
@@ -239,13 +241,11 @@ local function InRange(unit)
         if superwow then
             local myX, myY, myZ = UnitPosition("player")
             local uX, uY, uZ = UnitPosition(unit)
-            local x = (myX - uX)^2
-            local y = (myY - uY)^2
-            local z = (myZ - uZ)^2
-            local dis = math.abs(x + y + z)
-            -- not sure why 1089 but seems to be accurate from my testing
-            return dis <= 1089
+            -- Not sure why 1089, but seems to be accurate for 30yd range
+            -- spell from my testing
+            return math.abs((myX - uX)^2 + (myY - uY)^2 + (myZ - uZ)^2) <= 1089
         else
+            -- Not as accurate
             return CheckInteractDistance(unit, 4)
         end
     end
@@ -612,10 +612,9 @@ function RinseFrame_OnEvent()
 end
 
 function RinseFrame_OnUpdate(elapsed)
-    timeElapsed = GetTime() + elapsed
+    timeElapsed = timeElapsed + elapsed
     errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
     stopCastCooldown = (stopCastCooldown > 0) and (stopCastCooldown - elapsed) or 0
-    noticeCooldown = (noticeCooldown > 0) and (noticeCooldown - elapsed) or 10
     if timeElapsed < updateInterval then
         return
     end
@@ -665,7 +664,7 @@ function RinseFrame_OnUpdate(elapsed)
     -- Scan units in Prio array
     for index = 1, getn(Prio) do
         local unit = Prio[index]
-        if GoodUnit(unit) and not (UnitExists("target") and UnitIsUnit("target", unit)) then
+        if GoodUnit(unit) and not UnitIsUnit("target", unit) then
             local i = 1
             while debuffIndex < DEBUFFS_MAX and UnitDebuff(unit, i) do
                 RinseScanTooltipTextLeft1:SetText("")
@@ -705,7 +704,12 @@ function RinseFrame_OnUpdate(elapsed)
         while debuffIndex < DEBUFFS_MAX and Debuffs[debuffIndex].shown ~= 0 do
             debuffIndex = debuffIndex + 1
         end
-        if Debuffs[debuffIndex].name ~= "" then
+        local name = Debuffs[debuffIndex].name
+        local unit = Debuffs[debuffIndex].unit
+        local unitName = Debuffs[debuffIndex].unitName
+        local class = Debuffs[debuffIndex].unitClass
+        local debuffType = Debuffs[debuffIndex].type
+        if name ~= "" then
             local button = getglobal("RinseFrameDebuff"..buttonIndex)
             local icon = getglobal("RinseFrameDebuff"..buttonIndex.."Icon")
             local debuffName = getglobal("RinseFrameDebuff"..buttonIndex.."Name")
@@ -713,40 +717,43 @@ function RinseFrame_OnUpdate(elapsed)
             local count = getglobal("RinseFrameDebuff"..buttonIndex.."Count")
             local border = getglobal("RinseFrameDebuff"..buttonIndex.."Border")
             local outOfRange = getglobal("RinseFrameDebuff"..buttonIndex.."OutOfRange")
-            local onCooldown = getglobal("RinseFrameDebuff"..buttonIndex.."OnCooldown")
+            -- local onCooldown = getglobal("RinseFrameDebuff"..buttonIndex.."OnCooldown")
             icon:SetTexture(Debuffs[debuffIndex].texture)
-            debuffName:SetText(Debuffs[debuffIndex].name)
-            playerName:SetText(ClassColors[Debuffs[debuffIndex].unitClass]..Debuffs[debuffIndex].unitName)
+            debuffName:SetText(name)
+            playerName:SetText(ClassColors[class]..unitName)
             count:SetText(Debuffs[debuffIndex].stacks)
-            border:SetVertexColor(DebuffColor[Debuffs[debuffIndex].type].r, DebuffColor[Debuffs[debuffIndex].type].g, DebuffColor[Debuffs[debuffIndex].type].b)
-            button.unit = Debuffs[debuffIndex].unit
-            button.unitName = Debuffs[debuffIndex].unitName
-            button.unitClass = Debuffs[debuffIndex].unitClass
-            button.type = Debuffs[debuffIndex].type
+            border:SetVertexColor(DebuffColor[debuffType].r, DebuffColor[debuffType].g, DebuffColor[debuffType].b)
+            button.unit = unit
+            button.unitName = unitName
+            button.unitClass = class
+            button.type = debuffType
             button.debuffIndex = Debuffs[debuffIndex].debuffIndex
             button:Show()
-            if buttonIndex == 1 then
+            if buttonIndex == 1 and playNoticeSound then
                 playsound(noticeSound)
-                noticeCooldown = 3
+                playNoticeSound = false
             end
             Debuffs[debuffIndex].shown = 1
             for i = debuffIndex, DEBUFFS_MAX do
-                if Debuffs[i].unitName == Debuffs[debuffIndex].unitName then
+                if Debuffs[i].unitName == unitName then
                     Debuffs[i].shown = 1
                 end
             end
-            onCooldown:Hide()
-            outOfRange:Hide()
+            -- onCooldown:Hide()
             -- if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
             --     onCooldown:Show()
             -- end
-            if not InRange(Debuffs[debuffIndex].unit) then
+            if not InRange(unit) then
                 outOfRange:Show()
+            else
+                outOfRange:Hide()
             end
+        end
+        if not RinseFrameDebuff1:IsShown() then
+            playNoticeSound = true
         end
     end
 end
-
 
 function Rinse_Cleanse(button)
     local button = button or this
@@ -757,13 +764,15 @@ function Rinse_Cleanse(button)
     print("Trying To Remove "..DebuffColor[button.type].hex..debuff..CLOSE.." from "..ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE)
     if not InRange(button.unit) then
         print(ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
-        playsound(errorSound)
-        errorCooldown = 2
+        if errorCooldown <= 0 then
+            playsound(errorSound)
+            errorCooldown = 0.1
+        end
         return
     end
     if stopCastCooldown == 0 then
         SpellStopCasting()
-        stopCastCooldown = 3
+        stopCastCooldown = 1
     end
     if superwow then
         CastSpellByName(CanRemove[button.type], button.unit)
