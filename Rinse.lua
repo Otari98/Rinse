@@ -237,8 +237,18 @@ local function HasAbolish(unit, debuffType)
 	until not buff
 end
 
-local function InRange(unit)
+local function InRange(unit, spell)
     if unit and UnitIsFriend(unit, "player") then
+        if spell and IsSpellInRange then
+            local result = IsSpellInRange(spell, unit)
+            if result == 1 then
+                return true
+            elseif result == 0 then
+                return false
+            end
+            -- ignore result == -1
+        end
+
         if superwow then
             local myX, myY, myZ = UnitPosition("player")
             local uX, uY, uZ = UnitPosition(unit)
@@ -612,6 +622,46 @@ function RinseFrame_OnEvent()
     end
 end
 
+local function GetDebuffInfo(unit, i)
+    local debuffName
+    local debuffType
+    local texture
+    local applications
+    if superwow then
+        local spellId
+        texture, applications, debuffType, spellId = UnitDebuff(unit, i)
+        if spellId then
+            debuffName = SpellInfo(spellId)
+        end
+    else
+        RinseScanTooltipTextLeft1:SetText("")
+        RinseScanTooltipTextRight1:SetText("")
+        RinseScanTooltip:SetUnitDebuff(unit, i)
+        debuffName = RinseScanTooltipTextLeft1:GetText() or ""
+        debuffType = RinseScanTooltipTextRight1:GetText() or ""
+
+        texture, applications, debuffType = UnitDebuff(unit, i)
+    end
+
+    return debuffType, debuffName, texture, applications
+end
+
+local function SaveDebuffInfo(debuffIndex, targetIndex, class, debuffType, debuffName, texture)
+    if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
+        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish("target", debuffType) then
+        Debuffs[debuffIndex].name = debuffName or ""
+        Debuffs[debuffIndex].type = debuffType or ""
+        Debuffs[debuffIndex].texture = texture or ""
+        Debuffs[debuffIndex].stacks = applications or 0
+        Debuffs[debuffIndex].unit = "target"
+        Debuffs[debuffIndex].unitName = UnitName("target") or ""
+        Debuffs[debuffIndex].unitClass = class or ""
+        Debuffs[debuffIndex].debuffIndex = targetIndex
+        return true
+    end
+    return false
+end
+
 function RinseFrame_OnUpdate(elapsed)
     timeElapsed = timeElapsed + elapsed
     errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
@@ -636,26 +686,17 @@ function RinseFrame_OnUpdate(elapsed)
     -- Get new info
     -- Target is highest prio
     if GoodUnit("target") then
+        local _, class = UnitClass("target")
+
         local i = 1
-        while debuffIndex < DEBUFFS_MAX and UnitDebuff("target", i) do
-            RinseScanTooltipTextLeft1:SetText("")
-            RinseScanTooltipTextRight1:SetText("")
-            RinseScanTooltip:SetUnitDebuff("target", i)
-            local debuffName = RinseScanTooltipTextLeft1:GetText() or ""
-            local debuffType = RinseScanTooltipTextRight1:GetText() or ""
-            local texture, applications = UnitDebuff("target", i)
-            local _, class = UnitClass("target")
+        while debuffIndex < DEBUFFS_MAX do
+            local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
+            if not debuffName then
+                break
+            end
+
             if debuffType and debuffName and class then
-                if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
-                        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish("target", debuffType) then
-                    Debuffs[debuffIndex].name = debuffName or ""
-                    Debuffs[debuffIndex].type = debuffType or ""
-                    Debuffs[debuffIndex].texture = texture or ""
-                    Debuffs[debuffIndex].stacks = applications or 0
-                    Debuffs[debuffIndex].unit = "target"
-                    Debuffs[debuffIndex].unitName = UnitName("target") or ""
-                    Debuffs[debuffIndex].unitClass = class or ""
-                    Debuffs[debuffIndex].debuffIndex = i
+                if SaveDebuffInfo(debuffIndex, i, class, debuffType, debuffName, texture) then
                     debuffIndex = debuffIndex + 1
                 end
             end
@@ -666,26 +707,17 @@ function RinseFrame_OnUpdate(elapsed)
     for index = 1, getn(Prio) do
         local unit = Prio[index]
         if GoodUnit(unit) and not UnitIsUnit("target", unit) then
+            local _, class = UnitClass(unit)
+
             local i = 1
-            while debuffIndex < DEBUFFS_MAX and UnitDebuff(unit, i) do
-                RinseScanTooltipTextLeft1:SetText("")
-                RinseScanTooltipTextRight1:SetText("")
-                RinseScanTooltip:SetUnitDebuff(unit, i)
-                local debuffName = RinseScanTooltipTextLeft1:GetText() or ""
-                local debuffType = RinseScanTooltipTextRight1:GetText() or ""
-                local texture, applications = UnitDebuff(unit, i)
-                local _, class = UnitClass(unit)
+            while debuffIndex < DEBUFFS_MAX do
+                local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
+                if not debuffName then
+                    break
+                end
+
                 if debuffType and debuffName and class then
-                    if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
-                            not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
-                        Debuffs[debuffIndex].name = debuffName or ""
-                        Debuffs[debuffIndex].type = debuffType or ""
-                        Debuffs[debuffIndex].texture = texture or ""
-                        Debuffs[debuffIndex].stacks = applications or 0
-                        Debuffs[debuffIndex].unit = unit or ""
-                        Debuffs[debuffIndex].unitName = UnitName(unit) or ""
-                        Debuffs[debuffIndex].unitClass = class or ""
-                        Debuffs[debuffIndex].debuffIndex = i
+                    if SaveDebuffInfo(debuffIndex, i, class, debuffType, debuffName, texture) then
                         debuffIndex = debuffIndex + 1
                     end
                 end
@@ -744,7 +776,7 @@ function RinseFrame_OnUpdate(elapsed)
             -- if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
             --     onCooldown:Show()
             -- end
-            if not InRange(unit) then
+            if not InRange(unit, CanRemove[button.type]) then
                 outOfRange:Show()
             else
                 outOfRange:Hide()
@@ -763,7 +795,7 @@ function Rinse_Cleanse(button)
     end
     local debuff = getglobal(button:GetName().."Name"):GetText()
     print("Trying To Remove "..DebuffColor[button.type].hex..debuff..CLOSE.." from "..ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE)
-    if not InRange(button.unit) then
+    if not InRange(button.unit, CanRemove[button.type]) then
         print(ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
         if errorCooldown <= 0 then
             playsound(errorSound)
