@@ -114,6 +114,7 @@ Blacklist["Poison"] = {}
 ----------------------------------------------------
 Blacklist["Curse"]["Curse of Recklessness"] = true
 Blacklist["Curse"]["Delusions of Jin'do"] = true
+Blacklist["Curse"]["Dread of Outland"] = true
 ----------------------------------------------------
 Blacklist["Magic"]["Dreamless Sleep"] = true
 Blacklist["Magic"]["Greater Dreamless Sleep"] = true
