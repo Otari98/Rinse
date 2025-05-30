@@ -646,7 +646,7 @@ local function GetDebuffInfo(unit, i)
     return debuffType, debuffName, texture, applications
 end
 
-local function SaveDebuffInfo(unit, debuffIndex, targetIndex, class, debuffType, debuffName, texture)
+local function SaveDebuffInfo(unit, debuffIndex, targetIndex, class, debuffType, debuffName, texture, applications)
     if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
         not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
         Debuffs[debuffIndex].name = debuffName or ""
@@ -696,7 +696,7 @@ function RinseFrame_OnUpdate(elapsed)
             end
 
             if debuffType and debuffName and class then
-                if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture) then
+                if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture, applications) then
                     debuffIndex = debuffIndex + 1
                 end
             end
@@ -717,7 +717,7 @@ function RinseFrame_OnUpdate(elapsed)
                 end
 
                 if debuffType and debuffName and class then
-                    if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture) then
+                    if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications) then
                         debuffIndex = debuffIndex + 1
                     end
                 end
