@@ -646,15 +646,15 @@ local function GetDebuffInfo(unit, i)
     return debuffType, debuffName, texture, applications
 end
 
-local function SaveDebuffInfo(debuffIndex, targetIndex, class, debuffType, debuffName, texture)
+local function SaveDebuffInfo(unit, debuffIndex, targetIndex, class, debuffType, debuffName, texture)
     if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
-        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish("target", debuffType) then
+        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
         Debuffs[debuffIndex].name = debuffName or ""
         Debuffs[debuffIndex].type = debuffType or ""
         Debuffs[debuffIndex].texture = texture or ""
         Debuffs[debuffIndex].stacks = applications or 0
-        Debuffs[debuffIndex].unit = "target"
-        Debuffs[debuffIndex].unitName = UnitName("target") or ""
+        Debuffs[debuffIndex].unit = unit
+        Debuffs[debuffIndex].unitName = UnitName(unit) or ""
         Debuffs[debuffIndex].unitClass = class or ""
         Debuffs[debuffIndex].debuffIndex = targetIndex
         return true
@@ -696,7 +696,7 @@ function RinseFrame_OnUpdate(elapsed)
             end
 
             if debuffType and debuffName and class then
-                if SaveDebuffInfo(debuffIndex, i, class, debuffType, debuffName, texture) then
+                if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture) then
                     debuffIndex = debuffIndex + 1
                 end
             end
@@ -717,7 +717,7 @@ function RinseFrame_OnUpdate(elapsed)
                 end
 
                 if debuffType and debuffName and class then
-                    if SaveDebuffInfo(debuffIndex, i, class, debuffType, debuffName, texture) then
+                    if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture) then
                         debuffIndex = debuffIndex + 1
                     end
                 end
