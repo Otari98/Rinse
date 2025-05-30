@@ -125,6 +125,8 @@ Blacklist["Magic"]["Slip'kik's Savvy"] = true
 Blacklist["Magic"]["Thunderfury"] = true
 Blacklist["Magic"]["Magma Shackles"] = true
 Blacklist["Magic"]["Icicles"] = true
+Blacklist["Magic"]["Phase Shifted"] = true
+Blacklist["Magic"]["Unstable Mana"] = true
 ----------------------------------------------------
 Blacklist["Disease"]["Mutating Injection"] = true
 Blacklist["Disease"]["Sanctum Mind Decay"] = true
@@ -142,6 +144,7 @@ ClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
 ClassBlacklist["WARRIOR"]["Ignite Mana"] = true
 ClassBlacklist["WARRIOR"]["Tainted Mind"] = true
 ClassBlacklist["WARRIOR"]["Moroes Curse"] = true
+ClassBlacklist["WARRIOR"]["Curse of Manascale"] = true
 ----------------------------------------------------
 ClassBlacklist["ROGUE"]["Silence"] = true
 ClassBlacklist["ROGUE"]["Ancient Hysteria"] = true
@@ -150,7 +153,9 @@ ClassBlacklist["ROGUE"]["Tainted Mind"] = true
 ClassBlacklist["ROGUE"]["Smoke Bomb"] = true
 ClassBlacklist["ROGUE"]["Screams of the Past"] = true
 ClassBlacklist["ROGUE"]["Moroes Curse"] = true
+ClassBlacklist["ROGUE"]["Curse of Manascale"] = true
 ----------------------------------------------------
+ClassBlacklist["WARLOCK"]["Rift Entanglement"] = true
 
 local function arrcontains(array, value)
     for i = 1, getn(array) do
