@@ -146,6 +146,17 @@
 				<AbsDimension x="350" y="750"/>
 			</maxResize>
 		</ResizeBounds>
+        <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+            <EdgeSize>
+                <AbsValue val="16"/>
+            </EdgeSize>
+            <TileSize>
+                <AbsValue val="16"/>
+            </TileSize>
+            <BackgroundInsets>
+                <AbsInset left="5" right="5" top="5" bottom="5"/>
+            </BackgroundInsets>
+        </Backdrop>
 		<HitRectInsets>
 			<AbsInset left="-10" right="-10" top="-10" bottom="-10"/>
 		</HitRectInsets>
@@ -818,7 +829,7 @@
                 </HitRectInsets>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentOpacitySlider" relativePoint="BOTTOMLEFT">
-                        <Offset x="-5" y="-16"/>
+                        <Offset x="0" y="-24"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
@@ -843,7 +854,7 @@
                 </HitRectInsets>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentWyvernSting" relativePoint="BOTTOMLEFT">
-                        <Offset x="0" y="-4"/>
+                        <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
@@ -893,7 +904,7 @@
                 </HitRectInsets>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentPrint" relativePoint="BOTTOMLEFT">
-                        <Offset x="0" y="-4"/>
+                        <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
@@ -911,7 +922,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parentBackdrop" inherits="OptionsCheckButtonTemplate">
                 <Size x="32" y="32"/>
                 <HitRectInsets>
                     <AbsInset left="0" right="-100" top="0" bottom="0"/>
@@ -919,6 +930,31 @@
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentSound" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show Backdrop")
+                        this.tooltipText = "Show or Hide Backdrop Texture"
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_ToggleBackdrop()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets>
+                    <AbsInset left="0" right="-100" top="0" bottom="0"/>
+                </HitRectInsets>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentBackdrop" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>

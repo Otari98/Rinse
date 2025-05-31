@@ -21,6 +21,15 @@ local playNoticeSound = true
 local errorCooldown = 0
 local stopCastCooldown = 0
 
+local Backdrop = {
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = "true",
+    tileSize = 16,
+	edgeSize = 16,
+	insets = { left = 5, right = 5, top = 5, bottom = 5 },
+}
+
 local ClassColors = {}
 ClassColors["WARRIOR"] = "|cffc79c6e"
 ClassColors["DRUID"]   = "|cffff7d0a"
@@ -577,13 +586,22 @@ function Rinse_ToggleLock()
     RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
 end
 
+function Rinse_ToggleBackdrop()
+    RINSE_CONFIG.BACKDROP = not RINSE_CONFIG.BACKDROP
+    if RINSE_CONFIG.BACKDROP then
+        RinseFrame:SetBackdrop(Backdrop)
+        RinseFrame:SetBackdropBorderColor(1, 1, 1)
+        RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
+    else
+        RinseFrame:SetBackdrop(nil)
+    end
+end
+
 function RinseFrame_OnLoad()
     RinseFrame:RegisterEvent("ADDON_LOADED")
     RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
     RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
     RinseFrame:RegisterEvent("SPELLS_CHANGED")
-    RinseFrame:SetBackdropBorderColor(1, 1, 1)
-    RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
 end
 
 local function GoodUnit(unit)
@@ -601,24 +619,30 @@ end
 function RinseFrame_OnEvent()
     if event == "ADDON_LOADED" and arg1 == "Rinse" then
         RinseFrame:UnregisterEvent("ADDON_LOADED")
-        if not RINSE_CONFIG then
-            RINSE_CONFIG = {}
-            RINSE_CONFIG.SKIP_ARRAY = {}
-            RINSE_CONFIG.PRIO_ARRAY = {}
-            RINSE_CONFIG.POSITION = {x = 0, y = 0}
-            RINSE_CONFIG.SCALE = 0.85
-            RINSE_CONFIG.OPACITY = 1.0
-            RINSE_CONFIG.WEVERN_STING = false
-            RINSE_CONFIG.MUTATING_INJECTION = false
-            RINSE_CONFIG.PRINT = true
-            RINSE_CONFIG.SOUND = true
-            RINSE_CONFIG.LOCK = false
-        end
+        RINSE_CONFIG = RINSE_CONFIG or {}
+        RINSE_CONFIG.SKIP_ARRAY = RINSE_CONFIG.SKIP_ARRAY or {}
+        RINSE_CONFIG.PRIO_ARRAY = RINSE_CONFIG.PRIO_ARRAY or {}
+        RINSE_CONFIG.POSITION = RINSE_CONFIG.POSITION or {x = 0, y = 0}
+        RINSE_CONFIG.SCALE = RINSE_CONFIG.SCALE or 0.85
+        RINSE_CONFIG.OPACITY = RINSE_CONFIG.OPACITY or 1.0
+        RINSE_CONFIG.WEVERN_STING = RINSE_CONFIG.WEVERN_STING == nil and false or RINSE_CONFIG.WEVERN_STING
+        RINSE_CONFIG.MUTATING_INJECTION = RINSE_CONFIG.MUTATING_INJECTION == nil and false or RINSE_CONFIG.MUTATING_INJECTION
+        RINSE_CONFIG.PRINT = RINSE_CONFIG.PRINT == nil and true or RINSE_CONFIG.PRINT
+        RINSE_CONFIG.SOUND = RINSE_CONFIG.SOUND == nil and true or RINSE_CONFIG.SOUND
+        RINSE_CONFIG.LOCK = RINSE_CONFIG.LOCK == nil and false or RINSE_CONFIG.LOCK
+        RINSE_CONFIG.BACKDROP = RINSE_CONFIG.BACKDROP == nil and true or RINSE_CONFIG.BACKDROP
         RinseFrame:ClearAllPoints()
         RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
         RinseFrame:SetScale(RINSE_CONFIG.SCALE)
         RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
         RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
+        if RINSE_CONFIG.BACKDROP then
+            RinseFrame:SetBackdrop(Backdrop)
+            RinseFrame:SetBackdropBorderColor(1, 1, 1)
+            RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
+        else
+            RinseFrame:SetBackdrop(nil)
+        end
         RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
         RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
         RinseOptionsFrameWyvernSting:SetChecked(RINSE_CONFIG.WYVERN_STING)
@@ -626,6 +650,7 @@ function RinseFrame_OnEvent()
         RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
         RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)
         RinseOptionsFrameLock:SetChecked(RINSE_CONFIG.LOCK)
+        RinseOptionsFrameBackdrop:SetChecked(RINSE_CONFIG.BACKDROP)
         UpdateSpells()
     elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
         UpdatePrio()
