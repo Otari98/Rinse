@@ -834,8 +834,9 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Cure Wyvern Sting")
-                        this.tooltipText = "Cure Wyvern Sting"
+                        getglobal(this:GetName().."Text"):SetText("Cure \"Wyvern Sting\"")
+                        this.tooltipText = "Cure \"Wyvern Sting\" poison."
+                        this.tooltipRequirement = "(AQ40 - Princess Huhuran)"
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleWyvernSting()
@@ -859,8 +860,9 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Cure Mutating Injection")
-                        this.tooltipText = "Cure Mutating Injection"
+                        getglobal(this:GetName().."Text"):SetText("Cure \"Mutating Injection\"")
+                        this.tooltipText = "Cure \"Mutating Injection\" disease."
+                        this.tooltipRequirement = "(Naxx - Grobbulus)"
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleMutatingInjection()
@@ -884,8 +886,8 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText("Enable Error Messages")
-                        this.tooltipText = "Chat Error Messages"
+                        getglobal(this:GetName().."Text"):SetText("Enable Chat Messages")
+                        this.tooltipText = "Enable notification and error chat messages."
                     </OnLoad>
                     <OnClick>
                         Rinse_TogglePrint()
@@ -910,7 +912,7 @@
                 <Scripts>
                     <OnLoad>
                         getglobal(this:GetName().."Text"):SetText("Enable Sounds")
-                        this.tooltipText = "Enable Notification And Error Sounds"
+                        this.tooltipText = "Enable notification and error sounds."
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleSound()
@@ -935,7 +937,7 @@
                 <Scripts>
                     <OnLoad>
                         getglobal(this:GetName().."Text"):SetText("Show Backdrop")
-                        this.tooltipText = "Show or Hide Backdrop Texture"
+                        this.tooltipText = "Show or hide backdrop texture."
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleBackdrop()
@@ -960,7 +962,7 @@
                 <Scripts>
                     <OnLoad>
                         getglobal(this:GetName().."Text"):SetText("Lock Frame Position")
-                        this.tooltipText = "Prevent Window From Moving"
+                        this.tooltipText = "Prevent window from moving."
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleLock()
