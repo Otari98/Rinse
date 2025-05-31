@@ -146,17 +146,6 @@
 				<AbsDimension x="350" y="750"/>
 			</maxResize>
 		</ResizeBounds>
-        <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
-            <EdgeSize>
-                <AbsValue val="16"/>
-            </EdgeSize>
-            <TileSize>
-                <AbsValue val="16"/>
-            </TileSize>
-            <BackgroundInsets>
-                <AbsInset left="5" right="5" top="5" bottom="5"/>
-            </BackgroundInsets>
-        </Backdrop>
 		<HitRectInsets>
 			<AbsInset left="-10" right="-10" top="-10" bottom="-10"/>
 		</HitRectInsets>

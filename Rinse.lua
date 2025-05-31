@@ -114,6 +114,7 @@ Blacklist["Poison"] = {}
 ----------------------------------------------------
 Blacklist["Curse"]["Curse of Recklessness"] = true
 Blacklist["Curse"]["Delusions of Jin'do"] = true
+Blacklist["Curse"]["Dread of Outland"] = true
 ----------------------------------------------------
 Blacklist["Magic"]["Dreamless Sleep"] = true
 Blacklist["Magic"]["Greater Dreamless Sleep"] = true
@@ -124,6 +125,8 @@ Blacklist["Magic"]["Slip'kik's Savvy"] = true
 Blacklist["Magic"]["Thunderfury"] = true
 Blacklist["Magic"]["Magma Shackles"] = true
 Blacklist["Magic"]["Icicles"] = true
+Blacklist["Magic"]["Phase Shifted"] = true
+Blacklist["Magic"]["Unstable Mana"] = true
 ----------------------------------------------------
 Blacklist["Disease"]["Mutating Injection"] = true
 Blacklist["Disease"]["Sanctum Mind Decay"] = true
@@ -136,11 +139,19 @@ Blacklist["Poison"]["Poison Mushroom"] = true
 local ClassBlacklist = {}
 ClassBlacklist["WARRIOR"] = {}
 ClassBlacklist["ROGUE"] = {}
+ClassBlacklist["WARLOCK"] = {}
+ClassBlacklist["DRUID"] = {}
+ClassBlacklist["PALADIN"] = {}
+ClassBlacklist["MAGE"] = {}
+ClassBlacklist["PRIEST"] = {}
+ClassBlacklist["HUNTER"] = {}
+ClassBlacklist["SHAMAN"] = {}
 ----------------------------------------------------
 ClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
 ClassBlacklist["WARRIOR"]["Ignite Mana"] = true
 ClassBlacklist["WARRIOR"]["Tainted Mind"] = true
 ClassBlacklist["WARRIOR"]["Moroes Curse"] = true
+ClassBlacklist["WARRIOR"]["Curse of Manascale"] = true
 ----------------------------------------------------
 ClassBlacklist["ROGUE"]["Silence"] = true
 ClassBlacklist["ROGUE"]["Ancient Hysteria"] = true
@@ -149,7 +160,9 @@ ClassBlacklist["ROGUE"]["Tainted Mind"] = true
 ClassBlacklist["ROGUE"]["Smoke Bomb"] = true
 ClassBlacklist["ROGUE"]["Screams of the Past"] = true
 ClassBlacklist["ROGUE"]["Moroes Curse"] = true
+ClassBlacklist["ROGUE"]["Curse of Manascale"] = true
 ----------------------------------------------------
+ClassBlacklist["WARLOCK"]["Rift Entanglement"] = true
 
 local function arrcontains(array, value)
     for i = 1, getn(array) do
@@ -236,8 +249,18 @@ local function HasAbolish(unit, debuffType)
 	until not buff
 end
 
-local function InRange(unit)
+local function InRange(unit, spell)
     if unit and UnitIsFriend(unit, "player") then
+        if spell and IsSpellInRange then
+            local result = IsSpellInRange(spell, unit)
+            if result == 1 then
+                return true
+            elseif result == 0 then
+                return false
+            end
+            -- ignore result == -1
+        end
+
         if superwow then
             local myX, myY, myZ = UnitPosition("player")
             local uX, uY, uZ = UnitPosition(unit)
@@ -611,6 +634,46 @@ function RinseFrame_OnEvent()
     end
 end
 
+local function GetDebuffInfo(unit, i)
+    local debuffName
+    local debuffType
+    local texture
+    local applications
+    if superwow then
+        local spellId
+        texture, applications, debuffType, spellId = UnitDebuff(unit, i)
+        if spellId then
+            debuffName = SpellInfo(spellId)
+        end
+    else
+        RinseScanTooltipTextLeft1:SetText("")
+        RinseScanTooltipTextRight1:SetText("")
+        RinseScanTooltip:SetUnitDebuff(unit, i)
+        debuffName = RinseScanTooltipTextLeft1:GetText() or ""
+        debuffType = RinseScanTooltipTextRight1:GetText() or ""
+
+        texture, applications, debuffType = UnitDebuff(unit, i)
+    end
+
+    return debuffType, debuffName, texture, applications
+end
+
+local function SaveDebuffInfo(unit, debuffIndex, targetIndex, class, debuffType, debuffName, texture, applications)
+    if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
+        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
+        Debuffs[debuffIndex].name = debuffName or ""
+        Debuffs[debuffIndex].type = debuffType or ""
+        Debuffs[debuffIndex].texture = texture or ""
+        Debuffs[debuffIndex].stacks = applications or 0
+        Debuffs[debuffIndex].unit = unit
+        Debuffs[debuffIndex].unitName = UnitName(unit) or ""
+        Debuffs[debuffIndex].unitClass = class or ""
+        Debuffs[debuffIndex].debuffIndex = targetIndex
+        return true
+    end
+    return false
+end
+
 function RinseFrame_OnUpdate(elapsed)
     timeElapsed = timeElapsed + elapsed
     errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
@@ -635,26 +698,17 @@ function RinseFrame_OnUpdate(elapsed)
     -- Get new info
     -- Target is highest prio
     if GoodUnit("target") then
+        local _, class = UnitClass("target")
+
         local i = 1
-        while debuffIndex < DEBUFFS_MAX and UnitDebuff("target", i) do
-            RinseScanTooltipTextLeft1:SetText("")
-            RinseScanTooltipTextRight1:SetText("")
-            RinseScanTooltip:SetUnitDebuff("target", i)
-            local debuffName = RinseScanTooltipTextLeft1:GetText() or ""
-            local debuffType = RinseScanTooltipTextRight1:GetText() or ""
-            local texture, applications = UnitDebuff("target", i)
-            local _, class = UnitClass("target")
+        while debuffIndex < DEBUFFS_MAX do
+            local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
+            if not debuffName then
+                break
+            end
+
             if debuffType and debuffName and class then
-                if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
-                        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish("target", debuffType) then
-                    Debuffs[debuffIndex].name = debuffName or ""
-                    Debuffs[debuffIndex].type = debuffType or ""
-                    Debuffs[debuffIndex].texture = texture or ""
-                    Debuffs[debuffIndex].stacks = applications or 0
-                    Debuffs[debuffIndex].unit = "target"
-                    Debuffs[debuffIndex].unitName = UnitName("target") or ""
-                    Debuffs[debuffIndex].unitClass = class or ""
-                    Debuffs[debuffIndex].debuffIndex = i
+                if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture, applications) then
                     debuffIndex = debuffIndex + 1
                 end
             end
@@ -665,26 +719,17 @@ function RinseFrame_OnUpdate(elapsed)
     for index = 1, getn(Prio) do
         local unit = Prio[index]
         if GoodUnit(unit) and not UnitIsUnit("target", unit) then
+            local _, class = UnitClass(unit)
+
             local i = 1
-            while debuffIndex < DEBUFFS_MAX and UnitDebuff(unit, i) do
-                RinseScanTooltipTextLeft1:SetText("")
-                RinseScanTooltipTextRight1:SetText("")
-                RinseScanTooltip:SetUnitDebuff(unit, i)
-                local debuffName = RinseScanTooltipTextLeft1:GetText() or ""
-                local debuffType = RinseScanTooltipTextRight1:GetText() or ""
-                local texture, applications = UnitDebuff(unit, i)
-                local _, class = UnitClass(unit)
+            while debuffIndex < DEBUFFS_MAX do
+                local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
+                if not debuffName then
+                    break
+                end
+
                 if debuffType and debuffName and class then
-                    if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
-                            not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
-                        Debuffs[debuffIndex].name = debuffName or ""
-                        Debuffs[debuffIndex].type = debuffType or ""
-                        Debuffs[debuffIndex].texture = texture or ""
-                        Debuffs[debuffIndex].stacks = applications or 0
-                        Debuffs[debuffIndex].unit = unit or ""
-                        Debuffs[debuffIndex].unitName = UnitName(unit) or ""
-                        Debuffs[debuffIndex].unitClass = class or ""
-                        Debuffs[debuffIndex].debuffIndex = i
+                    if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications) then
                         debuffIndex = debuffIndex + 1
                     end
                 end
@@ -743,7 +788,7 @@ function RinseFrame_OnUpdate(elapsed)
             -- if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
             --     onCooldown:Show()
             -- end
-            if not InRange(unit) then
+            if not InRange(unit, CanRemove[button.type]) then
                 outOfRange:Show()
             else
                 outOfRange:Hide()
@@ -762,7 +807,7 @@ function Rinse_Cleanse(button)
     end
     local debuff = getglobal(button:GetName().."Name"):GetText()
     print("Trying To Remove "..DebuffColor[button.type].hex..debuff..CLOSE.." from "..ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE)
-    if not InRange(button.unit) then
+    if not InRange(button.unit, CanRemove[button.type]) then
         print(ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
         if errorCooldown <= 0 then
             playsound(errorSound)
