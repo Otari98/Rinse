@@ -139,6 +139,13 @@ Blacklist["Poison"]["Poison Mushroom"] = true
 local ClassBlacklist = {}
 ClassBlacklist["WARRIOR"] = {}
 ClassBlacklist["ROGUE"] = {}
+ClassBlacklist["WARLOCK"] = {}
+ClassBlacklist["DRUID"] = {}
+ClassBlacklist["PALADIN"] = {}
+ClassBlacklist["MAGE"] = {}
+ClassBlacklist["PRIEST"] = {}
+ClassBlacklist["HUNTER"] = {}
+ClassBlacklist["SHAMAN"] = {}
 ----------------------------------------------------
 ClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
 ClassBlacklist["WARRIOR"]["Ignite Mana"] = true
