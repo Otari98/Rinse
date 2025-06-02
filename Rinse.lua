@@ -11,7 +11,6 @@ local UnitIsPlayer = UnitIsPlayer
 local UnitIsCharmed = UnitIsCharmed
 local UnitName = UnitName
 local GetTime = GetTime
-local GetSpellCooldown = GetSpellCooldown
 local CheckInteractDistance = CheckInteractDistance
 local updateInterval = 0.1
 local timeElapsed = 0
@@ -28,6 +27,12 @@ local Backdrop = {
     tileSize = 16,
 	edgeSize = 16,
 	insets = { left = 5, right = 5, top = 5, bottom = 5 },
+}
+
+local Frames = {
+    "RinseFrame",
+    "RinsePrioListFrame",
+    "RinseSkipListFrame",
 }
 
 local ClassColors = {}
@@ -426,35 +431,27 @@ local function ClassMenu()
         info.text = ClassColors["WARRIOR"] .. "Warriors"
         info.value = "WARRIOR"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["DRUID"] .. "Druids"
         info.value = "DRUID"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["PALADIN"] .. "Paladins"
         info.value = "PALADIN"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["WARLOCK"] .. "Warlocks"
         info.value = "WARLOCK"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["MAGE"] .. "Mages"
         info.value = "MAGE"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["PRIEST"] .. "Priests"
         info.value = "PRIEST"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["ROGUE"] .. "Rogues"
         info.value = "ROGUE"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["HUNTER"] .. "Hunters"
         info.value = "HUNTER"
         UIDropDownMenu_AddButton(info)
-
         info.text = ClassColors["SHAMAN"] .. "Shamans"
         info.value = "SHAMAN"
         UIDropDownMenu_AddButton(info)
@@ -491,7 +488,6 @@ function RinsePrioListAddClass_OnClick()
     ToggleDropDownMenu(1, "Rinse_PrioList", RinseClassesDropDown, this, 0, 0)
 end
 
-local spellBookIndex
 local bookType = BOOKTYPE_SPELL
 if playerClass == "WARLOCK" then
     bookType = BOOKTYPE_PET
@@ -502,7 +498,6 @@ local function UpdateSpells()
         return
     end
     local found = false
-    spellBookIndex = nil
     for tab = 1, GetNumSpellTabs() do
         local _, _, offset, numSpells = GetSpellTabInfo(tab)
         for s = offset + 1, offset + numSpells do
@@ -512,7 +507,6 @@ local function UpdateSpells()
                     if v[1] == spell then
                         CanRemove[dispelType] = spell
                         found = true
-                        spellBookIndex = s
                     end
                 end
             end
@@ -529,7 +523,6 @@ local function UpdateSpells()
                 for dispelType, v in pairs(Spells[playerClass]) do
                     if v[2] and v[2] == spell then
                         CanRemove[dispelType] = spell
-                        spellBookIndex = s
                     end
                 end
             end
@@ -586,8 +579,7 @@ function Rinse_ToggleLock()
     RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
 end
 
-function Rinse_ToggleBackdrop()
-    RINSE_CONFIG.BACKDROP = not RINSE_CONFIG.BACKDROP
+local function UpdateBackdrop()
     if RINSE_CONFIG.BACKDROP then
         RinseFrame:SetBackdrop(Backdrop)
         RinseFrame:SetBackdropBorderColor(1, 1, 1)
@@ -595,6 +587,117 @@ function Rinse_ToggleBackdrop()
     else
         RinseFrame:SetBackdrop(nil)
     end
+end
+
+function Rinse_ToggleBackdrop()
+    RINSE_CONFIG.BACKDROP = not RINSE_CONFIG.BACKDROP
+    UpdateBackdrop()
+end
+
+local function UpdateFramesScale()
+    for _, frame in pairs(Frames) do
+        getglobal(frame):SetScale(RINSE_CONFIG.SCALE)
+    end
+end
+
+function RinseOptionsFrameScaleSLider_OnValueChanged()
+    local scale = tonumber(format("%.2f", this:GetValue()))
+    RINSE_CONFIG.SCALE = scale
+    RinseFrame:SetScale(scale)
+    RinseDebuffsFrame:SetScale(scale)
+    getglobal(this:GetName().."Text"):SetText("Scale ("..scale..")")
+    UpdateFramesScale()
+end
+
+local function UpdateDirection()
+    if not RINSE_CONFIG.FLIP then
+        RinseFrameBackground:ClearAllPoints()
+        RinseFrameBackground:SetPoint("TOP", 0, -5)
+        RinseFrameTitle:ClearAllPoints()
+        RinseFrameTitle:SetPoint("TOPLEFT", 12, -12)
+        for i = 1, BUTTONS_MAX do
+            local frame = getglobal("RinseFrameDebuff"..i)
+            if i == 1 then
+                frame:ClearAllPoints()
+                frame:SetPoint("TOP", RinseFrame, "TOP", 0, -31)
+            else
+                local prevFrame = getglobal("RinseFrameDebuff"..(i - 1))
+                frame:ClearAllPoints()
+                frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 8)
+            end
+        end
+    else
+        RinseFrameBackground:ClearAllPoints()
+        RinseFrameBackground:SetPoint("BOTTOM", 0, 5)
+        RinseFrameTitle:ClearAllPoints()
+        RinseFrameTitle:SetPoint("BOTTOMLEFT", 12, 12)
+        for i = BUTTONS_MAX, 1, -1 do
+            local frame = getglobal("RinseFrameDebuff"..i)
+            if i == BUTTONS_MAX then
+                frame:ClearAllPoints()
+                frame:SetPoint("TOP", RinseFrame, "TOP", 0, -2)
+            else
+                local prevFrame = getglobal("RinseFrameDebuff"..(i + 1))
+                frame:ClearAllPoints()
+                frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 8)
+            end
+        end
+    end
+end
+
+function Rinse_ToggleDirection()
+    RINSE_CONFIG.FLIP = not RINSE_CONFIG.FLIP
+    UpdateDirection()
+end
+
+local function UpdateNumButtons(num)
+    if num > BUTTONS_MAX then
+        RinseFrame:SetHeight(RinseFrame:GetHeight() + (num - BUTTONS_MAX) * 42)
+        local btn, prevBtn
+        if not RINSE_CONFIG.FLIP then
+            for i = BUTTONS_MAX + 1, num do
+                btn = getglobal("RinseFrameDebuff"..i)
+                if not btn then
+                    btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
+                end
+                prevBtn = getglobal("RinseFrameDebuff"..(i - 1))
+                btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 8)
+            end
+        else
+            for i = num, BUTTONS_MAX + 1, -1 do
+                btn = getglobal("RinseFrameDebuff"..i)
+                if not btn then
+                    btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
+                end
+                btn:ClearAllPoints()
+                if i == num then
+                    btn:SetPoint("TOP", RinseFrame, "TOP", 0, -2)
+                else
+                    prevBtn = getglobal("RinseFrameDebuff"..(i + 1))
+                    btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 8)
+                end
+            end
+            getglobal("RinseFrameDebuff"..BUTTONS_MAX):ClearAllPoints()
+            getglobal("RinseFrameDebuff"..BUTTONS_MAX):SetPoint("TOP", btn, "BOTTOM", 0, 8)
+        end
+    elseif num < BUTTONS_MAX then
+        RinseFrame:SetHeight(RinseFrame:GetHeight() - (BUTTONS_MAX - num) * 42)
+        for i = num, BUTTONS_MAX do
+            getglobal("RinseFrameDebuff"..i):Hide()
+        end
+        if RINSE_CONFIG.FLIP then
+            getglobal("RinseFrameDebuff"..num):ClearAllPoints()
+            getglobal("RinseFrameDebuff"..num):SetPoint("TOP", RinseFrame, "TOP", 0, -2)
+        end
+    end
+    BUTTONS_MAX = num
+end
+
+function RinseOptionsFrameButtonsSlider_OnValueChanged()
+    local numButtons = tonumber(format("%d", this:GetValue()))
+    RINSE_CONFIG.BUTTONS = numButtons
+    UpdateNumButtons(numButtons)
+    getglobal(this:GetName().."Text"):SetText("Debuffs shown ("..numButtons..")")
 end
 
 function RinseFrame_OnLoad()
@@ -631,18 +734,14 @@ function RinseFrame_OnEvent()
         RINSE_CONFIG.SOUND = RINSE_CONFIG.SOUND == nil and true or RINSE_CONFIG.SOUND
         RINSE_CONFIG.LOCK = RINSE_CONFIG.LOCK == nil and false or RINSE_CONFIG.LOCK
         RINSE_CONFIG.BACKDROP = RINSE_CONFIG.BACKDROP == nil and true or RINSE_CONFIG.BACKDROP
+        RINSE_CONFIG.FLIP = RINSE_CONFIG.FLIP == nil and false or RINSE_CONFIG.FLIP
+        RINSE_CONFIG.BUTTONS = RINSE_CONFIG.BUTTONS == nil and BUTTONS_MAX or RINSE_CONFIG.BUTTONS
         RinseFrame:ClearAllPoints()
         RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
         RinseFrame:SetScale(RINSE_CONFIG.SCALE)
+        RinseDebuffsFrame:SetScale(RINSE_CONFIG.SCALE)
         RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
         RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
-        if RINSE_CONFIG.BACKDROP then
-            RinseFrame:SetBackdrop(Backdrop)
-            RinseFrame:SetBackdropBorderColor(1, 1, 1)
-            RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
-        else
-            RinseFrame:SetBackdrop(nil)
-        end
         RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
         RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
         RinseOptionsFrameWyvernSting:SetChecked(RINSE_CONFIG.WYVERN_STING)
@@ -651,6 +750,12 @@ function RinseFrame_OnEvent()
         RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)
         RinseOptionsFrameLock:SetChecked(RINSE_CONFIG.LOCK)
         RinseOptionsFrameBackdrop:SetChecked(RINSE_CONFIG.BACKDROP)
+        RinseOptionsFrameFlip:SetChecked(RINSE_CONFIG.FLIP)
+        RinseOptionsFrameButtonsSlider:SetValue(RINSE_CONFIG.BUTTONS)
+        UpdateBackdrop()
+        UpdateFramesScale()
+        UpdateDirection()
+        UpdateNumButtons(RINSE_CONFIG.BUTTONS)
         UpdateSpells()
     elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
         UpdatePrio()
@@ -676,10 +781,8 @@ local function GetDebuffInfo(unit, i)
         RinseScanTooltip:SetUnitDebuff(unit, i)
         debuffName = RinseScanTooltipTextLeft1:GetText() or ""
         debuffType = RinseScanTooltipTextRight1:GetText() or ""
-
         texture, applications, debuffType = UnitDebuff(unit, i)
     end
-
     return debuffType, debuffName, texture, applications
 end
 
@@ -724,14 +827,12 @@ function RinseFrame_OnUpdate(elapsed)
     -- Target is highest prio
     if GoodUnit("target") then
         local _, class = UnitClass("target")
-
         local i = 1
         while debuffIndex < DEBUFFS_MAX do
             local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
             if not debuffName then
                 break
             end
-
             if debuffType and debuffName and class then
                 if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture, applications) then
                     debuffIndex = debuffIndex + 1
@@ -745,14 +846,12 @@ function RinseFrame_OnUpdate(elapsed)
         local unit = Prio[index]
         if GoodUnit(unit) and not UnitIsUnit("target", unit) then
             local _, class = UnitClass(unit)
-
             local i = 1
             while debuffIndex < DEBUFFS_MAX do
                 local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
                 if not debuffName then
                     break
                 end
-
                 if debuffType and debuffName and class then
                     if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications) then
                         debuffIndex = debuffIndex + 1
@@ -786,8 +885,6 @@ function RinseFrame_OnUpdate(elapsed)
             local playerName = getglobal("RinseFrameDebuff"..buttonIndex.."Player")
             local count = getglobal("RinseFrameDebuff"..buttonIndex.."Count")
             local border = getglobal("RinseFrameDebuff"..buttonIndex.."Border")
-            local outOfRange = getglobal("RinseFrameDebuff"..buttonIndex.."OutOfRange")
-            -- local onCooldown = getglobal("RinseFrameDebuff"..buttonIndex.."OnCooldown")
             icon:SetTexture(Debuffs[debuffIndex].texture)
             debuffName:SetText(name)
             playerName:SetText(ClassColors[class]..unitName)
@@ -809,14 +906,10 @@ function RinseFrame_OnUpdate(elapsed)
                     Debuffs[i].shown = 1
                 end
             end
-            -- onCooldown:Hide()
-            -- if spellBookIndex and GetSpellCooldown(spellBookIndex, bookType) ~= 0 then
-            --     onCooldown:Show()
-            -- end
             if not InRange(unit, CanRemove[button.type]) then
-                outOfRange:Show()
+                button:SetAlpha(0.5)
             else
-                outOfRange:Hide()
+                button:SetAlpha(1)
             end
         end
         if not RinseFrameDebuff1:IsShown() then
@@ -842,7 +935,7 @@ function Rinse_Cleanse(button)
     end
     if stopCastCooldown == 0 then
         SpellStopCasting()
-        stopCastCooldown = 1
+        stopCastCooldown = 0.2
     end
     if superwow then
         CastSpellByName(CanRemove[button.type], button.unit)
