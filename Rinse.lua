@@ -830,7 +830,7 @@ function RinseFrame_OnUpdate(elapsed)
         local i = 1
         while debuffIndex < DEBUFFS_MAX do
             local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
-            if not debuffName then
+            if not texture then
                 break
             end
             if debuffType and debuffName and class then
@@ -849,7 +849,7 @@ function RinseFrame_OnUpdate(elapsed)
             local i = 1
             while debuffIndex < DEBUFFS_MAX do
                 local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
-                if not debuffName then
+                if not texture then
                     break
                 end
                 if debuffType and debuffName and class then
