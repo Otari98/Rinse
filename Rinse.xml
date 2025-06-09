@@ -159,6 +159,9 @@
                     </OnMouseDown>
                     <OnMouseUp>
                         this:GetParent():StopMovingOrSizing()
+                        local x, y = this:GetParent():GetCenter()
+                        RINSE_CONFIG.POSITION.x = x or 0
+                        RINSE_CONFIG.POSITION.y = y or 0
                     </OnMouseUp>
                     <OnEnter>
                         local parent = this:GetParent()
@@ -377,7 +380,9 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        Rinse_AddUnitToList(RINSE_CONFIG.SKIP_ARRAY, "target")
+                        if UnitName("target") then
+                            Rinse_AddUnitToList(RINSE_CONFIG.SKIP_ARRAY, "target")
+                        end
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
@@ -565,7 +570,9 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        Rinse_AddUnitToList(RINSE_CONFIG.PRIO_ARRAY, "target")
+                        if UnitName("target") then
+                            Rinse_AddUnitToList(RINSE_CONFIG.PRIO_ARRAY, "target")
+                        end
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
