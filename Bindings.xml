@@ -1,0 +1,5 @@
+<Bindings>
+	<Binding name="RINSE" header="RINSE_HEADER">
+		Rinse()
+	</Binding>
+</Bindings>

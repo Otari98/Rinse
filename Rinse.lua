@@ -20,6 +20,10 @@ local playNoticeSound = true
 local errorCooldown = 0
 local stopCastCooldown = 0
 
+-- Bindings
+BINDING_HEADER_RINSE_HEADER = "Rinse"
+BINDING_NAME_RINSE = "Run Rinse"
+
 local Backdrop = {
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
