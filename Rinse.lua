@@ -19,6 +19,8 @@ local errorSound = "Sound\\Interface\\Error.wav"
 local playNoticeSound = true
 local errorCooldown = 0
 local stopCastCooldown = 0
+local prioTimer = 0
+local needUpdatePrio = false
 
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
@@ -33,6 +35,7 @@ local Backdrop = {
 	insets = { left = 5, right = 5, top = 5, bottom = 5 },
 }
 
+-- Frames that should scale together
 local Frames = {
     "RinseFrame",
     "RinsePrioListFrame",
@@ -57,14 +60,7 @@ DebuffColor["Curse"]   = { r = 0.6, g = 0.0, b = 1.0, hex = "|cff9900FF" }
 DebuffColor["Disease"] = { r = 0.6, g = 0.4, b = 0.0, hex = "|cff996600" }
 DebuffColor["Poison"]  = { r = 0.0, g = 0.6, b = 0.0, hex = "|cff009900" }
 
-local RED = DebuffColor["none"].hex
 local BLUE = DebuffColor["Magic"].hex
-local PURPLE = DebuffColor["Curse"].hex
-local BROWN = DebuffColor["Disease"].hex
-local GREEN = DebuffColor["Poison"].hex
-local GREY = GRAY_FONT_COLOR_CODE
-local WHITE = HIGHLIGHT_FONT_COLOR_CODE
-local CLOSE = FONT_COLOR_CODE_CLOSE
 
 -- Spells that remove stuff, for each class
 local Spells = {}
@@ -79,7 +75,7 @@ Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
 -- CanRemove[debuffType] = "spellName"
 local CanRemove = {}
 
--- Number of buttons shown
+-- Number of buttons shown, can be overridden by saved variables
 local BUTTONS_MAX = 5
 
 -- Maximum number of dispellable debuffs that we hold on to
@@ -182,6 +178,15 @@ ClassBlacklist["ROGUE"]["Curse of Manascale"] = true
 ----------------------------------------------------
 ClassBlacklist["WARLOCK"]["Rift Entanglement"] = true
 
+local function wipe(array)
+    if type(array) ~= "table" then
+        return
+    end
+    for i = getn(array), 1, -1 do
+        tremove(array, i)
+    end
+end
+
 local function arrcontains(array, value)
     for i = 1, getn(array) do
         if type(array[i]) == "table" then
@@ -198,14 +203,14 @@ local function arrcontains(array, value)
     return nil
 end
 
-local function print(msg)
+local function ChatMessage(msg)
     if RINSE_CONFIG.PRINT then
-        ChatFrame1:AddMessage(BLUE.."[Rinse] "..WHITE..(msg or "nil")..FONT_COLOR_CODE_CLOSE)
+        ChatFrame1:AddMessage(BLUE.."[Rinse]|r "..(tostring(msg)))
     end
 end
 
 local function debug(msg)
-    ChatFrame1:AddMessage(BLUE.."[Rinse]["..GetTime().."]"..WHITE..(tostring(msg))..FONT_COLOR_CODE_CLOSE)
+    ChatFrame1:AddMessage(BLUE.."[Rinse]["..format("%.3f",GetTime()).."]|r"..(tostring(msg)))
 end
 
 local function playsound(file)
@@ -214,7 +219,7 @@ local function playsound(file)
     end
 end
 
-local function tounitid(name, index)
+local function NameToUnitID(name)
     if not name then
         return nil
     end
@@ -231,12 +236,6 @@ local function tounitid(name, index)
                 return "raid"..i
             end
         end
-    end
-    if index then
-        return DefaultPrio[index]
-    end
-    if UnitName("target") and UnitName("target") == name then
-        return "target"
     end
 end
 
@@ -292,20 +291,64 @@ local function InRange(unit, spell)
     end
 end
 
+local Seen = {}
+
 local function UpdatePrio()
+    -- Reset Prio to default
+    wipe(Prio)
+    for i = 1, getn(DefaultPrio) do
+        tinsert(Prio, DefaultPrio[i])
+    end
     if RINSE_CONFIG.PRIO_ARRAY[1] then
-        -- Copy from user defined prio array into internal Prio
+        -- Copy from user defined PRIO_ARRAY into internal Prio
         for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
-            tinsert(Prio, i, tounitid(RINSE_CONFIG.PRIO_ARRAY[i].name, i))
-        end
-        -- Get rid of duplicates
-        for i = getn(Prio), getn(RINSE_CONFIG.PRIO_ARRAY) + 1, -1 do
-            if arrcontains(RINSE_CONFIG.PRIO_ARRAY, UnitName(Prio[i])) then
-                tremove(Prio, i)
+            local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
+            if unit and Prio[i] ~= unit then
+                tinsert(Prio, i, unit)
             end
         end
-    else
-        Prio = DefaultPrio
+    end
+    -- Get rid of duplicates and UnitIDs that we can't match to names in our raid/party
+    wipe(Seen)
+    for i = 1, getn(Prio) do
+        local name = UnitName(Prio[i])
+        if not name or arrcontains(Seen, name) then
+            -- Don't delete yet
+            Prio[i] = false
+        elseif name then
+            tinsert(Seen, name)
+        end
+    end
+    for i = getn(Prio), 1, -1 do
+        if Prio[i] == false then
+            tremove(Prio, i)
+        end
+    end
+    -- Randomize everything that is not in PRIO_ARRAY
+    if not RinseFrameDebuff1:IsShown() then
+        local startIndex = 2
+        local endIndex = getn(Prio)
+        if RINSE_CONFIG.PRIO_ARRAY[1] then
+            -- PRIO_ARRAY can contain names that are not in our raid/party
+            -- I assume the last name in PRIO_ARRAY that we can match to some UnitID is the end of PRIO_ARRAY
+            -- since we got rid of "empty" UnitIDs on previous step
+            local lastValidInPrio = 0
+            for i = getn(RINSE_CONFIG.PRIO_ARRAY), 1, -1 do
+                if NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name) then
+                    lastValidInPrio = i
+                    break
+                end
+            end
+            startIndex = lastValidInPrio + 1
+        end
+        for a = startIndex, endIndex do
+            local temp = Prio[a]
+            local b = random(startIndex, endIndex)
+            if Prio[a] and Prio[b] then
+                Prio[a] = Prio[b]
+                Prio[b] = temp
+            end
+        end
     end
 end
 
@@ -385,8 +428,8 @@ local function AddGroupOrClass()
         if UnitInRaid("player") then
             for i = 1 , 40 do
                 local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
-                local unit = tounitid(name)
-                if name and subgroup == this.value then
+                local unit = NameToUnitID(name)
+                if name and unit and subgroup == this.value then
                     Rinse_AddUnitToList(array, unit)
                 end
             end
@@ -405,8 +448,8 @@ local function AddGroupOrClass()
         if UnitInRaid("player") then
             for i = 1 , 40 do
                 local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
-                local unit = tounitid(name)
-                if name and classFileName == this.value then
+                local unit = NameToUnitID(name)
+                if name and unit and classFileName == this.value then
                     Rinse_AddUnitToList(array, unit)
                 end
             end
@@ -761,8 +804,10 @@ function RinseFrame_OnEvent()
         UpdateDirection()
         UpdateNumButtons(RINSE_CONFIG.BUTTONS)
         UpdateSpells()
-    elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
         UpdatePrio()
+    elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
+        needUpdatePrio = true
+        prioTimer = 2
     elseif event == "SPELLS_CHANGED" then
         UpdateSpells()
     end
@@ -790,7 +835,7 @@ local function GetDebuffInfo(unit, i)
     return debuffType, debuffName, texture, applications
 end
 
-local function SaveDebuffInfo(unit, debuffIndex, targetIndex, class, debuffType, debuffName, texture, applications)
+local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
     if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
         not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
         Debuffs[debuffIndex].name = debuffName or ""
@@ -800,7 +845,7 @@ local function SaveDebuffInfo(unit, debuffIndex, targetIndex, class, debuffType,
         Debuffs[debuffIndex].unit = unit
         Debuffs[debuffIndex].unitName = UnitName(unit) or ""
         Debuffs[debuffIndex].unitClass = class or ""
-        Debuffs[debuffIndex].debuffIndex = targetIndex
+        Debuffs[debuffIndex].debuffIndex = i
         return true
     end
     return false
@@ -810,6 +855,11 @@ function RinseFrame_OnUpdate(elapsed)
     timeElapsed = timeElapsed + elapsed
     errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
     stopCastCooldown = (stopCastCooldown > 0) and (stopCastCooldown - elapsed) or 0
+    prioTimer = (prioTimer > 0) and (prioTimer - elapsed) or 0
+    if needUpdatePrio and prioTimer <= 0 then
+        UpdatePrio()
+        needUpdatePrio = false
+    end
     if timeElapsed < updateInterval then
         return
     end
@@ -928,16 +978,16 @@ function Rinse_Cleanse(button)
         return
     end
     local debuff = getglobal(button:GetName().."Name"):GetText()
-    print("Trying To Remove "..DebuffColor[button.type].hex..debuff..CLOSE.." from "..ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE)
     if not InRange(button.unit, CanRemove[button.type]) then
-        print(ClassColors[button.unitClass]..UnitName(button.unit)..CLOSE.." is out of range.")
+        ChatMessage(ClassColors[button.unitClass]..UnitName(button.unit).."|r is out of range.")
         if errorCooldown <= 0 then
             playsound(errorSound)
             errorCooldown = 0.1
         end
         return
     end
-    if stopCastCooldown == 0 then
+    ChatMessage("Trying To Remove "..DebuffColor[button.type].hex..debuff.."|r from "..ClassColors[button.unitClass]..UnitName(button.unit).."|r")
+    if stopCastCooldown <= 0 then
         SpellStopCasting()
         stopCastCooldown = 0.2
     end
