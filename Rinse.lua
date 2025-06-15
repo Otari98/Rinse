@@ -992,7 +992,7 @@ function Rinse_Cleanse(button, attemptedCast)
     -- allow attempting 1 spell even if gcd active so that it can be queued
     if attemptedCast then
         -- check if on gcd
-        local _, duration, _ = GetSpellCooldown(spellSlot, BOOKTYPE_SPELL)
+        local _, duration, _ = GetSpellCooldown(spellSlot, bookType)
         -- if gcd active this will return 1.5 for all the relevant spells
         if duration == 1.5 then
             -- don't bother trying to cast
