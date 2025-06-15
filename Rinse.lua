@@ -25,11 +25,14 @@ local needUpdatePrio = false
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
 BINDING_NAME_RINSE = "Run Rinse"
+BINDING_NAME_RINSE_TOGGLE_OPTIONS = "Toggle Options"
+BINDING_NAME_RINSE_TOGGLE_PRIO = "Toggle Prio List"
+BINDING_NAME_RINSE_TOGGLE_SKIP = "Toggle Skip List"
 
 local Backdrop = {
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = "true",
+    tile = true,
     tileSize = 16,
 	edgeSize = 16,
 	insets = { left = 5, right = 5, top = 5, bottom = 5 },
@@ -624,6 +627,7 @@ end
 function Rinse_ToggleLock()
     RINSE_CONFIG.LOCK = not RINSE_CONFIG.LOCK
     RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
+    RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
 end
 
 local function UpdateBackdrop()
@@ -658,35 +662,43 @@ end
 
 local function UpdateDirection()
     if not RINSE_CONFIG.FLIP then
+        -- Normal direction (from top to bottom)
         RinseFrameBackground:ClearAllPoints()
         RinseFrameBackground:SetPoint("TOP", 0, -5)
         RinseFrameTitle:ClearAllPoints()
         RinseFrameTitle:SetPoint("TOPLEFT", 12, -12)
+        if RINSE_CONFIG.SHOW_HEADER then
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -35)
+        else
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+        end
         for i = 1, BUTTONS_MAX do
             local frame = getglobal("RinseFrameDebuff"..i)
             if i == 1 then
                 frame:ClearAllPoints()
-                frame:SetPoint("TOP", RinseFrame, "TOP", 0, -31)
+                frame:SetPoint("TOP", RinseDebuffsFrame, "TOP", 0, 0)
             else
                 local prevFrame = getglobal("RinseFrameDebuff"..(i - 1))
                 frame:ClearAllPoints()
-                frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 8)
+                frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 0)
             end
         end
     else
+        -- Inverted (from bottom to top)
         RinseFrameBackground:ClearAllPoints()
         RinseFrameBackground:SetPoint("BOTTOM", 0, 5)
         RinseFrameTitle:ClearAllPoints()
         RinseFrameTitle:SetPoint("BOTTOMLEFT", 12, 12)
-        for i = BUTTONS_MAX, 1, -1 do
+        RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+        for i = 1, BUTTONS_MAX do
             local frame = getglobal("RinseFrameDebuff"..i)
-            if i == BUTTONS_MAX then
+            if i == 1 then
                 frame:ClearAllPoints()
-                frame:SetPoint("TOP", RinseFrame, "TOP", 0, -2)
+                frame:SetPoint("BOTTOM", RinseDebuffsFrame, "BOTTOM", 0, 0)
             else
-                local prevFrame = getglobal("RinseFrameDebuff"..(i + 1))
+                local prevFrame = getglobal("RinseFrameDebuff"..(i - 1))
                 frame:ClearAllPoints()
-                frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 8)
+                frame:SetPoint("BOTTOM", prevFrame, "TOP", 0, 0)
             end
         end
     end
@@ -698,43 +710,29 @@ function Rinse_ToggleDirection()
 end
 
 local function UpdateNumButtons(num)
+    RinseDebuffsFrame:SetHeight(num * 42)
     if num > BUTTONS_MAX then
+        -- Adding buttons
         RinseFrame:SetHeight(RinseFrame:GetHeight() + (num - BUTTONS_MAX) * 42)
         local btn, prevBtn
-        if not RINSE_CONFIG.FLIP then
-            for i = BUTTONS_MAX + 1, num do
-                btn = getglobal("RinseFrameDebuff"..i)
-                if not btn then
-                    btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
-                end
-                prevBtn = getglobal("RinseFrameDebuff"..(i - 1))
-                btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 8)
+        for i = BUTTONS_MAX + 1, num do
+            btn = getglobal("RinseFrameDebuff"..i)
+            if not btn then
+                btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
             end
-        else
-            for i = num, BUTTONS_MAX + 1, -1 do
-                btn = getglobal("RinseFrameDebuff"..i)
-                if not btn then
-                    btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
-                end
-                btn:ClearAllPoints()
-                if i == num then
-                    btn:SetPoint("TOP", RinseFrame, "TOP", 0, -2)
-                else
-                    prevBtn = getglobal("RinseFrameDebuff"..(i + 1))
-                    btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 8)
-                end
+            prevBtn = getglobal("RinseFrameDebuff"..(i - 1))
+            btn:ClearAllPoints()
+            if not RINSE_CONFIG.FLIP then
+                btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 0)
+            else
+                btn:SetPoint("BOTTOM", prevBtn, "TOP", 0, 0)
             end
-            getglobal("RinseFrameDebuff"..BUTTONS_MAX):ClearAllPoints()
-            getglobal("RinseFrameDebuff"..BUTTONS_MAX):SetPoint("TOP", btn, "BOTTOM", 0, 8)
         end
     elseif num < BUTTONS_MAX then
+        -- Removing buttons
         RinseFrame:SetHeight(RinseFrame:GetHeight() - (BUTTONS_MAX - num) * 42)
-        for i = num, BUTTONS_MAX do
+        for i = num + 1, BUTTONS_MAX do
             getglobal("RinseFrameDebuff"..i):Hide()
-        end
-        if RINSE_CONFIG.FLIP then
-            getglobal("RinseFrameDebuff"..num):ClearAllPoints()
-            getglobal("RinseFrameDebuff"..num):SetPoint("TOP", RinseFrame, "TOP", 0, -2)
         end
     end
     BUTTONS_MAX = num
@@ -747,6 +745,31 @@ function RinseOptionsFrameButtonsSlider_OnValueChanged()
     getglobal(this:GetName().."Text"):SetText("Debuffs shown ("..numButtons..")")
 end
 
+local function UpdateHeader()
+    if RINSE_CONFIG.SHOW_HEADER then
+        RinseFrameHitRect:Show()
+        RinseFrameBackground:Show()
+        RinseFrameTitle:Show()
+        RinseFrame:SetHeight(BUTTONS_MAX * 42 + 40)
+        if RINSE_CONFIG.FLIP then
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+        else
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -35)
+        end
+    else
+        RinseFrameHitRect:Hide()
+        RinseFrameBackground:Hide()
+        RinseFrameTitle:Hide()
+        RinseFrame:SetHeight(BUTTONS_MAX * 42 + 10)
+        RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+    end
+end
+
+function Rinse_ToggleHeader()
+    RINSE_CONFIG.SHOW_HEADER = not RINSE_CONFIG.SHOW_HEADER
+    UpdateHeader()
+end
+
 function RinseFrame_OnLoad()
     RinseFrame:RegisterEvent("ADDON_LOADED")
     RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
@@ -756,14 +779,14 @@ end
 
 local function GoodUnit(unit)
     if not (unit and UnitExists(unit) and UnitName(unit)) then
-        return nil
+        return false
     end
     if UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) then
         if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(Prio, unit) or (unit == "target")) then
-            return 1
+            return true
         end
     end
-    return nil
+    return false
 end
 
 function RinseFrame_OnEvent()
@@ -783,6 +806,7 @@ function RinseFrame_OnEvent()
         RINSE_CONFIG.BACKDROP = RINSE_CONFIG.BACKDROP == nil and true or RINSE_CONFIG.BACKDROP
         RINSE_CONFIG.FLIP = RINSE_CONFIG.FLIP == nil and false or RINSE_CONFIG.FLIP
         RINSE_CONFIG.BUTTONS = RINSE_CONFIG.BUTTONS == nil and BUTTONS_MAX or RINSE_CONFIG.BUTTONS
+        RINSE_CONFIG.SHOW_HEADER = RINSE_CONFIG.SHOW_HEADER == nil and true or RINSE_CONFIG.SHOW_HEADER
         Blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
         Blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
         RinseFrame:ClearAllPoints()
@@ -791,6 +815,7 @@ function RinseFrame_OnEvent()
         RinseDebuffsFrame:SetScale(RINSE_CONFIG.SCALE)
         RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
         RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
+        RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
         RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
         RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
         RinseOptionsFrameWyvernSting:SetChecked(RINSE_CONFIG.WYVERN_STING)
@@ -799,12 +824,14 @@ function RinseFrame_OnEvent()
         RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)
         RinseOptionsFrameLock:SetChecked(RINSE_CONFIG.LOCK)
         RinseOptionsFrameBackdrop:SetChecked(RINSE_CONFIG.BACKDROP)
+        RinseOptionsFrameShowHeader:SetChecked(RINSE_CONFIG.SHOW_HEADER)
         RinseOptionsFrameFlip:SetChecked(RINSE_CONFIG.FLIP)
         RinseOptionsFrameButtonsSlider:SetValue(RINSE_CONFIG.BUTTONS)
         UpdateBackdrop()
         UpdateFramesScale()
         UpdateDirection()
         UpdateNumButtons(RINSE_CONFIG.BUTTONS)
+        UpdateHeader()
         UpdateSpells()
         UpdatePrio()
     elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
@@ -1017,6 +1044,14 @@ function Rinse()
 end
 
 SLASH_RINSE1 = "/rinse"
-SlashCmdList["RINSE"] = function()
-    Rinse()
+SlashCmdList["RINSE"] = function(cmd)
+    if cmd == "" then
+        Rinse()
+    elseif cmd == "options" then
+        RinseFrameOptions_OnClick()
+    elseif cmd == "skip" then
+        RinseFrameSkipList_OnClick()
+    elseif cmd == "prio" then
+        RinseFramePrioList_OnClick()
+    end
 end
