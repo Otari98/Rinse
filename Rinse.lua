@@ -75,8 +75,10 @@ Spells["MAGE"]    = { Curse = {"Remove Lesser Curse"} }
 Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
 
 -- Spells that we have
--- CanRemove[debuffType] = "spellName"
-local CanRemove = {}
+-- SpellNameToRemove[debuffType] = "spellName"
+local SpellNameToRemove = {}
+-- SpellSlotForName[spellName] = spellSlot
+local SpellSlotForName = {}
 
 -- Number of buttons shown, can be overridden by saved variables
 local BUTTONS_MAX = 5
@@ -246,7 +248,7 @@ local function HasAbolish(unit, debuffType)
     if not UnitExists(unit) or not debuffType then
         return
     end
-    if not CanRemove[debuffType] then
+    if not SpellNameToRemove[debuffType] then
         return
     end
     if not (debuffType == "Poison" or debuffType == "Disease") then
@@ -555,7 +557,8 @@ local function UpdateSpells()
             if spell then
                 for dispelType, v in pairs(Spells[playerClass]) do
                     if v[1] == spell then
-                        CanRemove[dispelType] = spell
+                        SpellNameToRemove[dispelType] = spell
+                        SpellSlotForName[spell] = s
                         found = true
                     end
                 end
@@ -572,7 +575,8 @@ local function UpdateSpells()
             if spell then
                 for dispelType, v in pairs(Spells[playerClass]) do
                     if v[2] and v[2] == spell then
-                        CanRemove[dispelType] = spell
+                        SpellNameToRemove[dispelType] = spell
+                        SpellSlotForName[spell] = s
                     end
                 end
             end
@@ -865,7 +869,7 @@ local function GetDebuffInfo(unit, i)
 end
 
 local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
-    if CanRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
+    if SpellNameToRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
         not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
         Debuffs[debuffIndex].name = debuffName or ""
         Debuffs[debuffIndex].type = debuffType or ""
@@ -989,7 +993,7 @@ function RinseFrame_OnUpdate(elapsed)
                     Debuffs[i].shown = 1
                 end
             end
-            if not InRange(unit, CanRemove[button.type]) then
+            if not InRange(unit, SpellNameToRemove[button.type]) then
                 button:SetAlpha(0.5)
             else
                 button:SetAlpha(1)
@@ -1001,27 +1005,57 @@ function RinseFrame_OnUpdate(elapsed)
     end
 end
 
-function Rinse_Cleanse(button)
+function Rinse_Cleanse(button, attemptedCast)
     local button = button or this
+
     if not button.unit or button.unit == "" then
-        return
+        return false
     end
+
     local debuff = getglobal(button:GetName().."Name"):GetText()
-    if not InRange(button.unit, CanRemove[button.type]) then
+    local spellName = SpellNameToRemove[button.type]
+    local spellSlot = SpellSlotForName[spellName]
+
+    -- allow attempting 1 spell even if gcd active so that it can be queued
+    if attemptedCast then
+        -- check if on gcd
+        local _, duration, _ = GetSpellCooldown(spellSlot, bookType)
+        -- if gcd active this will return 1.5 for all the relevant spells
+        if duration == 1.5 then
+            -- don't bother trying to cast
+            return false
+        end
+    end
+
+    if not InRange(button.unit, spellName) then
         ChatMessage(ClassColors[button.unitClass]..UnitName(button.unit).."|r is out of range.")
         if errorCooldown <= 0 then
             playsound(errorSound)
             errorCooldown = 0.1
         end
-        return
+        return false
     end
-    ChatMessage("Trying To Remove "..DebuffColor[button.type].hex..debuff.."|r from "..ClassColors[button.unitClass]..UnitName(button.unit).."|r")
-    if stopCastCooldown <= 0 then
+
+    local castingInterruptableSpell = true
+
+    -- if nampower available, check if we are actually casting something
+    -- to avoid needlessly calling SpellStopCasting and wiping spell queue
+    if GetCurrentCastingInfo then
+        local _, _, _, casting, channeling = GetCurrentCastingInfo();
+        if casting == 0 and channeling == 0 then
+            castingInterruptableSpell = false
+        end
+    end
+
+    if castingInterruptableSpell and stopCastCooldown <= 0 then
         SpellStopCasting()
         stopCastCooldown = 0.2
     end
+
+    ChatMessage("Trying To Remove " .. DebuffColor[button.type].hex .. debuff .. "|r from " .. ClassColors[button.unitClass] .. UnitName(button.unit) .. "|r")
+
     if superwow then
-        CastSpellByName(CanRemove[button.type], button.unit)
+        CastSpellByName(spellName, button.unit)
     else
         local selfcast = false
         if GetCVar("autoselfcast") == "1" then
@@ -1029,17 +1063,23 @@ function Rinse_Cleanse(button)
         end
         SetCVar("autoselfcast", 0)
         TargetByName(button.unitName, 1)
-        CastSpellByName(CanRemove[button.type])
+        CastSpellByName(spellName)
         TargetLastTarget()
         if selfcast then
             SetCVar("autoselfcast", 1)
         end
     end
+
+    return true
 end
 
 function Rinse()
+    local attemptedCast = false
+
     for i = 1, BUTTONS_MAX do
-        Rinse_Cleanse(getglobal("RinseFrameDebuff"..i))
+        if Rinse_Cleanse(getglobal("RinseFrameDebuff" .. i), attemptedCast) then
+            attemptedCast = true
+        end
     end
 end
 
