@@ -705,7 +705,7 @@
 
     <!-- Options Frame -->
     <Frame name="RinseOptionsFrame" parent="UIParent" movable="true" enableMouse="true" toplevel="true" frameStrata="DIALOG" hidden="true">
-        <Size x="200" y="380"/>
+        <Size x="200" y="410"/>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
@@ -859,11 +859,34 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentSound" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parentMSBT" inherits="OptionsCheckButtonTemplate">
                 <Size x="32" y="32"/>
                 <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentPrint" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="7"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Use MSBT for messages")
+                        this.tooltipText = "Output messages as Mik's Scrolling Battle text notifications instead of default chat window if MSBT is available."
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_ToggleMSBT()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="$parentSound" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentMSBT" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
