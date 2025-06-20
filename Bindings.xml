@@ -2,4 +2,13 @@
 	<Binding name="RINSE" header="RINSE_HEADER">
 		Rinse()
 	</Binding>
+	<Binding name="RINSE_TOGGLE_OPTIONS">
+		RinseFrameOptions_OnClick()
+	</Binding>
+    <Binding name="RINSE_TOGGLE_PRIO">
+		RinseFramePrioList_OnClick()
+	</Binding>
+	<Binding name="RINSE_TOGGLE_SKIP">
+		RinseFrameSkipList_OnClick()
+	</Binding>
 </Bindings>

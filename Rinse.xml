@@ -34,10 +34,10 @@
         </Scripts>
     </Button>
     <Button name="RinseDebuffButtonTemplate" virtual="true" hidden="true" toplevel="true">
-        <Size x="200" y="50"/>
+        <Size x="200" y="42"/>
         <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" tile="true">
             <TileSize val="16"/>
-            <BackgroundInsets left="5" right="5" top="4" bottom="4"/>
+            <BackgroundInsets left="5" right="5" top="0" bottom="0"/>
             <Color r="0" g="0" b="0"/>
         </Backdrop>
 		<Layers>
@@ -249,7 +249,6 @@
                             </OnLeave>
                         </Scripts>
                     </Button>
-
                 </Frames>
             </Frame>
         </Frames>
@@ -280,44 +279,36 @@
 
     <!-- Debuff buttons parented to their own frame so that alpha shenanigans of the main frame do not affect them -->
     <Frame name="RinseDebuffsFrame" parent="UIParent">
-        <Size x="1" y="1"/>
+        <Size x="200" y="220"/>
         <Anchors>
-            <Anchor point="TOPLEFT"/>
+            <Anchor point="TOP" relativePoint="TOP" relativeTo="RinseFrame">
+                <Offset x="0" y="-35"/>
+            </Anchor>
         </Anchors>
         <Frames>
             <Button name="RinseFrameDebuff1" inherits="RinseDebuffButtonTemplate" id="1">
                 <Anchors>
-                    <Anchor point="TOP" relativeTo="RinseFrame">
-                        <Offset x="0" y="-31"/>
-                    </Anchor>
+                    <Anchor point="TOP"/>
                 </Anchors>
             </Button>
             <Button name="RinseFrameDebuff2" inherits="RinseDebuffButtonTemplate" id="2">
                 <Anchors>
-                    <Anchor point="TOP" relativeTo="RinseFrameDebuff1" relativePoint="BOTTOM">
-                        <Offset x="0" y="8"/>
-                    </Anchor>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff1" relativePoint="BOTTOM"/>
                 </Anchors>
             </Button>
             <Button name="RinseFrameDebuff3" inherits="RinseDebuffButtonTemplate" id="3">
                 <Anchors>
-                    <Anchor point="TOP" relativeTo="RinseFrameDebuff2" relativePoint="BOTTOM">
-                        <Offset x="0" y="8"/>
-                    </Anchor>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff2" relativePoint="BOTTOM"/>
                 </Anchors>
             </Button>
             <Button name="RinseFrameDebuff4" inherits="RinseDebuffButtonTemplate" id="4">
                 <Anchors>
-                    <Anchor point="TOP" relativeTo="RinseFrameDebuff3" relativePoint="BOTTOM">
-                        <Offset x="0" y="8"/>
-                    </Anchor>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff3" relativePoint="BOTTOM"/>
                 </Anchors>
             </Button>
             <Button name="RinseFrameDebuff5" inherits="RinseDebuffButtonTemplate" id="5">
                 <Anchors>
-                    <Anchor point="TOP" relativeTo="RinseFrameDebuff4" relativePoint="BOTTOM">
-                        <Offset x="0" y="8"/>
-                    </Anchor>
+                    <Anchor point="TOP" relativeTo="RinseFrameDebuff4" relativePoint="BOTTOM"/>
                 </Anchors>
             </Button>
         </Frames>
@@ -705,7 +696,7 @@
 
     <!-- Options Frame -->
     <Frame name="RinseOptionsFrame" parent="UIParent" movable="true" enableMouse="true" toplevel="true" frameStrata="DIALOG" hidden="true">
-        <Size x="200" y="410"/>
+        <Size x="200" y="440"/>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
@@ -928,11 +919,34 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
+            <CheckButton name="$parentShowHeader" inherits="OptionsCheckButtonTemplate">
                 <Size x="32" y="32"/>
                 <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentBackdrop" relativePoint="BOTTOMLEFT">
+                        <Offset x="0" y="7"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnLoad>
+                        getglobal(this:GetName().."Text"):SetText("Show Header")
+                        this.tooltipText = "Show or hide header."
+                    </OnLoad>
+                    <OnClick>
+                        Rinse_ToggleHeader()
+                        if this:GetChecked() then
+                            PlaySound("igMainMenuOptionCheckBoxOn")
+                        else
+                            PlaySound("igMainMenuOptionCheckBoxOff")
+                        end
+                    </OnClick>
+                </Scripts>
+            </CheckButton>
+            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
+                <Size x="32" y="32"/>
+                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parentShowHeader" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
@@ -956,7 +970,7 @@
                 <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentLock" relativePoint="BOTTOMLEFT">
-                        <Offset x="0" y="7"/>
+                        <Offset x="0" y="-4"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
