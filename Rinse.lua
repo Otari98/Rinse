@@ -1,5 +1,6 @@
 local _, playerClass = UnitClass("player")
 local superwow = SUPERWOW_VERSION
+local unitxp_sp3 = pcall(UnitXP,"nop")
 local getn = table.getn
 local UnitExists = UnitExists
 local UnitIsFriend = UnitIsFriend
@@ -290,12 +291,16 @@ local function InRange(unit, spell)
             -- ignore result == -1
         end
 
-        if superwow then
+        if unitxp_sp3 and UnitIsVisible(unit) then
+            -- Accounts for true reach. A tauren can dispell a male tauren at 38y!
+            return UnitXP("distanceBetween", "player", unit) < 30
+        elseif superwow then
+            local _,unitRace = UnitRace(unit)
             local myX, myY, myZ = UnitPosition("player")
             local uX, uY, uZ = UnitPosition(unit)
-            -- Not sure why 1089, but seems to be accurate for 30yd range
-            -- spell from my testing
-            return math.abs((myX - uX)^2 + (myY - uY)^2 + (myZ - uZ)^2) <= 1089
+            local dx,dy,dz = uX - myX, uY - myY, uZ - myZ
+            -- sqrt(1089) == 33, smallest max dispell range not accounting for true melee reach
+            return (dx*dx + dy*dy + dz*dz) <= 1089
         else
             -- Not as accurate
             return CheckInteractDistance(unit, 4)
