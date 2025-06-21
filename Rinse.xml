@@ -795,11 +795,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleWyvernSting()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -819,11 +815,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleMutatingInjection()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -842,11 +834,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_TogglePrint()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -865,11 +853,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleMSBT()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -888,11 +872,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleSound()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -911,11 +891,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleBackdrop()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -934,11 +910,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleHeader()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -957,11 +929,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleLock()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
@@ -980,11 +948,7 @@
                     </OnLoad>
                     <OnClick>
                         Rinse_ToggleDirection()
-                        if this:GetChecked() then
-                            PlaySound("igMainMenuOptionCheckBoxOn")
-                        else
-                            PlaySound("igMainMenuOptionCheckBoxOff")
-                        end
+                        PlayClickSound()
                     </OnClick>
                 </Scripts>
             </CheckButton>
