@@ -1,5 +1,5 @@
 # Rinse Addon
-This addon is very similar to Decursive, it helps with removing debuffs from friendly units. Rinse is optimized for memory usage and also utilizes ![SuperWoW](https://github.com/balakethelock/SuperWoW) and ![nampower](https://github.com/pepopo978/nampower) functions if you have these mods installed.<br>
+This addon is very similar to Decursive, it helps with removing debuffs from friendly units. Rinse is optimized for memory usage and also utilizes ![SuperWoW](https://github.com/balakethelock/SuperWoW), ![nampower](https://github.com/pepopo978/nampower) and ![UnitXP_SP3](https://github.com/allfoxwy/UnitXP_SP3) functions if you have these mods installed.<br>
 You can use `/rinse` or `/run Rinse()` in a macro or make a key binding to cleanse without clicking inside GUI.
 
 Other commands:<br>
