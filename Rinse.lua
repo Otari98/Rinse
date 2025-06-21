@@ -621,6 +621,16 @@ function RinseFrameOptions_OnClick()
     end
 end
 
+local function DisableCheckBox(checkBox)
+    OptionsFrame_DisableCheckBox(checkBox)
+    getglobal(checkBox:GetName().."TooltipPreserve"):Show()
+end
+
+local function EnableCheckBox(checkBox)
+    OptionsFrame_EnableCheckBox(checkBox)
+    getglobal(checkBox:GetName().."TooltipPreserve"):Hide()
+end
+
 function Rinse_ToggleWyvernSting()
     RINSE_CONFIG.WYVERN_STING = not RINSE_CONFIG.WYVERN_STING
     Blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
@@ -633,10 +643,10 @@ end
 
 function Rinse_TogglePrint()
     RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
-    if RINSE_CONFIG.PRINT then
-        OptionsFrame_EnableCheckBox(RinseOptionsFrameMSBT)
+    if RINSE_CONFIG.PRINT and MikSBT then
+        EnableCheckBox(RinseOptionsFrameMSBT)
     else
-        OptionsFrame_DisableCheckBox(RinseOptionsFrameMSBT)
+        DisableCheckBox(RinseOptionsFrameMSBT)
     end
 end
 
@@ -859,19 +869,19 @@ function RinseFrame_OnEvent()
         RinseOptionsFrameFlip:SetChecked(RINSE_CONFIG.FLIP)
         RinseOptionsFrameButtonsSlider:SetValue(RINSE_CONFIG.BUTTONS)
         if Spells[playerClass].Poison then
-            OptionsFrame_EnableCheckBox(RinseOptionsFrameWyvernSting)
+            EnableCheckBox(RinseOptionsFrameWyvernSting)
         else
-            OptionsFrame_DisableCheckBox(RinseOptionsFrameWyvernSting)
+            DisableCheckBox(RinseOptionsFrameWyvernSting)
         end
         if Spells[playerClass].Disease then
-            OptionsFrame_EnableCheckBox(RinseOptionsFrameMutatingInjection)
+            EnableCheckBox(RinseOptionsFrameMutatingInjection)
         else
-            OptionsFrame_DisableCheckBox(RinseOptionsFrameMutatingInjection)
+            DisableCheckBox(RinseOptionsFrameMutatingInjection)
         end
-        if RINSE_CONFIG.PRINT then
-            OptionsFrame_EnableCheckBox(RinseOptionsFrameMSBT)
+        if RINSE_CONFIG.PRINT and MikSBT then
+            EnableCheckBox(RinseOptionsFrameMSBT)
         else
-            OptionsFrame_DisableCheckBox(RinseOptionsFrameMSBT)
+            DisableCheckBox(RinseOptionsFrameMSBT)
         end
         UpdateBackdrop()
         UpdateFramesScale()

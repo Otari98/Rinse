@@ -109,6 +109,33 @@
             </OnShow>
         </Scripts>
     </Button>
+    <CheckButton name="RinseOptionsCheckButtonTemplate" inherits="OptionsCheckButtonTemplate" virtual="true">
+        <Size x="32" y="32"/>
+        <HitRectInsets left="0" right="-120" top="5" bottom="5"/>
+        <Frames>
+            <Frame name="$parentTooltipPreserve" enableMouse="true" hidden="true">
+                <Size x="152" y="22"/>
+                <Anchors>
+                    <Anchor point="LEFT" relativePoint="LEFT"/>
+                </Anchors>
+                <Scripts>
+                    <OnEnter>
+                        if this:GetParent().tooltipText then
+                            GameTooltip:SetOwner(this:GetParent(), "ANCHOR_RIGHT")
+                            GameTooltip:SetText(this:GetParent().tooltipText, nil, nil, nil, nil, 1)
+                        end
+                        if this:GetParent().tooltipRequirement then
+                            GameTooltip:AddLine(this:GetParent().tooltipRequirement, "", 1.0, 1.0, 1.0)
+                            GameTooltip:Show()
+                        end
+                    </OnEnter>
+                    <OnLeave>
+                        GameTooltip:Hide()
+                    </OnLeave>
+                </Scripts>
+            </Frame>
+        </Frames>
+    </CheckButton>
 
     <!-- Main Frame -->
     <Frame name="RinseFrame" toplevel="false" parent="UIParent" movable="true" enableMouse="true" clampedToScreen="true" resizable="false">
@@ -779,9 +806,7 @@
                     </OnValueChanged>
                 </Scripts>
             </Slider>
-            <CheckButton name="$parentWyvernSting" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentWyvernSting" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentOpacitySlider" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-24"/>
@@ -799,9 +824,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentMutatingInjection" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentMutatingInjection" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentWyvernSting" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
@@ -819,9 +842,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentPrint" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentPrint" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentMutatingInjection" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
@@ -838,9 +859,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentMSBT" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentMSBT" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentPrint" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
@@ -857,9 +876,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentSound" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentSound" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentMSBT" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
@@ -876,9 +893,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentBackdrop" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentBackdrop" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentSound" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
@@ -895,9 +910,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentShowHeader" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentShowHeader" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentBackdrop" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
@@ -914,9 +927,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentLock" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentLock" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentShowHeader" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
@@ -933,9 +944,7 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentFlip" inherits="OptionsCheckButtonTemplate">
-                <Size x="32" y="32"/>
-                <HitRectInsets left="0" right="-100" top="0" bottom="0"/>
+            <CheckButton name="$parentFlip" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
                     <Anchor point="TOPLEFT" relativeTo="$parentLock" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
