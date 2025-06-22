@@ -868,12 +868,12 @@ function RinseFrame_OnEvent()
         RinseOptionsFrameShowHeader:SetChecked(RINSE_CONFIG.SHOW_HEADER)
         RinseOptionsFrameFlip:SetChecked(RINSE_CONFIG.FLIP)
         RinseOptionsFrameButtonsSlider:SetValue(RINSE_CONFIG.BUTTONS)
-        if Spells[playerClass].Poison then
+        if Spells[playerClass] and Spells[playerClass].Poison then
             EnableCheckBox(RinseOptionsFrameWyvernSting)
         else
             DisableCheckBox(RinseOptionsFrameWyvernSting)
         end
-        if Spells[playerClass].Disease then
+        if Spells[playerClass] and Spells[playerClass].Disease then
             EnableCheckBox(RinseOptionsFrameMutatingInjection)
         else
             DisableCheckBox(RinseOptionsFrameMutatingInjection)
