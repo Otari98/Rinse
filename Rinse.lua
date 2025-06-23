@@ -281,7 +281,7 @@ local function HasAbolish(unit, debuffType)
 end
 
 local function InRange(unit, spell)
-    if unit and UnitIsFriend(unit, "player") then
+    if unit and UnitIsFriend(unit, "player") and not UnitCanAttack("player", unit) then
         if spell and IsSpellInRange then
             local result = IsSpellInRange(spell, unit)
             if result == 1 then
@@ -830,7 +830,7 @@ local function GoodUnit(unit)
     if not (unit and UnitExists(unit) and UnitName(unit)) then
         return false
     end
-    if UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) then
+    if UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) and not UnitCanAttack("player", unit) then
         if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(Prio, unit) or (unit == "target")) then
             return true
         end
