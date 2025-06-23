@@ -551,6 +551,16 @@ function RinsePrioListAddClass_OnClick()
     ToggleDropDownMenu(1, "Rinse_PrioList", RinseClassesDropDown, this, 0, 0)
 end
 
+function Rinse_ClearButton_OnClick()
+    if this:GetParent() == RinseSkipListFrame then
+        wipe(RINSE_CONFIG.SKIP_ARRAY)
+        RinseSkipListScrollFrame_Update()
+    elseif this:GetParent() == RinsePrioListFrame then
+        wipe(RINSE_CONFIG.PRIO_ARRAY)
+        RinsePrioListScrollFrame_Update()
+    end
+end
+
 local bookType = BOOKTYPE_SPELL
 if playerClass == "WARLOCK" then
     bookType = BOOKTYPE_PET

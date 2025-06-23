@@ -343,7 +343,7 @@
 
     <!-- Skip List Frame -->
     <Frame name="RinseSkipListFrame" parent="UIParent" hidden="true" movable="true" enableMouse="true" clampedToScreen="true" toplevel="true">
-        <Size x="200" y="250"/>
+        <Size x="200" y="268"/>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
@@ -517,6 +517,19 @@
                     <Anchor point="TOPLEFT" relativeTo="RinseSkipListFrameButton9" relativePoint="BOTTOMLEFT"/>
                 </Anchors>
             </Button>
+            <Button name="$parentClear" inherits="UIPanelButtonTemplate2" text="Clear">
+                <Size x="64" y="32"/>
+                <Anchors>
+                    <Anchor point="BOTTOM">
+                        <Offset x="0" y="2"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        Rinse_ClearButton_OnClick()
+                    </OnClick>
+                </Scripts>
+            </Button>
         </Frames>
         <Scripts>
             <OnMouseDown>
@@ -533,7 +546,7 @@
 
     <!-- Priority List Frame -->
     <Frame name="RinsePrioListFrame" parent="UIParent" hidden="true" movable="true" enableMouse="true" clampedToScreen="true" toplevel="true">
-        <Size x="200" y="250"/>
+        <Size x="200" y="268"/>
         <Anchors>
             <Anchor point="CENTER"/>
         </Anchors>
@@ -707,6 +720,19 @@
                     <Anchor point="TOPLEFT" relativeTo="RinsePrioListFrameButton9" relativePoint="BOTTOMLEFT"/>
                 </Anchors>
             </Button>
+            <Button name="$parentClear" inherits="UIPanelButtonTemplate2" text="Clear">
+                <Size x="64" y="32"/>
+                <Anchors>
+                    <Anchor point="BOTTOM">
+                        <Offset x="0" y="2"/>
+                    </Anchor>
+                </Anchors>
+                <Scripts>
+                    <OnClick>
+                        Rinse_ClearButton_OnClick()
+                    </OnClick>
+                </Scripts>
+            </Button>
         </Frames>
         <Scripts>
             <OnMouseDown>
@@ -731,7 +757,7 @@
             <EdgeSize val="16"/>
             <TileSize val="16"/>
             <BackgroundInsets left="5" right="5" top="5" bottom="5"/>
-            <Color r="0" g="0" b="0" a="0.5"/>
+            <Color r="0" g="0" b="0" a="0.8"/>
         </Backdrop>
         <Layers>
             <Layer level="BACKGROUND">
