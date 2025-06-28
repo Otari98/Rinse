@@ -128,6 +128,12 @@ for i = 1, 40 do
     tinsert(Prio, "raid"..i)
 end
 
+--Spells that will prevent a unit from being decursed
+local Blocklist = {
+    ["Unstable Mana"] = true,
+    ["Dread of Outland"] = true,
+}
+
 -- Spells to ignore always
 local Blacklist = {}
 Blacklist["Curse"] = {}
@@ -946,7 +952,12 @@ local function GetDebuffInfo(unit, i)
     return debuffType, debuffName, texture, applications
 end
 
+local blockedUnits = {}
+
 local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
+    if  SpellNameToRemove[debuffType] and Blocklist[debuffName] then --if blocked debuff of type we can dispell is found, unit goes on the block list
+        blockedUnits[UnitName(unit)] = true
+    end
     if SpellNameToRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
         not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
         Debuffs[debuffIndex].name = debuffName or ""
@@ -988,6 +999,8 @@ function RinseFrame_OnUpdate(elapsed)
         Debuffs[i].debuffIndex = 0
     end
     local debuffIndex = 1
+    --clear blockedUnits
+    blockedUnits = {}
     -- Get new info
     -- Target is highest prio
     if GoodUnit("target") then
@@ -1044,6 +1057,9 @@ function RinseFrame_OnUpdate(elapsed)
         local class = Debuffs[debuffIndex].unitClass
         local debuffType = Debuffs[debuffIndex].type
         if name ~= "" then
+            if blockedUnits[unitName] then --if unit is on unit blocklist, do not add
+                break
+            end
             local button = getglobal("RinseFrameDebuff"..buttonIndex)
             local icon = getglobal("RinseFrameDebuff"..buttonIndex.."Icon")
             local debuffName = getglobal("RinseFrameDebuff"..buttonIndex.."Name")
