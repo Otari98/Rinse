@@ -102,7 +102,7 @@ for i = 1, DEBUFFS_MAX do
         unit = "",
         unitName = "",
         unitClass = "",
-        shown = 0
+        shown = false
     }
 end
 
@@ -164,12 +164,6 @@ local ClassBlacklist = {}
 ClassBlacklist["WARRIOR"] = {}
 ClassBlacklist["ROGUE"] = {}
 ClassBlacklist["WARLOCK"] = {}
-ClassBlacklist["DRUID"] = {}
-ClassBlacklist["PALADIN"] = {}
-ClassBlacklist["MAGE"] = {}
-ClassBlacklist["PRIEST"] = {}
-ClassBlacklist["HUNTER"] = {}
-ClassBlacklist["SHAMAN"] = {}
 ----------------------------------------------------
 ClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
 ClassBlacklist["WARRIOR"]["Ignite Mana"] = true
@@ -297,9 +291,11 @@ local function InRange(unit, spell)
         elseif superwow then
             local myX, myY, myZ = UnitPosition("player")
             local uX, uY, uZ = UnitPosition(unit)
-            local dx, dy, dz = uX - myX, uY - myY, uZ - myZ
-            -- sqrt(1089) == 33, smallest max dispell range not accounting for true melee reach
-            return ((dx * dx) + (dy * dy) + (dz * dz)) <= 1089
+			if uX then
+				local dx, dy, dz = uX - myX, uY - myY, uZ - myZ
+				-- sqrt(1089) == 33, smallest max dispell range not accounting for true melee reach
+				return ((dx * dx) + (dy * dy) + (dz * dz)) <= 1089
+			end
         else
             -- Not as accurate
             return CheckInteractDistance(unit, 4)
@@ -947,8 +943,7 @@ local function GetDebuffInfo(unit, i)
 end
 
 local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
-    if SpellNameToRemove[debuffType] and not (Blacklist[debuffType] and Blacklist[debuffType][debuffName]) and
-        not (ClassBlacklist[class] and ClassBlacklist[class][debuffName]) and not HasAbolish(unit, debuffType) then
+    if SpellNameToRemove[debuffType] and not HasAbolish(unit, debuffType) then
         Debuffs[debuffIndex].name = debuffName or ""
         Debuffs[debuffIndex].type = debuffType or ""
         Debuffs[debuffIndex].texture = texture or ""
@@ -984,7 +979,7 @@ function RinseFrame_OnUpdate(elapsed)
         Debuffs[i].unit = ""
         Debuffs[i].unitName = ""
         Debuffs[i].unitClass = ""
-        Debuffs[i].shown = 0
+        Debuffs[i].shown = false
         Debuffs[i].debuffIndex = 0
     end
     local debuffIndex = 1
@@ -1026,6 +1021,16 @@ function RinseFrame_OnUpdate(elapsed)
             end
         end
     end
+	-- Find blacklisted debuffs, if found, mark all debuffs of the same type of that unit as shown
+	for k, v in pairs(Debuffs) do
+		if (Blacklist[v.type] and Blacklist[v.type][v.name]) or (ClassBlacklist[v.unitClass] and ClassBlacklist[v.unitClass][v.name]) then
+			for k2, v2 in pairs(Debuffs) do
+				if v2.unitName == v.unitName and (v2.type == v.type or SpellNameToRemove[v.type] == "Cleanse") then
+					v2.shown = true
+				end
+			end
+		end
+	end
     -- Hide all buttons
     for i = 1, BUTTONS_MAX do
         local btn = getglobal("RinseFrameDebuff"..i)
@@ -1035,7 +1040,7 @@ function RinseFrame_OnUpdate(elapsed)
     debuffIndex = 1
     for buttonIndex = 1, BUTTONS_MAX do
         -- Find next debuff to show
-        while debuffIndex < DEBUFFS_MAX and Debuffs[debuffIndex].shown ~= 0 do
+        while debuffIndex < DEBUFFS_MAX and Debuffs[debuffIndex].shown ~= false do
             debuffIndex = debuffIndex + 1
         end
         local name = Debuffs[debuffIndex].name
@@ -1065,10 +1070,11 @@ function RinseFrame_OnUpdate(elapsed)
                 playsound(noticeSound)
                 playNoticeSound = false
             end
-            Debuffs[debuffIndex].shown = 1
-            for i = debuffIndex, DEBUFFS_MAX do
+            Debuffs[debuffIndex].shown = true
+			-- Don't show other debuffs from the same unit
+            for i in pairs(Debuffs) do
                 if Debuffs[i].unitName == unitName then
-                    Debuffs[i].shown = 1
+                    Debuffs[i].shown = true
                 end
             end
             if not InRange(unit, SpellNameToRemove[button.type]) then
