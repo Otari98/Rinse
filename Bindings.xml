@@ -5,7 +5,7 @@
 	<Binding name="RINSE_TOGGLE_OPTIONS">
 		RinseFrameOptions_OnClick()
 	</Binding>
-    <Binding name="RINSE_TOGGLE_PRIO">
+	<Binding name="RINSE_TOGGLE_PRIO">
 		RinseFramePrioList_OnClick()
 	</Binding>
 	<Binding name="RINSE_TOGGLE_SKIP">
