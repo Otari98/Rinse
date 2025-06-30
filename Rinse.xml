@@ -749,7 +749,7 @@
 
 	<!-- Options Frame -->
 	<Frame name="RinseOptionsFrame" parent="UIParent" movable="true" enableMouse="true" toplevel="true" frameStrata="DIALOG" hidden="true">
-		<Size x="200" y="440"/>
+		<Size x="200" y="460"/>
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
@@ -868,9 +868,27 @@
 					</OnClick>
 				</Scripts>
 			</CheckButton>
-			<CheckButton name="$parentPrint" inherits="RinseOptionsCheckButtonTemplate">
+			<CheckButton name="$parentShadowform" inherits="RinseOptionsCheckButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentMutatingInjection" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="7"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Shadowform Filter")
+						this.tooltipText = "Check to only dispel magic debuffs while in Shadowform."
+						this.tooltipRequirement = "(Priest only)"
+					</OnLoad>
+					<OnClick>
+						Rinse_ToggleShadowform()
+						PlayClickSound()
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="$parentPrint" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentShadowform" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="-4"/>
 					</Anchor>
 				</Anchors>
@@ -893,7 +911,7 @@
 				</Anchors>
 				<Scripts>
 					<OnLoad>
-						getglobal(this:GetName().."Text"):SetText("Use MSBT for messages")
+						getglobal(this:GetName().."Text"):SetText("Use MSBT for Messages")
 						this.tooltipText = "Output messages as Mik's Scrolling Battle text notifications instead of default chat window if MSBT is available."
 					</OnLoad>
 					<OnClick>

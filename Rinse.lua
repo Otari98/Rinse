@@ -22,6 +22,7 @@ local errorCooldown = 0
 local stopCastCooldown = 0
 local prioTimer = 0
 local needUpdatePrio = false
+local shadowform
 
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
@@ -78,6 +79,7 @@ Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
 -- Spells that we have
 -- SpellNameToRemove[debuffType] = "spellName"
 local SpellNameToRemove = {}
+
 -- SpellSlotForName[spellName] = spellSlot
 local SpellSlotForName = {}
 
@@ -181,6 +183,7 @@ ClassBlacklist["ROGUE"]["Moroes Curse"] = true
 ClassBlacklist["ROGUE"]["Curse of Manascale"] = true
 ----------------------------------------------------
 ClassBlacklist["WARLOCK"]["Rift Entanglement"] = true
+----------------------------------------------------
 
 local function wipe(array)
 	if type(array) ~= "table" then
@@ -249,13 +252,13 @@ end
 
 local function HasAbolish(unit, debuffType)
 	if not UnitExists(unit) or not debuffType then
-		return
+		return false
 	end
 	if not SpellNameToRemove[debuffType] then
-		return
+		return false
 	end
 	if not (debuffType == "Poison" or debuffType == "Disease") then
-		return
+		return false
 	end
 	local i = 1
 	local buff
@@ -268,10 +271,23 @@ local function HasAbolish(unit, debuffType)
 	repeat
 		buff = UnitBuff(unit, i)
 		if buff == icon then
-			return 1
+			return true
 		end
 		i = i + 1
 	until not buff
+	return false
+end
+
+local function HasShadowform()
+	for i = 0, 31 do
+		local index = GetPlayerBuff(i, "HELPFUL")
+		if index > -1 then
+			if GetPlayerBuffTexture(index) == "Interface\\Icons\\Spell_Shadow_Shadowform" then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 local function InRange(unit, spell)
@@ -647,6 +663,10 @@ function Rinse_ToggleMutatingInjection()
 	Blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
 end
 
+function Rinse_ToggleShadowform()
+	RINSE_CONFIG.SHADOWFORM = not RINSE_CONFIG.SHADOWFORM
+end
+
 function Rinse_TogglePrint()
 	RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
 	if RINSE_CONFIG.PRINT and MikSBT then
@@ -820,6 +840,9 @@ function RinseFrame_OnLoad()
 		-- Announce queued decurses
 		RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
 	end
+	if playerClass == "PRIEST" then
+		RinseFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
+	end
 end
 
 local function GoodUnit(unit)
@@ -853,6 +876,7 @@ function RinseFrame_OnEvent()
 		RINSE_CONFIG.FLIP = RINSE_CONFIG.FLIP == nil and false or RINSE_CONFIG.FLIP
 		RINSE_CONFIG.BUTTONS = RINSE_CONFIG.BUTTONS == nil and BUTTONS_MAX or RINSE_CONFIG.BUTTONS
 		RINSE_CONFIG.SHOW_HEADER = RINSE_CONFIG.SHOW_HEADER == nil and true or RINSE_CONFIG.SHOW_HEADER
+		RINSE_CONFIG.SHADOWFORM = RINSE_CONFIG.SHADOWFORM == nil and true or RINSE_CONFIG.SHADOWFORM
 		Blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
 		Blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
 		RinseFrame:ClearAllPoints()
@@ -866,6 +890,7 @@ function RinseFrame_OnEvent()
 		RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
 		RinseOptionsFrameWyvernSting:SetChecked(RINSE_CONFIG.WYVERN_STING)
 		RinseOptionsFrameMutatingInjection:SetChecked(RINSE_CONFIG.MUTATING_INJECTION)
+		RinseOptionsFrameShadowform:SetChecked(RINSE_CONFIG.SHADOWFORM)
 		RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
 		RinseOptionsFrameMSBT:SetChecked(RINSE_CONFIG.MSBT)
 		RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)
@@ -883,6 +908,11 @@ function RinseFrame_OnEvent()
 			EnableCheckBox(RinseOptionsFrameMutatingInjection)
 		else
 			DisableCheckBox(RinseOptionsFrameMutatingInjection)
+		end
+		if playerClass == "PRIEST" then
+			EnableCheckBox(RinseOptionsFrameShadowform)
+		else
+			DisableCheckBox(RinseOptionsFrameShadowform)
 		end
 		if RINSE_CONFIG.PRINT and MikSBT then
 			EnableCheckBox(RinseOptionsFrameMSBT)
@@ -917,6 +947,8 @@ function RinseFrame_OnEvent()
 		prioTimer = 2
 	elseif event == "SPELLS_CHANGED" then
 		UpdateSpells()
+	elseif event == "PLAYER_AURAS_CHANGED" then
+		shadowform = HasShadowform()
 	end
 end
 
@@ -1028,6 +1060,14 @@ function RinseFrame_OnUpdate(elapsed)
 				if v2.unitName == v.unitName and (v2.type == v.type or SpellNameToRemove[v.type] == "Cleanse") then
 					v2.shown = true
 				end
+			end
+		end
+	end
+	-- Don't show diseases in Shadowform
+	if shadowform and RINSE_CONFIG.SHADOWFORM then
+		for k, v in pairs(Debuffs) do
+			if v.type == "Disease" then
+				v.shown = true
 			end
 		end
 	end
