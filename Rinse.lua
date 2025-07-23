@@ -1,3 +1,4 @@
+local _G = _G or getfenv(0)
 local _, playerClass = UnitClass("player")
 local superwow = SUPERWOW_VERSION
 local unitxp = pcall(UnitXP, "nop")
@@ -23,6 +24,12 @@ local stopCastCooldown = 0
 local prioTimer = 0
 local needUpdatePrio = false
 local shadowform
+local selectedClass = "WARRIOR"
+local BlacklistArray = {}
+local ClassBlacklistArray = {}
+local FilterArray = {}
+local OptionsScrollMaxButtons = 8
+local AddToList
 
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
@@ -75,7 +82,9 @@ Spells["PRIEST"]  = { Magic = {"Dispel Magic"}, Disease = {"Abolish Disease", "C
 Spells["SHAMAN"]  = { Poison = {"Cure Poison"}, Disease = {"Cure Disease"} }
 Spells["MAGE"]    = { Curse = {"Remove Lesser Curse"} }
 Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
-
+Spells["WARRIOR"] = {}
+Spells["ROGUE"]   = {}
+Spells["HUNTER"]  = {}
 -- Spells that we have
 -- SpellNameToRemove[debuffType] = "spellName"
 local SpellNameToRemove = {}
@@ -130,60 +139,82 @@ for i = 1, 40 do
 	tinsert(Prio, "raid"..i)
 end
 
--- Spells to ignore always
-local Blacklist = {}
-Blacklist["Curse"] = {}
-Blacklist["Magic"] = {}
-Blacklist["Disease"] = {}
-Blacklist["Poison"] = {}
-----------------------------------------------------
-Blacklist["Curse"]["Curse of Recklessness"] = true
-Blacklist["Curse"]["Delusions of Jin'do"] = true
-Blacklist["Curse"]["Dread of Outland"] = true
-Blacklist["Curse"]["Curse of Legion"] = true
-----------------------------------------------------
-Blacklist["Magic"]["Dreamless Sleep"] = true
-Blacklist["Magic"]["Greater Dreamless Sleep"] = true
-Blacklist["Magic"]["Songflower Serenade"] = true
-Blacklist["Magic"]["Mol'dar's Moxie"] = true
-Blacklist["Magic"]["Fengus' Ferocity"] = true
-Blacklist["Magic"]["Slip'kik's Savvy"] = true
-Blacklist["Magic"]["Thunderfury"] = true
-Blacklist["Magic"]["Magma Shackles"] = true
-Blacklist["Magic"]["Icicles"] = true
-Blacklist["Magic"]["Phase Shifted"] = true
-Blacklist["Magic"]["Unstable Mana"] = true
-----------------------------------------------------
-Blacklist["Disease"]["Mutating Injection"] = true
-Blacklist["Disease"]["Sanctum Mind Decay"] = true
-----------------------------------------------------
-Blacklist["Poison"]["Wyvern Sting"] = true
-Blacklist["Poison"]["Poison Mushroom"] = true
+-- Spells to ignore always (these will block other debuffs of the same type from showing)
+local DefaultBlacklist = {}
+-- Curse
+DefaultBlacklist["Curse of Recklessness"] = true
+DefaultBlacklist["Delusions of Jin'do"] = true
+DefaultBlacklist["Dread of Outland"] = true
+DefaultBlacklist["Curse of Legion"] = true
+-- Magic
+DefaultBlacklist["Dreamless Sleep"] = true
+DefaultBlacklist["Greater Dreamless Sleep"] = true
+DefaultBlacklist["Songflower Serenade"] = true
+DefaultBlacklist["Mol'dar's Moxie"] = true
+DefaultBlacklist["Fengus' Ferocity"] = true
+DefaultBlacklist["Slip'kik's Savvy"] = true
+DefaultBlacklist["Thunderfury"] = true
+DefaultBlacklist["Magma Shackles"] = true
+DefaultBlacklist["Icicles"] = true
+DefaultBlacklist["Phase Shifted"] = true
+DefaultBlacklist["Unstable Mana"] = true
+-- Disease
+DefaultBlacklist["Mutating Injection"] = true
+DefaultBlacklist["Sanctum Mind Decay"] = true
+-- Poison
+DefaultBlacklist["Wyvern Sting"] = true
+DefaultBlacklist["Poison Mushroom"] = true
 ----------------------------------------------------
 
--- Spells to ignore on certain classes
+local Blacklist = {}
+for k, v in pairs(DefaultBlacklist) do
+	Blacklist[k] = v
+end
+
+-- Spells to ignore on certain classes (these will block other debuffs of the same type from showing)
+local DefaultClassBlacklist = {}
+for k in pairs(ClassColors) do
+	DefaultClassBlacklist[k] = {}
+end
+----------------------------------------------------
+DefaultClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
+DefaultClassBlacklist["WARRIOR"]["Ignite Mana"] = true
+DefaultClassBlacklist["WARRIOR"]["Tainted Mind"] = true
+DefaultClassBlacklist["WARRIOR"]["Moroes Curse"] = true
+DefaultClassBlacklist["WARRIOR"]["Curse of Manascale"] = true
+----------------------------------------------------
+DefaultClassBlacklist["ROGUE"]["Silence"] = true
+DefaultClassBlacklist["ROGUE"]["Ancient Hysteria"] = true
+DefaultClassBlacklist["ROGUE"]["Ignite Mana"] = true
+DefaultClassBlacklist["ROGUE"]["Tainted Mind"] = true
+DefaultClassBlacklist["ROGUE"]["Smoke Bomb"] = true
+DefaultClassBlacklist["ROGUE"]["Screams of the Past"] = true
+DefaultClassBlacklist["ROGUE"]["Moroes Curse"] = true
+DefaultClassBlacklist["ROGUE"]["Curse of Manascale"] = true
+----------------------------------------------------
+DefaultClassBlacklist["WARLOCK"]["Rift Entanglement"] = true
+----------------------------------------------------
+
 local ClassBlacklist = {}
-ClassBlacklist["WARRIOR"] = {}
-ClassBlacklist["ROGUE"] = {}
-ClassBlacklist["WARLOCK"] = {}
-----------------------------------------------------
-ClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
-ClassBlacklist["WARRIOR"]["Ignite Mana"] = true
-ClassBlacklist["WARRIOR"]["Tainted Mind"] = true
-ClassBlacklist["WARRIOR"]["Moroes Curse"] = true
-ClassBlacklist["WARRIOR"]["Curse of Manascale"] = true
-----------------------------------------------------
-ClassBlacklist["ROGUE"]["Silence"] = true
-ClassBlacklist["ROGUE"]["Ancient Hysteria"] = true
-ClassBlacklist["ROGUE"]["Ignite Mana"] = true
-ClassBlacklist["ROGUE"]["Tainted Mind"] = true
-ClassBlacklist["ROGUE"]["Smoke Bomb"] = true
-ClassBlacklist["ROGUE"]["Screams of the Past"] = true
-ClassBlacklist["ROGUE"]["Moroes Curse"] = true
-ClassBlacklist["ROGUE"]["Curse of Manascale"] = true
-----------------------------------------------------
-ClassBlacklist["WARLOCK"]["Rift Entanglement"] = true
-----------------------------------------------------
+for k in pairs(ClassColors) do
+	ClassBlacklist[k] = {}
+	for k2, v2 in pairs(DefaultClassBlacklist[k]) do
+		ClassBlacklist[k][k2] = v2
+	end
+end
+
+-- Spells that player doesnt want to see (these will NOT block any other debuffs from showing)
+-- Can be name of the debuff or a type
+local DefaultFilter = {}
+DefaultFilter["Magic"] = Spells[playerClass].Magic == nil
+DefaultFilter["Disease"] = Spells[playerClass].Disease == nil
+DefaultFilter["Poison"] = Spells[playerClass].Poison == nil
+DefaultFilter["Curse"] = Spells[playerClass].Curse == nil
+
+local Filter = {}
+for k, v in pairs(DefaultFilter) do
+	Filter[k] = v
+end
 
 local function wipe(array)
 	if type(array) ~= "table" then
@@ -191,6 +222,15 @@ local function wipe(array)
 	end
 	for i = getn(array), 1, -1 do
 		tremove(array, i)
+	end
+end
+
+local function wipelist(list)
+	if type(list) ~= "table" then
+		return
+	end
+	for k in pairs(list) do
+		list[k] = nil
 	end
 end
 
@@ -208,6 +248,17 @@ local function arrcontains(array, value)
 		end
 	end
 	return nil
+end
+
+local function listsize(list)
+	if type(list) ~= "table" then
+		return
+	end
+	local size = 0
+	for k in pairs(list) do
+		size = size + 1
+	end
+	return size
 end
 
 local function ChatMessage(msg)
@@ -386,8 +437,8 @@ function RinseSkipListScrollFrame_Update()
 	local numPlayers = getn(RINSE_CONFIG.SKIP_ARRAY)
 	FauxScrollFrame_Update(RinseSkipListScrollFrame, numPlayers, 10, 16)
 	for i = 1, 10 do
-		local button = getglobal("RinseSkipListFrameButton"..i)
-		local buttonText = getglobal("RinseSkipListFrameButton"..i.."Text")
+		local button = _G["RinseSkipListFrameButton"..i]
+		local buttonText = _G["RinseSkipListFrameButton"..i.."Text"]
 		arrayIndex = i + offset
 		if RINSE_CONFIG.SKIP_ARRAY[arrayIndex] then
 			buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.SKIP_ARRAY[arrayIndex].class]..RINSE_CONFIG.SKIP_ARRAY[arrayIndex].name)
@@ -405,8 +456,8 @@ function RinsePrioListScrollFrame_Update()
 	local numPlayers = getn(RINSE_CONFIG.PRIO_ARRAY)
 	FauxScrollFrame_Update(RinsePrioListScrollFrame, numPlayers, 10, 16)
 	for i = 1, 10 do
-		local button = getglobal("RinsePrioListFrameButton"..i)
-		local buttonText = getglobal("RinsePrioListFrameButton"..i.."Text")
+		local button = _G["RinsePrioListFrameButton"..i]
+		local buttonText = _G["RinsePrioListFrameButton"..i.."Text"]
 		arrayIndex = i + offset
 		if RINSE_CONFIG.PRIO_ARRAY[arrayIndex] then
 			buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.PRIO_ARRAY[arrayIndex].class]..RINSE_CONFIG.PRIO_ARRAY[arrayIndex].name)
@@ -582,24 +633,26 @@ local function UpdateSpells()
 	if not Spells[playerClass] then
 		return
 	end
-	local found = false
-	for tab = 1, GetNumSpellTabs() do
-		local _, _, offset, numSpells = GetSpellTabInfo(tab)
-		for s = offset + 1, offset + numSpells do
-			local spell = GetSpellName(s, bookType)
-			if spell then
-				for dispelType, v in pairs(Spells[playerClass]) do
-					if v[1] == spell then
-						SpellNameToRemove[dispelType] = spell
-						SpellSlotForName[spell] = s
-						found = true
+	if not (playerClass == "PALADIN" and RINSE_CHAR_CONFIG.FILTER.Magic) then
+		local found = false
+		for tab = 1, GetNumSpellTabs() do
+			local _, _, offset, numSpells = GetSpellTabInfo(tab)
+			for s = offset + 1, offset + numSpells do
+				local spell = GetSpellName(s, bookType)
+				if spell then
+					for dispelType, v in pairs(Spells[playerClass]) do
+						if v[1] == spell then
+							SpellNameToRemove[dispelType] = spell
+							SpellSlotForName[spell] = s
+							found = true
+						end
 					end
 				end
 			end
 		end
-	end
-	if found then
-		return
+		if found then
+			return
+		end
 	end
 	for tab = 1, GetNumSpellTabs() do
 		local _, _, offset, numSpells = GetSpellTabInfo(tab)
@@ -645,22 +698,54 @@ end
 
 local function DisableCheckBox(checkBox)
 	OptionsFrame_DisableCheckBox(checkBox)
-	getglobal(checkBox:GetName().."TooltipPreserve"):Show()
+	_G[checkBox:GetName().."TooltipPreserve"]:Show()
 end
 
 local function EnableCheckBox(checkBox)
 	OptionsFrame_EnableCheckBox(checkBox)
-	getglobal(checkBox:GetName().."TooltipPreserve"):Hide()
+	_G[checkBox:GetName().."TooltipPreserve"]:Hide()
+end
+
+local function UpdateBlacklist()
+	for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST) do
+		Blacklist[k] = v
+	end
+	for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST_CLASS) do
+		if not RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] then
+			RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] = {}
+		end
+		for k2, v2 in pairs(RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k]) do
+			ClassBlacklist[k][k2] = v2
+		end
+	end
+end
+
+local function UpdateFilter()
+	for k, v in pairs(RINSE_CHAR_CONFIG.FILTER) do
+		Filter[k] = v
+	end
+	UpdateSpells()
+end
+
+function Rinse_ToggleFilter(filter)
+	RINSE_CHAR_CONFIG.FILTER[filter] = not RINSE_CHAR_CONFIG.FILTER[filter]
+	_G["RinseOptionsFrameFilter"..filter]:SetChecked(not RINSE_CHAR_CONFIG.FILTER[filter])
+	UpdateFilter()
+	RinseOptionsFrameFilterScrollFrame_Update()
 end
 
 function Rinse_ToggleWyvernSting()
-	RINSE_CONFIG.WYVERN_STING = not RINSE_CONFIG.WYVERN_STING
-	Blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
+	RINSE_CHAR_CONFIG.BLACKLIST["Wyvern Sting"] = not RINSE_CHAR_CONFIG.BLACKLIST["Wyvern Sting"]
+	RinseOptionsFrameWyvernSting:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST["Wyvern Sting"])
+	UpdateBlacklist()
+	RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
 function Rinse_ToggleMutatingInjection()
-	RINSE_CONFIG.MUTATING_INJECTION = not RINSE_CONFIG.MUTATING_INJECTION
-	Blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
+	RINSE_CHAR_CONFIG.BLACKLIST["Mutating Injection"] = not RINSE_CHAR_CONFIG.BLACKLIST["Mutating Injection"]
+	RinseOptionsFrameMutatingInjection:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST["Mutating Injection"])
+	UpdateBlacklist()
+	RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
 function Rinse_ToggleShadowform()
@@ -707,7 +792,7 @@ end
 
 local function UpdateFramesScale()
 	for _, frame in pairs(Frames) do
-		getglobal(frame):SetScale(RINSE_CONFIG.SCALE)
+		_G[frame]:SetScale(RINSE_CONFIG.SCALE)
 	end
 end
 
@@ -716,7 +801,7 @@ function RinseOptionsFrameScaleSLider_OnValueChanged()
 	RINSE_CONFIG.SCALE = scale
 	RinseFrame:SetScale(scale)
 	RinseDebuffsFrame:SetScale(scale)
-	getglobal(this:GetName().."Text"):SetText("Scale ("..scale..")")
+	_G[this:GetName().."Text"]:SetText("Scale ("..scale..")")
 	UpdateFramesScale()
 end
 
@@ -733,12 +818,12 @@ local function UpdateDirection()
 			RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
 		end
 		for i = 1, BUTTONS_MAX do
-			local frame = getglobal("RinseFrameDebuff"..i)
+			local frame = _G["RinseFrameDebuff"..i]
 			if i == 1 then
 				frame:ClearAllPoints()
 				frame:SetPoint("TOP", RinseDebuffsFrame, "TOP", 0, 0)
 			else
-				local prevFrame = getglobal("RinseFrameDebuff"..(i - 1))
+				local prevFrame = _G["RinseFrameDebuff"..(i - 1)]
 				frame:ClearAllPoints()
 				frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 0)
 			end
@@ -751,12 +836,12 @@ local function UpdateDirection()
 		RinseFrameTitle:SetPoint("BOTTOMLEFT", 12, 12)
 		RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
 		for i = 1, BUTTONS_MAX do
-			local frame = getglobal("RinseFrameDebuff"..i)
+			local frame = _G["RinseFrameDebuff"..i]
 			if i == 1 then
 				frame:ClearAllPoints()
 				frame:SetPoint("BOTTOM", RinseDebuffsFrame, "BOTTOM", 0, 0)
 			else
-				local prevFrame = getglobal("RinseFrameDebuff"..(i - 1))
+				local prevFrame = _G["RinseFrameDebuff"..(i - 1)]
 				frame:ClearAllPoints()
 				frame:SetPoint("BOTTOM", prevFrame, "TOP", 0, 0)
 			end
@@ -777,11 +862,11 @@ local function UpdateNumButtons()
 		RinseFrame:SetHeight(RinseFrame:GetHeight() + (num - BUTTONS_MAX) * 42)
 		local btn, prevBtn
 		for i = BUTTONS_MAX + 1, num do
-			btn = getglobal("RinseFrameDebuff"..i)
+			btn = _G["RinseFrameDebuff"..i]
 			if not btn then
 				btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
 			end
-			prevBtn = getglobal("RinseFrameDebuff"..(i - 1))
+			prevBtn = _G["RinseFrameDebuff"..(i - 1)]
 			btn:ClearAllPoints()
 			if not RINSE_CONFIG.FLIP then
 				btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 0)
@@ -793,7 +878,7 @@ local function UpdateNumButtons()
 		-- Removing buttons
 		RinseFrame:SetHeight(RinseFrame:GetHeight() - (BUTTONS_MAX - num) * 42)
 		for i = num + 1, BUTTONS_MAX do
-			getglobal("RinseFrameDebuff"..i):Hide()
+			_G["RinseFrameDebuff"..i]:Hide()
 		end
 	end
 	BUTTONS_MAX = num
@@ -803,7 +888,7 @@ function RinseOptionsFrameButtonsSlider_OnValueChanged()
 	local numButtons = tonumber(format("%d", this:GetValue()))
 	RINSE_CONFIG.BUTTONS = numButtons
 	UpdateNumButtons()
-	getglobal(this:GetName().."Text"):SetText("Debuffs shown ("..numButtons..")")
+	_G[this:GetName().."Text"]:SetText("Debuffs shown ("..numButtons..")")
 end
 
 local function UpdateHeader()
@@ -843,6 +928,7 @@ function RinseFrame_OnLoad()
 	if playerClass == "PRIEST" then
 		RinseFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 	end
+	RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
 end
 
 local function GoodUnit(unit)
@@ -861,13 +947,12 @@ function RinseFrame_OnEvent()
 	if event == "ADDON_LOADED" and arg1 == "Rinse" then
 		RinseFrame:UnregisterEvent("ADDON_LOADED")
 		RINSE_CONFIG = RINSE_CONFIG or {}
+		RINSE_CHAR_CONFIG = RINSE_CHAR_CONFIG or {}
 		RINSE_CONFIG.SKIP_ARRAY = RINSE_CONFIG.SKIP_ARRAY or {}
 		RINSE_CONFIG.PRIO_ARRAY = RINSE_CONFIG.PRIO_ARRAY or {}
 		RINSE_CONFIG.POSITION = RINSE_CONFIG.POSITION or {x = 0, y = 0}
 		RINSE_CONFIG.SCALE = RINSE_CONFIG.SCALE or 0.85
 		RINSE_CONFIG.OPACITY = RINSE_CONFIG.OPACITY or 1.0
-		RINSE_CONFIG.WYVERN_STING = RINSE_CONFIG.WYVERN_STING == nil and false or RINSE_CONFIG.WYVERN_STING
-		RINSE_CONFIG.MUTATING_INJECTION = RINSE_CONFIG.MUTATING_INJECTION == nil and false or RINSE_CONFIG.MUTATING_INJECTION
 		RINSE_CONFIG.PRINT = RINSE_CONFIG.PRINT == nil and true or RINSE_CONFIG.PRINT
 		RINSE_CONFIG.MSBT = RINSE_CONFIG.MSBT == nil and true or RINSE_CONFIG.MSBT
 		RINSE_CONFIG.SOUND = RINSE_CONFIG.SOUND == nil and true or RINSE_CONFIG.SOUND
@@ -877,8 +962,24 @@ function RinseFrame_OnEvent()
 		RINSE_CONFIG.BUTTONS = RINSE_CONFIG.BUTTONS == nil and BUTTONS_MAX or RINSE_CONFIG.BUTTONS
 		RINSE_CONFIG.SHOW_HEADER = RINSE_CONFIG.SHOW_HEADER == nil and true or RINSE_CONFIG.SHOW_HEADER
 		RINSE_CONFIG.SHADOWFORM = RINSE_CONFIG.SHADOWFORM == nil and true or RINSE_CONFIG.SHADOWFORM
-		Blacklist["Poison"]["Wyvern Sting"] = not RINSE_CONFIG.WYVERN_STING
-		Blacklist["Disease"]["Mutating Injection"] = not RINSE_CONFIG.MUTATING_INJECTION
+		RINSE_CHAR_CONFIG.BLACKLIST = RINSE_CHAR_CONFIG.BLACKLIST or {}
+		RINSE_CHAR_CONFIG.BLACKLIST_CLASS = RINSE_CHAR_CONFIG.BLACKLIST_CLASS or {
+			WARRIOR = {},
+			DRUID   = {},
+			PALADIN = {},
+			WARLOCK = {},
+			MAGE    = {},
+			PRIEST  = {},
+			ROGUE   = {},
+			HUNTER  = {},
+			SHAMAN  = {},
+		}
+		RINSE_CHAR_CONFIG.FILTER = RINSE_CHAR_CONFIG.FILTER or {
+			Magic = Spells[playerClass].Magic == nil,
+			Disease = Spells[playerClass].Disease == nil,
+			Poison = Spells[playerClass].Poison == nil,
+			Curse = Spells[playerClass].Curse == nil,
+		}
 		RinseFrame:ClearAllPoints()
 		RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
 		RinseFrame:SetScale(RINSE_CONFIG.SCALE)
@@ -888,8 +989,6 @@ function RinseFrame_OnEvent()
 		RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
 		RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
 		RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
-		RinseOptionsFrameWyvernSting:SetChecked(RINSE_CONFIG.WYVERN_STING)
-		RinseOptionsFrameMutatingInjection:SetChecked(RINSE_CONFIG.MUTATING_INJECTION)
 		RinseOptionsFrameShadowform:SetChecked(RINSE_CONFIG.SHADOWFORM)
 		RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
 		RinseOptionsFrameMSBT:SetChecked(RINSE_CONFIG.MSBT)
@@ -899,25 +998,48 @@ function RinseFrame_OnEvent()
 		RinseOptionsFrameShowHeader:SetChecked(RINSE_CONFIG.SHOW_HEADER)
 		RinseOptionsFrameFlip:SetChecked(RINSE_CONFIG.FLIP)
 		RinseOptionsFrameButtonsSlider:SetValue(RINSE_CONFIG.BUTTONS)
+		UpdateBlacklist()
+		RinseOptionsFrameWyvernSting:SetChecked(not Blacklist["Wyvern Sting"])
+		RinseOptionsFrameMutatingInjection:SetChecked(not Blacklist["Mutating Injection"])
+		UpdateFilter()
+		RinseOptionsFrameFilterMagic:SetChecked(not Filter.Magic)
+		RinseOptionsFrameFilterDisease:SetChecked(not Filter.Disease)
+		RinseOptionsFrameFilterPoison:SetChecked(not Filter.Poison)
+		RinseOptionsFrameFilterCurse:SetChecked(not Filter.Curse)
+		for k in pairs(DebuffColor) do
+			if k ~= "none" then
+				local checkBox = _G["RinseOptionsFrameFilter"..k]
+				if Spells[playerClass] and Spells[playerClass][k] then
+					EnableCheckBox(checkBox)
+				else
+					DisableCheckBox(checkBox)
+					checkBox.tooltipRequirement = "Not available to your class."
+				end
+			end
+		end
 		if Spells[playerClass] and Spells[playerClass].Poison then
 			EnableCheckBox(RinseOptionsFrameWyvernSting)
 		else
 			DisableCheckBox(RinseOptionsFrameWyvernSting)
+			RinseOptionsFrameWyvernSting.tooltipRequirement = "Not available to your class."
 		end
 		if Spells[playerClass] and Spells[playerClass].Disease then
 			EnableCheckBox(RinseOptionsFrameMutatingInjection)
 		else
 			DisableCheckBox(RinseOptionsFrameMutatingInjection)
+			RinseOptionsFrameMutatingInjection.tooltipRequirement = "Not available to your class."
 		end
 		if playerClass == "PRIEST" then
 			EnableCheckBox(RinseOptionsFrameShadowform)
 		else
 			DisableCheckBox(RinseOptionsFrameShadowform)
+			RinseOptionsFrameShadowform.tooltipRequirement = "Not available to your class."
 		end
 		if RINSE_CONFIG.PRINT and MikSBT then
 			EnableCheckBox(RinseOptionsFrameMSBT)
 		else
 			DisableCheckBox(RinseOptionsFrameMSBT)
+			RinseOptionsFrameMSBT.tooltipRequirement = not MikSBT and "MSBT missing." or nil
 		end
 		UpdateBackdrop()
 		UpdateFramesScale()
@@ -937,7 +1059,7 @@ function RinseFrame_OnEvent()
 					if not lastButton.unit or lastButton.unit == "" then
 						return
 					end
-					local debuff = getglobal(lastButton:GetName().."Name"):GetText()
+					local debuff = _G[lastButton:GetName().."Name"]:GetText()
 					ChatMessage(DebuffColor[lastButton.type].hex..debuff.."|r - "..ClassColors[lastButton.unitClass]..UnitName(lastButton.unit).."|r")
 				end
 			end
@@ -1055,7 +1177,7 @@ function RinseFrame_OnUpdate(elapsed)
 	end
 	-- Find blacklisted debuffs, if found, mark all debuffs of the same type of that unit as shown
 	for k, v in pairs(Debuffs) do
-		if (Blacklist[v.type] and Blacklist[v.type][v.name]) or (ClassBlacklist[v.unitClass] and ClassBlacklist[v.unitClass][v.name]) then
+		if Blacklist[v.name] or (ClassBlacklist[v.unitClass] and ClassBlacklist[v.unitClass][v.name]) then
 			for k2, v2 in pairs(Debuffs) do
 				if v2.unitName == v.unitName and (v2.type == v.type or SpellNameToRemove[v.type] == "Cleanse") then
 					v2.shown = true
@@ -1071,9 +1193,15 @@ function RinseFrame_OnUpdate(elapsed)
 			end
 		end
 	end
+	-- Find player defined debuffs that should be hidden
+	for k, v in pairs(Debuffs) do
+		if Filter[v.name] or Filter[v.type] then
+			v.shown = true
+		end
+	end
 	-- Hide all buttons
 	for i = 1, BUTTONS_MAX do
-		local btn = getglobal("RinseFrameDebuff"..i)
+		local btn = _G["RinseFrameDebuff"..i]
 		btn:Hide()
 		btn.unit = nil
 	end
@@ -1089,12 +1217,12 @@ function RinseFrame_OnUpdate(elapsed)
 		local class = Debuffs[debuffIndex].unitClass
 		local debuffType = Debuffs[debuffIndex].type
 		if name ~= "" then
-			local button = getglobal("RinseFrameDebuff"..buttonIndex)
-			local icon = getglobal("RinseFrameDebuff"..buttonIndex.."Icon")
-			local debuffName = getglobal("RinseFrameDebuff"..buttonIndex.."Name")
-			local playerName = getglobal("RinseFrameDebuff"..buttonIndex.."Player")
-			local count = getglobal("RinseFrameDebuff"..buttonIndex.."Count")
-			local border = getglobal("RinseFrameDebuff"..buttonIndex.."Border")
+			local button = _G["RinseFrameDebuff"..buttonIndex]
+			local icon = _G["RinseFrameDebuff"..buttonIndex.."Icon"]
+			local debuffName = _G["RinseFrameDebuff"..buttonIndex.."Name"]
+			local playerName = _G["RinseFrameDebuff"..buttonIndex.."Player"]
+			local count = _G["RinseFrameDebuff"..buttonIndex.."Count"]
+			local border = _G["RinseFrameDebuff"..buttonIndex.."Border"]
 			icon:SetTexture(Debuffs[debuffIndex].texture)
 			debuffName:SetText(name)
 			playerName:SetText(ClassColors[class]..unitName)
@@ -1134,7 +1262,7 @@ function Rinse_Cleanse(button, attemptedCast)
 	if not button.unit or button.unit == "" then
 		return false
 	end
-	local debuff = getglobal(button:GetName().."Name"):GetText()
+	local debuff = _G[button:GetName().."Name"]:GetText()
 	local spellName = SpellNameToRemove[button.type]
 	local spellSlot = SpellSlotForName[spellName]
 	local onGcd = false
@@ -1197,7 +1325,7 @@ end
 function Rinse()
 	local attemptedCast = false
 	for i = 1, BUTTONS_MAX do
-		if Rinse_Cleanse(getglobal("RinseFrameDebuff"..i), attemptedCast) then
+		if Rinse_Cleanse(_G["RinseFrameDebuff"..i], attemptedCast) then
 			attemptedCast = true
 		end
 	end
@@ -1217,3 +1345,314 @@ SlashCmdList["RINSE"] = function(cmd)
 		ChatFrame1:AddMessage(BLUE.."[Rinse]|r Unknown command. Use /rinse, /rinse options, /rinse skip or /rinse prio.")
 	end
 end
+
+function RinseOptionsFrame_OnLoad()
+	for i = 1, OptionsScrollMaxButtons do
+		local frame = CreateFrame("Button", "RinseOptionsBlacklistButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
+		frame:SetID(i)
+		frame:SetPoint("TOPLEFT", RinseOptionsFrameBlacklistScrollFrame, 0, -16 * (i-1))
+	end
+	for i = 1, OptionsScrollMaxButtons do
+		local frame = CreateFrame("Button", "RinseOptionsClassBlacklistButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
+		frame:SetID(i)
+		frame:SetPoint("TOPLEFT", RinseOptionsFrameClassBlacklistScrollFrame, 0, -16 * (i-1))
+	end
+	for i = 1, OptionsScrollMaxButtons do
+		local frame = CreateFrame("Button", "RinseOptionsFilterButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
+		frame:SetID(i)
+		frame:SetPoint("TOPLEFT", RinseOptionsFrameFilterScrollFrame, 0, -16 * (i-1))
+	end
+end
+
+function RinseOptionsFrameBlacklistScrollFrame_Update()
+	local frame = RinseOptionsFrameBlacklistScrollFrame or this
+	local offset = FauxScrollFrame_GetOffset(frame)
+	local arrayIndex = 1
+	wipe(BlacklistArray)
+	for k in pairs(Blacklist) do
+		if Blacklist[k] then
+			tinsert(BlacklistArray, k)
+		end
+	end
+	sort(BlacklistArray)
+	local numEntries = getn(BlacklistArray)
+	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
+	for i = 1, OptionsScrollMaxButtons do
+		local button = _G["RinseOptionsBlacklistButton"..i]
+		local buttonText = _G["RinseOptionsBlacklistButton"..i.."Text"]
+		arrayIndex = i + offset
+		if BlacklistArray[arrayIndex] then
+			buttonText:SetText(BlacklistArray[arrayIndex])
+			button:SetID(arrayIndex)
+			button:Show()
+		else
+			button:Hide()
+		end
+	end
+end
+
+function RinseOptionsFrameAddToBlacklist_OnClick()
+	AddToList = 1
+	StaticPopup_Show("RINSE_ADD_TO_BLACKLIST")
+end
+
+function RinseOptionsFrameResetBlacklist_OnClick()
+	wipelist(Blacklist)
+	wipelist(RINSE_CHAR_CONFIG.BLACKLIST)
+	for k, v in pairs(DefaultBlacklist) do
+		Blacklist[k] = v
+		if k == "Wyvern Sting" or k == "Mutating Injection" then
+			RINSE_CHAR_CONFIG.BLACKLIST[k] = true
+			_G["RinseOptionsFrame"..gsub(k, "%s", "")]:SetChecked(false)
+		end
+	end
+	RinseOptionsFrameBlacklistScrollFrame:SetVerticalScroll(0)
+	RinseOptionsFrameBlacklistScrollFrame_Update()
+end
+
+function RinseOptionsFrameClassBlacklistScrollFrame_Update()
+	local frame = RinseOptionsFrameClassBlacklistScrollFrame or this
+	local offset = FauxScrollFrame_GetOffset(frame)
+	local arrayIndex = 1
+	wipe(ClassBlacklistArray)
+	for k in pairs(ClassBlacklist[selectedClass]) do
+		if ClassBlacklist[selectedClass][k] then
+			tinsert(ClassBlacklistArray, k)
+		end
+	end
+	sort(ClassBlacklistArray)
+	local numEntries = getn(ClassBlacklistArray)
+	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
+	for i = 1, OptionsScrollMaxButtons do
+		local button = _G["RinseOptionsClassBlacklistButton"..i]
+		local buttonText = _G["RinseOptionsClassBlacklistButton"..i.."Text"]
+		arrayIndex = i + offset
+		if ClassBlacklistArray[arrayIndex] then
+			buttonText:SetText(ClassBlacklistArray[arrayIndex])
+			button:SetID(arrayIndex)
+			button:Show()
+		else
+			button:Hide()
+		end
+	end
+end
+
+local function SelectClass()
+	selectedClass = this.value
+	local text = this:GetText()
+	-- text = gsub(text, "|cff%x%x%x%x%x%x", "")
+	RinseOptionsFrameSelectClassText:SetText(text)
+	RinseOptionsFrameClassBlacklistScrollFrame_Update()
+end
+
+local info2 = {}
+info2.textHeight = 12
+info2.notCheckable = true
+info2.hasArrow = false
+info2.func = SelectClass
+
+local function BlacklistClassMenu()
+	if UIDROPDOWNMENU_MENU_LEVEL == 1 then
+		info2.text = ClassColors["WARRIOR"].."Warriors"
+		info2.value = "WARRIOR"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["DRUID"].."Druids"
+		info2.value = "DRUID"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["PALADIN"].."Paladins"
+		info2.value = "PALADIN"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["WARLOCK"].."Warlocks"
+		info2.value = "WARLOCK"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["MAGE"].."Mages"
+		info2.value = "MAGE"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["PRIEST"].."Priests"
+		info2.value = "PRIEST"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["ROGUE"].."Rogues"
+		info2.value = "ROGUE"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["HUNTER"].."Hunters"
+		info2.value = "HUNTER"
+		UIDropDownMenu_AddButton(info2)
+		info2.text = ClassColors["SHAMAN"].."Shamans"
+		info2.value = "SHAMAN"
+		UIDropDownMenu_AddButton(info2)
+	end
+end
+
+function RinseOptionsFrameSelectClass_OnClick()
+	UIDropDownMenu_Initialize(RinseClassesDropDown, BlacklistClassMenu, "MENU")
+	ToggleDropDownMenu(1, "RinseOptions", RinseClassesDropDown, this, 0, 0)
+	PlaySound("igMainMenuOptionCheckBoxOn")
+end
+
+function RinseOptionsFrameAddToClassBlacklist_OnClick()
+	AddToList = 2
+	StaticPopup_Show("RINSE_ADD_TO_BLACKLIST")
+end
+
+function RinseOptionsFrameResetClassBlacklist_OnClick()
+	wipelist(RINSE_CHAR_CONFIG.BLACKLIST_CLASS[selectedClass])
+	wipelist(ClassBlacklist[selectedClass])
+	for k, v in pairs(DefaultClassBlacklist[selectedClass]) do
+		ClassBlacklist[selectedClass][k] = v
+	end
+	RinseOptionsFrameClassBlacklistScrollFrame:SetVerticalScroll(0)
+	RinseOptionsFrameClassBlacklistScrollFrame_Update()
+end
+
+StaticPopupDialogs["RINSE_ADD_TO_BLACKLIST"] = {
+	text = "Enter exact name of a debuff:",
+	button1 = OKAY,
+	button2 = CANCEL,
+	hasEditBox = 1,
+	maxLetters = 90,
+	OnAccept = function()
+		local text = _G[this:GetParent():GetName().."EditBox"]:GetText()
+		if AddToList == 1 then
+			RINSE_CHAR_CONFIG.BLACKLIST[text] = true
+			if _G["RinseOptionsFrame"..gsub(text, "%s", "")] then
+				_G["RinseOptionsFrame"..gsub(text, "%s", "")]:SetChecked(false)
+			end
+		elseif AddToList == 2 then
+			RINSE_CHAR_CONFIG.BLACKLIST_CLASS[selectedClass][text] = true
+		end
+		UpdateBlacklist()
+		RinseOptionsFrameBlacklistScrollFrame_Update()
+		RinseOptionsFrameClassBlacklistScrollFrame_Update()
+	end,
+	EditBoxOnEnterPressed = function()
+		StaticPopupDialogs[this:GetParent().which].OnAccept()
+		this:GetParent():Hide()
+	end,
+	EditBoxOnEscapePressed = function()
+		this:GetParent():Hide()
+	end,
+	OnShow = function()
+		_G[this:GetName().."EditBox"]:SetFocus()
+	end,
+	OnHide = function()
+		_G[this:GetName().."EditBox"]:SetText("")
+	end,
+	timeout = 0,
+	exclusive = 1,
+	hideOnEscape = 1
+}
+
+function RinseOptionsScrollFrameButton_OnClick()
+	local text = this:GetText()
+	if DebuffColor[text] and text ~= "none" and Spells[playerClass][text] == nil then
+		return
+	end
+	local buttonType = gsub(gsub(this:GetName(), "^RinseOptions", ""), "Button%d+$", "")
+	local scrollFrame = "RinseOptionsFrame"..buttonType.."ScrollFrame"
+	if buttonType == "Blacklist" or buttonType == "ClassBlacklist" then
+		if text == "Wyvern Sting" or text == "Mutating Injection" then
+			text = gsub(text, "%s", "")
+			if _G["RinseOptionsFrame"..text]:IsEnabled() == 1 then
+				_G["RinseOptionsFrame"..text]:Click()
+				return
+			end
+		end
+		if buttonType == "ClassBlacklist" then
+			RINSE_CHAR_CONFIG.BLACKLIST_CLASS[selectedClass][text] = false
+		elseif buttonType == "Blacklist" then
+			RINSE_CHAR_CONFIG.BLACKLIST[text] = false
+		end
+		UpdateBlacklist()
+	elseif buttonType == "Filter" then
+		RINSE_CHAR_CONFIG.FILTER[text] = false
+		if _G["RinseOptionsFrameFilter"..text] then
+			_G["RinseOptionsFrameFilter"..text]:SetChecked(true)
+		end
+		UpdateFilter()
+	end
+	_G[scrollFrame.."_Update"]()
+	PlaySound("igMainMenuOptionCheckBoxOn")
+end
+
+function RinseOptionsFrameFilterScrollFrame_Update()
+	local frame = RinseOptionsFrameFilterScrollFrame or this
+	local offset = FauxScrollFrame_GetOffset(frame)
+	local arrayIndex = 1
+	wipe(FilterArray)
+	for k in pairs(Filter) do
+		if Filter[k] then
+			if DebuffColor[k] then
+				tinsert(FilterArray, 1, k)
+			else
+				tinsert(FilterArray, k)
+			end
+		end
+	end
+	-- sort(FilterArray)
+	local numEntries = getn(FilterArray)
+	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
+	for i = 1, OptionsScrollMaxButtons do
+		local button = _G["RinseOptionsFilterButton"..i]
+		local buttonText = _G["RinseOptionsFilterButton"..i.."Text"]
+		arrayIndex = i + offset
+		if FilterArray[arrayIndex] then
+			buttonText:SetText(FilterArray[arrayIndex])
+			button:SetID(arrayIndex)
+			button:Show()
+		else
+			button:Hide()
+		end
+	end
+end
+
+function RinseOptionsFrameAddToFilter_OnClick()
+	StaticPopup_Show("RINSE_ADD_TO_FILTER")
+end
+
+function RinseOptionsFrameResetFilter_OnClick()
+	wipelist(RINSE_CHAR_CONFIG.FILTER)
+	wipelist(Filter)
+	for k, v in pairs(DefaultFilter) do
+		Filter[k] = v
+		if _G["RinseOptionsFrameFilter"..k] then
+			RINSE_CHAR_CONFIG.FILTER[k] = Spells[playerClass][k] == nil
+			_G["RinseOptionsFrameFilter"..k]:SetChecked(not v)
+		end
+	end
+	UpdateSpells()
+	RinseOptionsFrameFilterScrollFrame:SetVerticalScroll(0)
+	RinseOptionsFrameFilterScrollFrame_Update()
+end
+
+StaticPopupDialogs["RINSE_ADD_TO_FILTER"] = {
+	text = "Enter exact name of a debuff (or a type):",
+	button1 = OKAY,
+	button2 = CANCEL,
+	hasEditBox = 1,
+	maxLetters = 90,
+	OnAccept = function()
+		local text = _G[this:GetParent():GetName().."EditBox"]:GetText()
+		RINSE_CHAR_CONFIG.FILTER[text] = true
+		if _G["RinseOptionsFrameFilter"..text] then
+			_G["RinseOptionsFrameFilter"..text]:SetChecked(false)
+		end
+		UpdateFilter()
+		RinseOptionsFrameFilterScrollFrame_Update()
+	end,
+	EditBoxOnEnterPressed = function()
+		StaticPopupDialogs[this:GetParent().which].OnAccept()
+		this:GetParent():Hide()
+	end,
+	EditBoxOnEscapePressed = function()
+		this:GetParent():Hide()
+	end,
+	OnShow = function()
+		_G[this:GetName().."EditBox"]:SetFocus()
+	end,
+	OnHide = function()
+		_G[this:GetName().."EditBox"]:SetText("")
+	end,
+	timeout = 0,
+	exclusive = 1,
+	hideOnEscape = 1
+}

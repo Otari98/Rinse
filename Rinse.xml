@@ -33,6 +33,37 @@
 			</OnLeave>
 		</Scripts>
 	</Button>
+	<Button name="RinseOptionsButtonTemplate" virtual="true" hidden="true" toplevel="true">
+		<Size x="160" y="16"/>
+		<ButtonText name="$parentText">
+			<Anchors>
+				<Anchor point="LEFT"/>
+			</Anchors>
+		</ButtonText>
+		<NormalFont inherits="GameFontNormal">
+			<Shadow/>
+		</NormalFont>
+		<HighlightFont inherits="GameFontHighlight">
+			<Shadow/>
+		</HighlightFont>
+		<DisabledFont inherits="GameFontDisable"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnClick>
+				RinseOptionsScrollFrameButton_OnClick()
+			</OnClick>
+			<OnEnter>
+				getglobal(this:GetName().."Highlight"):Show()
+			</OnEnter>
+			<OnLeave>
+				getglobal(this:GetName().."Highlight"):Hide()
+			</OnLeave>
+		</Scripts>
+	</Button>
 	<Button name="RinseDebuffButtonTemplate" virtual="true" hidden="true" toplevel="true">
 		<Size x="200" y="42"/>
 		<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" tile="true">
@@ -83,7 +114,7 @@
 						<Anchor point="CENTER" relativeTo="$parentIcon"/>
 					</Anchors>
 					<TexCoords left="0.296875" right="0.5703125" top="0" bottom="0.515625"/>
-				</Texture>	
+				</Texture>
 			</Layer>
 		</Layers>
 		<HighlightTexture inherits="DialogButtonHighlightTexture"/>
@@ -152,7 +183,7 @@
 			<Layer level="BACKGROUND">
 				<Texture name="RinseFrameBackground">
 					<Size x="190" y="30"/>
-					<Anchors> 
+					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="0" y="-5"/>
 						</Anchor>
@@ -162,7 +193,7 @@
 			</Layer>
 			<Layer level="BORDER">
 				<FontString name="$parentTitle" inherits="GameFontNormal">
-					<Anchors> 
+					<Anchors>
 						<Anchor point="TOPLEFT">
 							<Offset x="12" y="-12"/>
 						</Anchor>
@@ -282,7 +313,6 @@
 		<Scripts>
 			<OnLoad>
 				RinseFrame_OnLoad()
-				RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
 			</OnLoad>
 			<OnEvent>
 				RinseFrame_OnEvent()
@@ -357,7 +387,7 @@
 			<Layer level="BACKGROUND">
 				<Texture>
 					<Size x="190" y="60"/>
-					<Anchors> 
+					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="0" y="-5"/>
 						</Anchor>
@@ -384,7 +414,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						HideUIPanel(this:GetParent())
+						this:GetParent():Hide()
 						DropDownList1:Hide()
 					</OnClick>
 				</Scripts>
@@ -560,7 +590,7 @@
 			<Layer level="BACKGROUND">
 				<Texture>
 					<Size x="190" y="60"/>
-					<Anchors> 
+					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="0" y="-5"/>
 						</Anchor>
@@ -587,7 +617,7 @@
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						HideUIPanel(this:GetParent())
+						this:GetParent():Hide()
 						DropDownList1:Hide()
 					</OnClick>
 				</Scripts>
@@ -749,7 +779,7 @@
 
 	<!-- Options Frame -->
 	<Frame name="RinseOptionsFrame" parent="UIParent" movable="true" enableMouse="true" toplevel="true" frameStrata="DIALOG" hidden="true">
-		<Size x="200" y="460"/>
+		<Size x="400" y="660"/>
 		<Anchors>
 			<Anchor point="CENTER"/>
 		</Anchors>
@@ -763,9 +793,12 @@
 			<Layer level="BACKGROUND">
 				<Texture>
 					<Size x="192" y="30"/>
-					<Anchors> 
-						<Anchor point="TOP">
-							<Offset x="0" y="-5"/>
+					<Anchors>
+						<Anchor point="TOPLEFT">
+							<Offset x="5" y="-5"/>
+						</Anchor>
+						<Anchor point="TOPRIGHT">
+							<Offset x="-5" y="-35"/>
 						</Anchor>
 					</Anchors>
 					<Color r="0" g="0" b="0"/>
@@ -776,6 +809,34 @@
 					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="0" y="-10"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentBlacklistText" inherits="GameFontNormal" text="Blacklist" justifyH="LEFT">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset x="80" y="-40"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentClassBlacklistText" inherits="GameFontNormal" text="Class Blacklist" justifyH="LEFT">
+					<Anchors>
+						<Anchor point="TOP">
+							<Offset x="85" y="-230"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentFilterText" inherits="GameFontNormal" text="Filter">
+					<Anchors>
+						<Anchor point="BOTTOM">
+							<Offset x="-90" y="180"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentHiddenDebuffsText" inherits="GameFontNormal" text="Hidden Debuffs">
+					<Anchors>
+						<Anchor point="BOTTOM">
+							<Offset x="80" y="180"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
@@ -792,8 +853,8 @@
 			<Slider name="$parentScaleSlider" inherits="OptionsSliderTemplate">
 				<Size x="160" y="16"/>
 				<Anchors>
-					<Anchor point="TOP">
-						<Offset x="0" y="-50"/>
+					<Anchor point="TOPLEFT">
+						<Offset x="18" y="-50"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -842,7 +903,6 @@
 					<OnLoad>
 						getglobal(this:GetName().."Text"):SetText("Cure \"Wyvern Sting\"")
 						this.tooltipText = "Cure \"Wyvern Sting\" poison."
-						this.tooltipRequirement = "(AQ40 - Princess Huhuran)"
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleWyvernSting()
@@ -860,7 +920,6 @@
 					<OnLoad>
 						getglobal(this:GetName().."Text"):SetText("Cure \"Mutating Injection\"")
 						this.tooltipText = "Cure \"Mutating Injection\" disease."
-						this.tooltipRequirement = "(Naxx - Grobbulus)"
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleMutatingInjection()
@@ -878,7 +937,6 @@
 					<OnLoad>
 						getglobal(this:GetName().."Text"):SetText("Shadowform Filter")
 						this.tooltipText = "Check to only dispel magic debuffs while in Shadowform."
-						this.tooltipRequirement = "(Priest only)"
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleShadowform()
@@ -1025,8 +1083,299 @@
 					</OnValueChanged>
 				</Scripts>
 			</Slider>
+			<ScrollFrame name="$parentBlacklistScrollFrame" inherits="FauxScrollFrameTemplate" hidden="false">
+				<Size x="150" y="128"/>
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset x="80" y="-60"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnVerticalScroll>
+						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameBlacklistScrollFrame_Update)
+					</OnVerticalScroll>
+					<OnShow>
+						RinseOptionsFrameBlacklistScrollFrame_Update()
+					</OnShow>
+				</Scripts>
+			</ScrollFrame>
+			<Button name="$parentAddToBlacklist" inherits="UIPanelButtonTemplate2" text="Add">
+				<Size x="70" y="22"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
+						<Offset x="-2" y="-2"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						RinseOptionsFrameAddToBlacklist_OnClick()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="$parentResetBlacklist" inherits="UIPanelButtonTemplate2" text="Reset">
+				<Size x="70" y="22"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
+						<Offset x="22" y="-2"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						RinseOptionsFrameResetBlacklist_OnClick()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<ScrollFrame name="$parentClassBlacklistScrollFrame" inherits="FauxScrollFrameTemplate" hidden="false">
+				<Size x="150" y="128"/>
+				<Anchors>
+					<Anchor point="TOP">
+						<Offset x="80" y="-265"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnVerticalScroll>
+						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameClassBlacklistScrollFrame_Update)
+					</OnVerticalScroll>
+					<OnShow>
+						RinseOptionsFrameClassBlacklistScrollFrame_Update()
+					</OnShow>
+				</Scripts>
+			</ScrollFrame>
+			<Button name="$parentSelectClass">
+				<Size x="24" y="24"/>
+				<Anchors>
+					<Anchor point="BOTTOM" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="TOP">
+						<Offset x="28" y="0"/>
+					</Anchor>
+				</Anchors>
+				<NormalTexture name="$parentNormalTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</NormalTexture>
+				<PushedTexture name="$parentPushedTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</PushedTexture>
+				<DisabledTexture name="$parentDisabledTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</DisabledTexture>
+				<HighlightTexture name="$parentHighlightTexture" file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</HighlightTexture>
+				<Layers>
+					<Layer level="BACKGROUND">
+						<FontString name="$parentText" inherits="GameFontNormalSmall" text="|cffc79c6eWarriors">
+							<Anchors>
+								<Anchor point="RIGHT" relativePoint="LEFT"/>
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+				<Scripts>
+					<OnClick>
+						RinseOptionsFrameSelectClass_OnClick()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="$parentAddToClassBlacklist" inherits="UIPanelButtonTemplate2" text="Add">
+				<Size x="70" y="22"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
+						<Offset x="-2" y="-2"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						RinseOptionsFrameAddToClassBlacklist_OnClick()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="$parentResetClassBlacklist" inherits="UIPanelButtonTemplate2" text="Reset">
+				<Size x="70" y="22"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
+						<Offset x="22" y="-2"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						RinseOptionsFrameResetClassBlacklist_OnClick()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<ScrollFrame name="$parentFilterScrollFrame" inherits="FauxScrollFrameTemplate" hidden="false">
+				<Size x="150" y="128"/>
+				<Anchors>
+					<Anchor point="BOTTOM">
+						<Offset x="80" y="40"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnVerticalScroll>
+						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameFilterScrollFrame_Update)
+					</OnVerticalScroll>
+					<OnShow>
+						RinseOptionsFrameFilterScrollFrame_Update()
+					</OnShow>
+				</Scripts>
+			</ScrollFrame>
+			<Button name="$parentAddToFilter" inherits="UIPanelButtonTemplate2" text="Add">
+				<Size x="70" y="22"/>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMLEFT">
+						<Offset x="-2" y="-2"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						RinseOptionsFrameAddToFilter_OnClick()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<Button name="$parentResetFilter" inherits="UIPanelButtonTemplate2" text="Reset">
+				<Size x="70" y="22"/>
+				<Anchors>
+					<Anchor point="TOPRIGHT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMRIGHT">
+						<Offset x="22" y="-2"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnClick>
+						RinseOptionsFrameResetFilter_OnClick()
+					</OnClick>
+				</Scripts>
+			</Button>
+			<CheckButton name="$parentFilterMagic" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentButtonsSlider" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="-47"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Cure Magic")
+						this.tooltipText = "Check this to cure magic debuffs."
+					</OnLoad>
+					<OnClick>
+						Rinse_ToggleFilter("Magic")
+						PlayClickSound()
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="$parentFilterDisease" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentFilterMagic" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="7"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Cure Disease")
+						this.tooltipText = "Check this to cure diseases."
+					</OnLoad>
+					<OnClick>
+						Rinse_ToggleFilter("Disease")
+						PlayClickSound()
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="$parentFilterPoison" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentFilterDisease" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="7"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Cure Poison")
+						this.tooltipText = "Check this to cure poisons."
+					</OnLoad>
+					<OnClick>
+						Rinse_ToggleFilter("Poison")
+						PlayClickSound()
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="$parentFilterCurse" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentFilterPoison" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="7"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Cure Curse")
+						this.tooltipText = "Check this to cure curses."
+					</OnLoad>
+					<OnClick>
+						Rinse_ToggleFilter("Curse")
+						PlayClickSound()
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<Frame>
+				<Size x="60" y="25"/>
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="RinseOptionsFrameBlacklistText"/>
+				</Anchors>
+				<Scripts>
+					<OnEnter>
+						GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+						GameTooltip:SetText("These will be hidden and will block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
+						GameTooltip:Show()
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide()
+					</OnLeave>
+				</Scripts>
+			</Frame>
+			<Frame>
+				<Size x="60" y="25"/>
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="RinseOptionsFrameClassBlacklistText"/>
+				</Anchors>
+				<Scripts>
+					<OnEnter>
+						GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+						GameTooltip:SetText("These will be hidden and will block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
+						GameTooltip:Show()
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide()
+					</OnLeave>
+				</Scripts>
+			</Frame>
+			<Frame>
+				<Size x="60" y="25"/>
+				<Anchors>
+					<Anchor point="CENTER" relativeTo="RinseOptionsFrameHiddenDebuffsText"/>
+				</Anchors>
+				<Scripts>
+					<OnEnter>
+						GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+						GameTooltip:SetText("These will be hidden but will NOT block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
+						GameTooltip:Show()
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide()
+					</OnLeave>
+				</Scripts>
+			</Frame>
 		</Frames>
 		<Scripts>
+			<OnLoad>
+				RinseOptionsFrame_OnLoad()
+			</OnLoad>
 			<OnMouseDown>
 				this:StartMoving()
 			</OnMouseDown>
