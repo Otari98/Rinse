@@ -927,9 +927,26 @@
 					</OnClick>
 				</Scripts>
 			</CheckButton>
-			<CheckButton name="$parentShadowform" inherits="RinseOptionsCheckButtonTemplate">
+			<CheckButton name="$parentIgnoreAbolish" inherits="RinseOptionsCheckButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentMutatingInjection" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="7"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Ignore Abolish")
+						this.tooltipText = "Dispel even when an abolish is present."
+					</OnLoad>
+					<OnClick>
+						Rinse_ToggleIgnoreAbolish()
+						PlayClickSound()
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="$parentShadowform" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentIgnoreAbolish" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="7"/>
 					</Anchor>
 				</Anchors>

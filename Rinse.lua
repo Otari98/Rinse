@@ -748,6 +748,10 @@ function Rinse_ToggleMutatingInjection()
 	RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
+function Rinse_ToggleIgnoreAbolish()
+	RINSE_CONFIG.IGNORE_ABOLISH = not RINSE_CONFIG.IGNORE_ABOLISH
+end
+
 function Rinse_ToggleShadowform()
 	RINSE_CONFIG.SHADOWFORM = not RINSE_CONFIG.SHADOWFORM
 end
@@ -962,6 +966,7 @@ function RinseFrame_OnEvent()
 		RINSE_CONFIG.BUTTONS = RINSE_CONFIG.BUTTONS == nil and BUTTONS_MAX or RINSE_CONFIG.BUTTONS
 		RINSE_CONFIG.SHOW_HEADER = RINSE_CONFIG.SHOW_HEADER == nil and true or RINSE_CONFIG.SHOW_HEADER
 		RINSE_CONFIG.SHADOWFORM = RINSE_CONFIG.SHADOWFORM == nil and true or RINSE_CONFIG.SHADOWFORM
+		RINSE_CONFIG.IGNORE_ABOLISH = RINSE_CONFIG.IGNORE_ABOLISH == nil and true or RINSE_CONFIG.IGNORE_ABOLISH
 		RINSE_CHAR_CONFIG.BLACKLIST = RINSE_CHAR_CONFIG.BLACKLIST or {}
 		RINSE_CHAR_CONFIG.BLACKLIST_CLASS = RINSE_CHAR_CONFIG.BLACKLIST_CLASS or {
 			WARRIOR = {},
@@ -989,6 +994,7 @@ function RinseFrame_OnEvent()
 		RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
 		RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
 		RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
+		RinseOptionsFrameIgnoreAbolish:SetChecked(RINSE_CONFIG.IGNORE_ABOLISH)
 		RinseOptionsFrameShadowform:SetChecked(RINSE_CONFIG.SHADOWFORM)
 		RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
 		RinseOptionsFrameMSBT:SetChecked(RINSE_CONFIG.MSBT)
@@ -1097,7 +1103,7 @@ local function GetDebuffInfo(unit, i)
 end
 
 local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
-	if SpellNameToRemove[debuffType] and not HasAbolish(unit, debuffType) then
+	if SpellNameToRemove[debuffType] and (RINSE_CONFIG.IGNORE_ABOLISH or not HasAbolish(unit, debuffType)) then
 		Debuffs[debuffIndex].name = debuffName or ""
 		Debuffs[debuffIndex].type = debuffType or ""
 		Debuffs[debuffIndex].texture = texture or ""
