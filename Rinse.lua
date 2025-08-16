@@ -387,6 +387,12 @@ local function UpdatePrio()
 			end
 		end
 	end
+	-- Add pets if enabled
+	if RINSE_CONFIG.PETS then
+		for i = 1, getn(Prio) do
+			tinsert(Prio, (gsub(Prio[i], "(%a+)(%d*)", "%1pet%2")))
+		end
+	end
 	-- Get rid of duplicates and UnitIDs that we can't match to names in our raid/party
 	wipe(Seen)
 	for i = 1, getn(Prio) do
@@ -756,6 +762,11 @@ function Rinse_ToggleShadowform()
 	RINSE_CONFIG.SHADOWFORM = not RINSE_CONFIG.SHADOWFORM
 end
 
+function Rinse_TogglePets()
+	RINSE_CONFIG.PETS = not RINSE_CONFIG.PETS
+	UpdatePrio()
+end
+
 function Rinse_TogglePrint()
 	RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
 	if RINSE_CONFIG.PRINT and MikSBT then
@@ -949,6 +960,9 @@ end
 
 function RinseFrame_OnEvent()
 	if event == "ADDON_LOADED" and arg1 == "Rinse" then
+		tinsert(UISpecialFrames, "RinsePrioListFrame")
+		tinsert(UISpecialFrames, "RinseSkipListFrame")
+		tinsert(UISpecialFrames, "RinseOptionsFrame")
 		RinseFrame:UnregisterEvent("ADDON_LOADED")
 		RINSE_CONFIG = RINSE_CONFIG or {}
 		RINSE_CHAR_CONFIG = RINSE_CHAR_CONFIG or {}
@@ -967,6 +981,7 @@ function RinseFrame_OnEvent()
 		RINSE_CONFIG.SHOW_HEADER = RINSE_CONFIG.SHOW_HEADER == nil and true or RINSE_CONFIG.SHOW_HEADER
 		RINSE_CONFIG.SHADOWFORM = RINSE_CONFIG.SHADOWFORM == nil and true or RINSE_CONFIG.SHADOWFORM
 		RINSE_CONFIG.IGNORE_ABOLISH = RINSE_CONFIG.IGNORE_ABOLISH == nil and true or RINSE_CONFIG.IGNORE_ABOLISH
+		RINSE_CONFIG.PETS = RINSE_CONFIG.PETS == nil and false or RINSE_CONFIG.PETS
 		RINSE_CHAR_CONFIG.BLACKLIST = RINSE_CHAR_CONFIG.BLACKLIST or {}
 		RINSE_CHAR_CONFIG.BLACKLIST_CLASS = RINSE_CHAR_CONFIG.BLACKLIST_CLASS or {
 			WARRIOR = {},
@@ -996,6 +1011,7 @@ function RinseFrame_OnEvent()
 		RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
 		RinseOptionsFrameIgnoreAbolish:SetChecked(RINSE_CONFIG.IGNORE_ABOLISH)
 		RinseOptionsFrameShadowform:SetChecked(RINSE_CONFIG.SHADOWFORM)
+		RinseOptionsFramePets:SetChecked(RINSE_CONFIG.PETS)
 		RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
 		RinseOptionsFrameMSBT:SetChecked(RINSE_CONFIG.MSBT)
 		RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)

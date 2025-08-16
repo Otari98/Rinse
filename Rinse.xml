@@ -381,7 +381,7 @@
 			<EdgeSize val="16"/>
 			<TileSize val="16"/>
 			<BackgroundInsets left="5" right="5" top="5" bottom="5"/>
-			<Color r="0" g="0" b="0" a="0.5"/>
+			<Color r="0" g="0" b="0" a="1"/>
 		</Backdrop>
 		<Layers>
 			<Layer level="BACKGROUND">
@@ -584,7 +584,7 @@
 			<EdgeSize val="16"/>
 			<TileSize val="16"/>
 			<BackgroundInsets left="5" right="5" top="5" bottom="5"/>
-			<Color r="0" g="0" b="0" a="0.5"/>
+			<Color r="0" g="0" b="0" a="1"/>
 		</Backdrop>
 		<Layers>
 			<Layer level="BACKGROUND">
@@ -787,7 +787,7 @@
 			<EdgeSize val="16"/>
 			<TileSize val="16"/>
 			<BackgroundInsets left="5" right="5" top="5" bottom="5"/>
-			<Color r="0" g="0" b="0" a="0.8"/>
+			<Color r="0" g="0" b="0" a="1"/>
 		</Backdrop>
 		<Layers>
 			<Layer level="BACKGROUND">
@@ -805,35 +805,35 @@
 				</Texture>
 			</Layer>
 			<Layer level="BORDER">
-				<FontString inherits="GameFontNormalLarge" text="Rinse Options">
+				<FontString inherits="GameFontNormalLarge" text="Rinse Options" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="0" y="-10"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentBlacklistText" inherits="GameFontNormal" text="Blacklist" justifyH="LEFT">
+				<FontString name="$parentBlacklistText" inherits="GameFontNormal" text="Blacklist" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="80" y="-40"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentClassBlacklistText" inherits="GameFontNormal" text="Class Blacklist" justifyH="LEFT">
+				<FontString name="$parentClassBlacklistText" inherits="GameFontNormal" text="Class Blacklist" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="85" y="-230"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentFilterText" inherits="GameFontNormal" text="Filter">
+				<FontString name="$parentFilterText" inherits="GameFontNormal" text="Filter" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
-							<Offset x="-90" y="180"/>
+							<Offset x="-90" y="125"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentHiddenDebuffsText" inherits="GameFontNormal" text="Hidden Debuffs">
+				<FontString name="$parentHiddenDebuffsText" inherits="GameFontNormal" text="Hidden Debuffs" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
 							<Offset x="80" y="180"/>
@@ -961,9 +961,26 @@
 					</OnClick>
 				</Scripts>
 			</CheckButton>
-			<CheckButton name="$parentPrint" inherits="RinseOptionsCheckButtonTemplate">
+			<CheckButton name="$parentPets" inherits="RinseOptionsCheckButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentShadowform" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="7"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Cure Pets")
+						this.tooltipText = "Scan pets for debuffs."
+					</OnLoad>
+					<OnClick>
+						Rinse_TogglePets()
+						PlayClickSound()
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="$parentPrint" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentPets" relativePoint="BOTTOMLEFT">
 						<Offset x="0" y="-4"/>
 					</Anchor>
 				</Anchors>
