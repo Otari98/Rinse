@@ -342,7 +342,8 @@ local function HasShadowform()
 end
 
 local function InRange(unit, spell)
-	if unit and UnitIsFriend(unit, "player") and not UnitCanAttack("player", unit) then
+	if not unit then return false end
+	if UnitIsFriend(unit, "player") and not UnitCanAttack("player", unit) then
 		if spell and IsSpellInRange then
 			local result = IsSpellInRange(spell, unit)
 			if result == 1 then
@@ -367,6 +368,9 @@ local function InRange(unit, spell)
 			-- Not as accurate
 			return CheckInteractDistance(unit, 4)
 		end
+	else
+		-- The above can't check mc'd players, this is the backup
+		return CheckInteractDistance(unit, 4)
 	end
 end
 
@@ -946,11 +950,17 @@ function RinseFrame_OnLoad()
 	RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
 end
 
+-- Check if unit can be cleansed
+local function CanBeCleansed(unit)
+	return (UnitCanAssist("player",unit) and not UnitIsCharmed(unit))
+	    or (not UnitCanAssist("player",unit) and UnitIsCharmed(unit))
+end
+
 local function GoodUnit(unit)
 	if not (unit and UnitExists(unit) and UnitName(unit)) then
 		return false
 	end
-	if UnitIsFriend(unit, "player") and UnitIsVisible(unit) and not UnitIsCharmed(unit) and not UnitCanAttack("player", unit) then
+	if UnitIsVisible(unit) and CanBeCleansed(unit) then
 		if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(Prio, unit) or (unit == "target")) then
 			return true
 		end
