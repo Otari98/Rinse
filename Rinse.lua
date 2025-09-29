@@ -1297,13 +1297,10 @@ function Rinse_Cleanse(button, attemptedCast)
 	local debuff = _G[button:GetName().."Name"]:GetText()
 	local spellName = SpellNameToRemove[button.type]
 	local spellSlot = SpellSlotForName[spellName]
-	local onGcd = false
 	-- Check if on gcd
-	local _, duration = GetSpellCooldown(spellSlot, bookType)
 	-- If gcd active this will return 1.5 for all the relevant spells
-	if duration == 1.5 then
-		onGcd = true
-	end
+	local _, duration = GetSpellCooldown(spellSlot, bookType)
+	local onGcd = duration == 1.5
 	-- Allow attempting 1 spell even if gcd active so that it can be queued
 	if attemptedCast and onGcd then
 		-- Otherwise don't bother trying to cast
@@ -1339,17 +1336,14 @@ function Rinse_Cleanse(button, attemptedCast)
 	if superwow then
 		CastSpellByName(spellName, button.unit)
 	else
-		local selfcast = false
-		if GetCVar("autoselfcast") == "1" then
-			selfcast = true
-		end
+		local selfcast = GetCVar("autoselfcast")
 		SetCVar("autoselfcast", 0)
-		TargetByName(button.unitName, 1)
-		CastSpellByName(spellName)
-		TargetLastTarget()
-		if selfcast then
-			SetCVar("autoselfcast", 1)
+		TargetUnit(button.unit)
+		if UnitExists("target") and UnitIsUnit("target", button.unit) then
+			CastSpellByName(spellName)
+			TargetLastTarget()
 		end
+		SetCVar("autoselfcast", selfcast)
 	end
 	return true
 end
