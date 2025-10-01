@@ -1337,11 +1337,15 @@ function Rinse_Cleanse(button, attemptedCast)
 		CastSpellByName(spellName, button.unit)
 	else
 		local selfcast = GetCVar("autoselfcast")
+		local lastTarget = UnitName("target")
 		SetCVar("autoselfcast", 0)
 		TargetUnit(button.unit)
 		if UnitExists("target") and UnitIsUnit("target", button.unit) then
 			CastSpellByName(spellName)
-			TargetLastTarget()
+			if lastTarget ~= UnitName("target") then
+				-- If we didnt have target or it was someone else
+				TargetLastTarget()
+			end
 		end
 		SetCVar("autoselfcast", selfcast)
 	end
