@@ -1524,8 +1524,9 @@ end
 
 local info2 = {}
 info2.textHeight = 12
-info2.notCheckable = true
-info2.hasArrow = false
+info2.notCheckable = 1
+info2.checked = nil
+info2.hasArrow = nil
 info2.func = SelectClass
 
 local function BlacklistClassMenu()

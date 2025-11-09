@@ -1,0 +1,217 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+	<Button name="RinseListButtonTemplate" virtual="true" hidden="true" toplevel="true">
+		<Size x="160" y="16"/>
+		<ButtonText name="$parentText">
+			<Anchors>
+				<Anchor point="LEFT"/>
+			</Anchors>
+		</ButtonText>
+		<NormalFont inherits="GameFontNormalLarge">
+			<Shadow/>
+		</NormalFont>
+		<DisabledFont inherits="GameFontDisable"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOMRIGHT">
+							<Offset x="-10" y="0"/>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnClick>
+				RinseListButton_OnClick()
+			</OnClick>
+			<OnEnter>
+				getglobal(this:GetName().."Highlight"):Show()
+			</OnEnter>
+			<OnLeave>
+				getglobal(this:GetName().."Highlight"):Hide()
+			</OnLeave>
+		</Scripts>
+	</Button>
+	<Button name="RinseOptionsButtonTemplate" virtual="true" hidden="true" toplevel="true">
+		<Size x="160" y="16"/>
+		<ButtonText name="$parentText">
+			<Anchors>
+				<Anchor point="LEFT"/>
+			</Anchors>
+		</ButtonText>
+		<NormalFont inherits="GameFontNormal">
+			<Shadow/>
+		</NormalFont>
+		<HighlightFont inherits="GameFontHighlight">
+			<Shadow/>
+		</HighlightFont>
+		<DisabledFont inherits="GameFontDisable"/>
+		<Layers>
+			<Layer level="BACKGROUND">
+				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOMRIGHT">
+							<Offset x="-10" y="0"/>
+						</Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnClick>
+				RinseOptionsScrollFrameButton_OnClick()
+			</OnClick>
+			<OnEnter>
+				getglobal(this:GetName().."Highlight"):Show()
+			</OnEnter>
+			<OnLeave>
+				getglobal(this:GetName().."Highlight"):Hide()
+			</OnLeave>
+		</Scripts>
+	</Button>
+	<Button name="RinseDebuffButtonTemplate" virtual="true" hidden="true" toplevel="true">
+		<Size x="200" y="42"/>
+		<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" tile="true">
+			<TileSize val="16"/>
+			<BackgroundInsets left="5" right="5" top="0" bottom="0"/>
+			<Color r="0" g="0" b="0"/>
+		</Backdrop>
+		<Layers>
+			<Layer level="BORDER">
+				<Texture name="$parentIcon">
+					<Size x="32" y="32"/>
+					<Anchors>
+						<Anchor point="LEFT">
+							<Offset x="10" y="0"/>
+						</Anchor>
+					</Anchors>
+				</Texture>
+				<FontString name="$parentPlayer" inherits="GameFontNormalLarge" justifyH="LEFT">
+					<Size x="200" y="20"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeTo="$parentIcon" relativePoint="TOPRIGHT">
+							<Offset x="5" y="3"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+				<FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT">
+					<Size x="200" y="20"/>
+					<Anchors>
+						<Anchor point="LEFT" relativeTo="$parentIcon" relativePoint="RIGHT">
+							<Offset x="5" y="-8"/>
+						</Anchor>
+					</Anchors>
+				</FontString>
+			</Layer>
+			<Layer level="ARTWORK">
+				<FontString name="$parentCount" inherits="NumberFontNormalLarge" justifyH="RIGHT" hidden="false" outline="THICK">
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" relativeTo="$parentIcon"/>
+					</Anchors>
+					<Color r="1" g="0" b="0"/>
+					<Shadow/>
+				</FontString>
+			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="$parentBorder" file="Interface\Buttons\UI-Debuff-Overlays">
+					<Size x="34" y="32"/>
+					<Anchors>
+						<Anchor point="CENTER" relativeTo="$parentIcon"/>
+					</Anchors>
+					<TexCoords left="0.296875" right="0.5703125" top="0" bottom="0.515625"/>
+				</Texture>
+			</Layer>
+		</Layers>
+		<HighlightTexture inherits="DialogButtonHighlightTexture"/>
+		<Scripts>
+			<OnLoad>
+				this:RegisterForClicks("LeftButtonDown")
+			</OnLoad>
+			<OnClick>
+				Rinse_Cleanse(this)
+			</OnClick>
+			<OnEnter>
+				if this.unit then
+					GameTooltip:SetOwner(this, "ANCHOR_TOPLEFT")
+					GameTooltip:SetUnitDebuff(this.unit, this.debuffIndex)
+					GameTooltip:Show()
+				end
+			</OnEnter>
+			<OnLeave>
+				GameTooltip:Hide()
+			</OnLeave>
+			<OnShow>
+				this:SetAlpha(1)
+			</OnShow>
+		</Scripts>
+	</Button>
+	<CheckButton name="RinseOptionsCheckButtonTemplate" inherits="OptionsCheckButtonTemplate" virtual="true">
+		<Size x="32" y="32"/>
+		<HitRectInsets left="0" right="-120" top="5" bottom="5"/>
+		<Frames>
+			<Frame name="$parentTooltipPreserve" enableMouse="true" hidden="true">
+				<Size x="152" y="22"/>
+				<Anchors>
+					<Anchor point="LEFT" relativePoint="LEFT"/>
+				</Anchors>
+				<Scripts>
+					<OnEnter>
+						if this:GetParent().tooltipText then
+							GameTooltip:SetOwner(this:GetParent(), "ANCHOR_RIGHT")
+							GameTooltip:SetText(this:GetParent().tooltipText, nil, nil, nil, nil, 1)
+						end
+						if this:GetParent().tooltipRequirement then
+							GameTooltip:AddLine(this:GetParent().tooltipRequirement, nil, nil, nil, 1)
+							GameTooltip:Show()
+						end
+					</OnEnter>
+					<OnLeave>
+						GameTooltip:Hide()
+					</OnLeave>
+				</Scripts>
+			</Frame>
+		</Frames>
+	</CheckButton>
+	<ScrollFrame name="RinseScrollFrameTemplate" inherits="FauxScrollFrameTemplate" virtual="true">
+		<Frames>
+			<Frame enableMouse="false">
+				<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+					<EdgeSize val="16"/>
+					<TileSize val="16"/>
+					<BackgroundInsets left="5" right="5" top="5" bottom="5"/>
+					<Color r="0" g="0" b="0"/>
+				</Backdrop>
+				<Anchors>
+					<Anchor point="TOPLEFT">
+						<Offset x="-6" y="8"/>
+					</Anchor>
+					<Anchor point="BOTTOMRIGHT">
+						<Offset x="30" y="-8"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<!-- Keep it visible -->
+					<OnLoad>
+						this:SetParent(this:GetParent():GetParent())
+					</OnLoad>
+				</Scripts>
+			</Frame>
+			<Frame enableMouse="false">
+				<Backdrop edgeFile="Interface\Buttons\UI-SliderBar-Border">
+					<EdgeSize val="8"/>
+				</Backdrop>
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentScrollBarScrollUpButton">
+						<Offset x="-4" y="6"/>
+					</Anchor>
+					<Anchor point="BOTTOMRIGHT" relativeTo="$parentScrollBarScrollDownButton">
+						<Offset x="4" y="-6"/>
+					</Anchor>
+				</Anchors>
+			</Frame>
+		</Frames>
+	</ScrollFrame>
+</Ui>

@@ -1,172 +1,6 @@
-<Ui xmlns="http://www.blizzard.com/wow/ui/"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
 
 	<Script file="Rinse.lua"/>
-
-	<!-- Templates -->
-	<Button name="RinseListButtonTemplate" virtual="true" hidden="true" toplevel="true">
-		<Size x="160" y="16"/>
-		<ButtonText name="$parentText">
-			<Anchors>
-				<Anchor point="LEFT"/>
-			</Anchors>
-		</ButtonText>
-		<NormalFont inherits="GameFontNormalLarge">
-			<Shadow/>
-		</NormalFont>
-		<DisabledFont inherits="GameFontDisable"/>
-		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
-			</Layer>
-		</Layers>
-		<Scripts>
-			<OnClick>
-				RinseListButton_OnClick()
-			</OnClick>
-			<OnEnter>
-				getglobal(this:GetName().."Highlight"):Show()
-			</OnEnter>
-			<OnLeave>
-				getglobal(this:GetName().."Highlight"):Hide()
-			</OnLeave>
-		</Scripts>
-	</Button>
-	<Button name="RinseOptionsButtonTemplate" virtual="true" hidden="true" toplevel="true">
-		<Size x="160" y="16"/>
-		<ButtonText name="$parentText">
-			<Anchors>
-				<Anchor point="LEFT"/>
-			</Anchors>
-		</ButtonText>
-		<NormalFont inherits="GameFontNormal">
-			<Shadow/>
-		</NormalFont>
-		<HighlightFont inherits="GameFontHighlight">
-			<Shadow/>
-		</HighlightFont>
-		<DisabledFont inherits="GameFontDisable"/>
-		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture name="$parentHighlight" file="Interface\QuestFrame\UI-QuestTitleHighlight" alphaMode="ADD" setAllPoints="true" hidden="true"/>
-			</Layer>
-		</Layers>
-		<Scripts>
-			<OnClick>
-				RinseOptionsScrollFrameButton_OnClick()
-			</OnClick>
-			<OnEnter>
-				getglobal(this:GetName().."Highlight"):Show()
-			</OnEnter>
-			<OnLeave>
-				getglobal(this:GetName().."Highlight"):Hide()
-			</OnLeave>
-		</Scripts>
-	</Button>
-	<Button name="RinseDebuffButtonTemplate" virtual="true" hidden="true" toplevel="true">
-		<Size x="200" y="42"/>
-		<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" tile="true">
-			<TileSize val="16"/>
-			<BackgroundInsets left="5" right="5" top="0" bottom="0"/>
-			<Color r="0" g="0" b="0"/>
-		</Backdrop>
-		<Layers>
-			<Layer level="BORDER">
-				<Texture name="$parentIcon">
-					<Size x="32" y="32"/>
-					<Anchors>
-						<Anchor point="LEFT">
-							<Offset x="10" y="0"/>
-						</Anchor>
-					</Anchors>
-				</Texture>
-				<FontString name="$parentPlayer" inherits="GameFontNormalLarge" justifyH="LEFT">
-					<Size x="200" y="20"/>
-					<Anchors>
-						<Anchor point="TOPLEFT" relativeTo="$parentIcon" relativePoint="TOPRIGHT">
-							<Offset x="5" y="3"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-				<FontString name="$parentName" inherits="GameFontNormalSmall" justifyH="LEFT">
-					<Size x="200" y="20"/>
-					<Anchors>
-						<Anchor point="LEFT" relativeTo="$parentIcon" relativePoint="RIGHT">
-							<Offset x="5" y="-8"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
-			</Layer>
-			<Layer level="ARTWORK">
-				<FontString name="$parentCount" inherits="NumberFontNormalLarge" justifyH="RIGHT" hidden="false" outline="THICK">
-					<Anchors>
-						<Anchor point="BOTTOMRIGHT" relativeTo="$parentIcon"/>
-					</Anchors>
-					<Color r="1" g="0" b="0"/>
-					<Shadow/>
-				</FontString>
-			</Layer>
-			<Layer level="OVERLAY">
-				<Texture name="$parentBorder" file="Interface\Buttons\UI-Debuff-Overlays">
-					<Size x="34" y="32"/>
-					<Anchors>
-						<Anchor point="CENTER" relativeTo="$parentIcon"/>
-					</Anchors>
-					<TexCoords left="0.296875" right="0.5703125" top="0" bottom="0.515625"/>
-				</Texture>
-			</Layer>
-		</Layers>
-		<HighlightTexture inherits="DialogButtonHighlightTexture"/>
-		<Scripts>
-			<OnLoad>
-				this:RegisterForClicks("LeftButtonDown")
-			</OnLoad>
-			<OnClick>
-				Rinse_Cleanse(this)
-			</OnClick>
-			<OnEnter>
-				if this.unit then
-					GameTooltip:SetOwner(this, "ANCHOR_TOPLEFT")
-					GameTooltip:SetUnitDebuff(this.unit, this.debuffIndex)
-					GameTooltip:Show()
-				end
-			</OnEnter>
-			<OnLeave>
-				GameTooltip:Hide()
-			</OnLeave>
-			<OnShow>
-				this:SetAlpha(1)
-			</OnShow>
-		</Scripts>
-	</Button>
-	<CheckButton name="RinseOptionsCheckButtonTemplate" inherits="OptionsCheckButtonTemplate" virtual="true">
-		<Size x="32" y="32"/>
-		<HitRectInsets left="0" right="-120" top="5" bottom="5"/>
-		<Frames>
-			<Frame name="$parentTooltipPreserve" enableMouse="true" hidden="true">
-				<Size x="152" y="22"/>
-				<Anchors>
-					<Anchor point="LEFT" relativePoint="LEFT"/>
-				</Anchors>
-				<Scripts>
-					<OnEnter>
-						if this:GetParent().tooltipText then
-							GameTooltip:SetOwner(this:GetParent(), "ANCHOR_RIGHT")
-							GameTooltip:SetText(this:GetParent().tooltipText, nil, nil, nil, nil, 1)
-						end
-						if this:GetParent().tooltipRequirement then
-							GameTooltip:AddLine(this:GetParent().tooltipRequirement, "", 1.0, 1.0, 1.0)
-							GameTooltip:Show()
-						end
-					</OnEnter>
-					<OnLeave>
-						GameTooltip:Hide()
-					</OnLeave>
-				</Scripts>
-			</Frame>
-		</Frames>
-	</CheckButton>
 
 	<!-- Main Frame -->
 	<Frame name="RinseFrame" toplevel="false" parent="UIParent" movable="true" enableMouse="true" clampedToScreen="true" resizable="false">
@@ -484,11 +318,11 @@
 					</OnLeave>
 				</Scripts>
 			</Button>
-			<ScrollFrame name="RinseSkipListScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
+			<ScrollFrame name="RinseSkipListScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
 				<Size x="150" y="160"/>
 				<Anchors>
-					<Anchor point="TOPRIGHT" relativeTo="RinseSkipListFrame" relativePoint="TOPRIGHT">
-						<Offset x="-30" y="-72"/>
+					<Anchor point="TOPRIGHT">
+						<Offset x="-37" y="-72"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -687,11 +521,11 @@
 					</OnLeave>
 				</Scripts>
 			</Button>
-			<ScrollFrame name="RinsePrioListScrollFrame" inherits="FauxScrollFrameTemplate" hidden="true">
+			<ScrollFrame name="RinsePrioListScrollFrame" inherits="RinseScrollFrameTemplate" hidden="true">
 				<Size x="150" y="160"/>
 				<Anchors>
 					<Anchor point="TOPRIGHT" relativeTo="RinsePrioListFrame" relativePoint="TOPRIGHT">
-						<Offset x="-30" y="-72"/>
+						<Offset x="-37" y="-72"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -812,31 +646,31 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentBlacklistText" inherits="GameFontNormal" text="Blacklist" justifyH="CENTER">
+				<FontString name="$parentBlacklistText" inherits="GameFontHighlight" text="Blacklist" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="TOP">
-							<Offset x="80" y="-40"/>
+							<Offset x="90" y="-40"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentClassBlacklistText" inherits="GameFontNormal" text="Class Blacklist" justifyH="CENTER">
+				<FontString name="$parentClassBlacklistText" inherits="GameFontHighlight" text="Class Blacklist" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="TOP">
-							<Offset x="85" y="-230"/>
+							<Offset x="95" y="-222"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentFilterText" inherits="GameFontNormal" text="Filter" justifyH="CENTER">
+				<FontString name="$parentFilterText" inherits="GameFontHighlight" text="Filter" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
 							<Offset x="-90" y="125"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentHiddenDebuffsText" inherits="GameFontNormal" text="Hidden Debuffs" justifyH="CENTER">
+				<FontString name="$parentHiddenDebuffsText" inherits="GameFontHighlight" text="Hidden Debuffs" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
-							<Offset x="80" y="180"/>
+							<Offset x="90" y="180"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
@@ -1117,7 +951,7 @@
 					</OnValueChanged>
 				</Scripts>
 			</Slider>
-			<ScrollFrame name="$parentBlacklistScrollFrame" inherits="FauxScrollFrameTemplate" hidden="false">
+			<ScrollFrame name="$parentBlacklistScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
 				<Size x="150" y="128"/>
 				<Anchors>
 					<Anchor point="TOP">
@@ -1134,10 +968,10 @@
 				</Scripts>
 			</ScrollFrame>
 			<Button name="$parentAddToBlacklist" inherits="UIPanelButtonTemplate2" text="Add">
-				<Size x="70" y="22"/>
+				<Size x="93" y="22"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
-						<Offset x="-2" y="-2"/>
+						<Offset x="-5" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -1147,10 +981,10 @@
 				</Scripts>
 			</Button>
 			<Button name="$parentResetBlacklist" inherits="UIPanelButtonTemplate2" text="Reset">
-				<Size x="70" y="22"/>
+				<Size x="93" y="22"/>
 				<Anchors>
 					<Anchor point="TOPRIGHT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
-						<Offset x="22" y="-2"/>
+						<Offset x="30" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -1159,7 +993,7 @@
 					</OnClick>
 				</Scripts>
 			</Button>
-			<ScrollFrame name="$parentClassBlacklistScrollFrame" inherits="FauxScrollFrameTemplate" hidden="false">
+			<ScrollFrame name="$parentClassBlacklistScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
 				<Size x="150" y="128"/>
 				<Anchors>
 					<Anchor point="TOP">
@@ -1179,7 +1013,7 @@
 				<Size x="24" y="24"/>
 				<Anchors>
 					<Anchor point="BOTTOM" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="TOP">
-						<Offset x="28" y="0"/>
+						<Offset x="38" y="7"/>
 					</Anchor>
 				</Anchors>
 				<NormalTexture name="$parentNormalTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up">
@@ -1222,10 +1056,10 @@
 				</Scripts>
 			</Button>
 			<Button name="$parentAddToClassBlacklist" inherits="UIPanelButtonTemplate2" text="Add">
-				<Size x="70" y="22"/>
+				<Size x="93" y="22"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
-						<Offset x="-2" y="-2"/>
+						<Offset x="-5" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -1235,10 +1069,10 @@
 				</Scripts>
 			</Button>
 			<Button name="$parentResetClassBlacklist" inherits="UIPanelButtonTemplate2" text="Reset">
-				<Size x="70" y="22"/>
+				<Size x="93" y="22"/>
 				<Anchors>
 					<Anchor point="TOPRIGHT" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
-						<Offset x="22" y="-2"/>
+						<Offset x="30" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -1247,7 +1081,7 @@
 					</OnClick>
 				</Scripts>
 			</Button>
-			<ScrollFrame name="$parentFilterScrollFrame" inherits="FauxScrollFrameTemplate" hidden="false">
+			<ScrollFrame name="$parentFilterScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
 				<Size x="150" y="128"/>
 				<Anchors>
 					<Anchor point="BOTTOM">
@@ -1264,10 +1098,10 @@
 				</Scripts>
 			</ScrollFrame>
 			<Button name="$parentAddToFilter" inherits="UIPanelButtonTemplate2" text="Add">
-				<Size x="70" y="22"/>
+				<Size x="93" y="22"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMLEFT">
-						<Offset x="-2" y="-2"/>
+						<Offset x="-5" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -1277,10 +1111,10 @@
 				</Scripts>
 			</Button>
 			<Button name="$parentResetFilter" inherits="UIPanelButtonTemplate2" text="Reset">
-				<Size x="70" y="22"/>
+				<Size x="93" y="22"/>
 				<Anchors>
 					<Anchor point="TOPRIGHT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMRIGHT">
-						<Offset x="22" y="-2"/>
+						<Offset x="30" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
