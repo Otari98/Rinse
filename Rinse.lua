@@ -176,6 +176,7 @@ end
 -- typically, not worth having an entire configuration section for.
 local PriorityDebuffs = {}
 PriorityDebuffs["Tranquilizing Poison"] = true -- warriors will thank you
+PriorityDebuffs["Slowing Poison"] = true
 PriorityDebuffs["Mana Buildup"] = true
 PriorityDebuffs["Enveloped Flames"] = true -- prio so it shows up for pets!
 PriorityDebuffs["Poison Charge"] = true -- to prio it over curses for druids
