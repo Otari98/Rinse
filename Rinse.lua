@@ -171,6 +171,15 @@ for k, v in pairs(DefaultBlacklist) do
 	Blacklist[k] = v
 end
 
+-- Debuffs that should be prioritized over other debuffs of the same type
+-- Add more priority debuffs here as needed, it's going to be a tiny list
+-- typically, not worth having an entire configuration section for.
+local PriorityDebuffs = {}
+PriorityDebuffs["Tranquilizing Poison"] = true -- warriors will thank you
+PriorityDebuffs["Mana Buildup"] = true
+PriorityDebuffs["Enveloped Flames"] = true -- prio so it shows up for pets!
+PriorityDebuffs["Poison Charge"] = true -- to prio it over curses for druids
+
 -- Spells to ignore on certain classes (these will block other debuffs of the same type from showing)
 local DefaultClassBlacklist = {}
 for k in pairs(ClassColors) do
@@ -391,11 +400,9 @@ local function UpdatePrio()
 			end
 		end
 	end
-	-- Add pets if enabled
-	if RINSE_CONFIG.PETS then
-		for i = 1, getn(Prio) do
-			tinsert(Prio, (gsub(Prio[i], "(%a+)(%d*)", "%1pet%2")))
-		end
+	-- Always add pets to scan list (filtering happens during save based on RINSE_CONFIG.PETS)
+	for i = 1, getn(Prio) do
+		tinsert(Prio, (gsub(Prio[i], "(%a+)(%d*)", "%1pet%2")))
 	end
 	-- Get rid of duplicates and UnitIDs that we can't match to names in our raid/party
 	wipe(Seen)
@@ -1129,6 +1136,15 @@ local function GetDebuffInfo(unit, i)
 end
 
 local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
+	local isPriority = PriorityDebuffs[debuffName]
+	local isPet = strfind(unit, "pet") ~= nil
+
+	-- If unit is a pet and PETS is disabled, only save priority debuffs
+	if isPet and not RINSE_CONFIG.PETS and not isPriority then
+		return false
+	end
+
+	-- Check if debuff can be removed and respect abolish setting
 	if SpellNameToRemove[debuffType] and (RINSE_CONFIG.IGNORE_ABOLISH or not HasAbolish(unit, debuffType)) then
 		Debuffs[debuffIndex].name = debuffName or ""
 		Debuffs[debuffIndex].type = debuffType or ""
@@ -1187,7 +1203,7 @@ function RinseFrame_OnUpdate(elapsed)
 			i = i + 1
 		end
 	end
-	-- Scan units in Prio array
+	-- Scan units in Prio array (pets are included, filtered in SaveDebuffInfo)
 	for index = 1, getn(Prio) do
 		local unit = Prio[index]
 		if GoodUnit(unit) and not UnitIsUnit("target", unit) then
@@ -1217,6 +1233,17 @@ function RinseFrame_OnUpdate(elapsed)
 			end
 		end
 	end
+	-- Handle priority debuffs: if a unit has a priority debuff, hide ALL non-priority debuffs on that unit
+	for k, v in pairs(Debuffs) do
+		if PriorityDebuffs[v.name] and v.type ~= "" then
+			-- This is a priority debuff, hide all other non-priority debuffs on the same unit (regardless of type)
+			for k2, v2 in pairs(Debuffs) do
+				if v2.unitName == v.unitName and not PriorityDebuffs[v2.name] then
+					v2.shown = true
+				end
+			end
+		end
+	end
 	-- Don't show diseases in Shadowform
 	if shadowform and RINSE_CONFIG.SHADOWFORM then
 		for k, v in pairs(Debuffs) do
@@ -1229,6 +1256,20 @@ function RinseFrame_OnUpdate(elapsed)
 	for k, v in pairs(Debuffs) do
 		if Filter[v.name] or Filter[v.type] then
 			v.shown = true
+		end
+	end
+	-- Move priority debuffs to the front of the list
+	-- This is CRITICAL so that priority debuffs are removed first raidwide
+	local frontIndex = 1
+	for i = 1, DEBUFFS_MAX do
+		if Debuffs[i].name ~= "" and not Debuffs[i].shown and PriorityDebuffs[Debuffs[i].name] then
+			if i ~= frontIndex then
+				-- Swap priority debuff to front
+				local temp = Debuffs[frontIndex]
+				Debuffs[frontIndex] = Debuffs[i]
+				Debuffs[i] = temp
+			end
+			frontIndex = frontIndex + 1
 		end
 	end
 	-- Hide all buttons
