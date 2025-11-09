@@ -410,41 +410,44 @@ local function UpdatePrio()
 	for i = 1, getn(Prio) do
 		local name = UnitName(Prio[i])
 		if not name or arrcontains(Seen, name) then
-			-- Don't delete yet
+			-- Don't delete yet, just flag
 			Prio[i] = false
 		elseif name then
 			tinsert(Seen, name)
 		end
 	end
+	-- Delete now
 	for i = getn(Prio), 1, -1 do
 		if Prio[i] == false then
 			tremove(Prio, i)
 		end
 	end
+	-- Skip randomization if display is not empty
+	if RinseFrameDebuff1:IsShown() then
+		return
+	end
 	-- Randomize everything that is not in PRIO_ARRAY
-	if not RinseFrameDebuff1:IsShown() then
-		local startIndex = 2
-		local endIndex = getn(Prio)
-		if RINSE_CONFIG.PRIO_ARRAY[1] then
-			-- PRIO_ARRAY can contain names that are not in our raid/party
-			-- I assume the last name in PRIO_ARRAY that we can match to some UnitID is the end of PRIO_ARRAY
-			-- since we got rid of "empty" UnitIDs on previous step
-			local lastValidInPrio = 0
-			for i = getn(RINSE_CONFIG.PRIO_ARRAY), 1, -1 do
-				if NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name) then
-					lastValidInPrio = i
-					break
-				end
+	local startIndex = 2
+	local endIndex = getn(Prio)
+	if RINSE_CONFIG.PRIO_ARRAY[1] then
+		-- PRIO_ARRAY can contain names that are not in our raid/party
+		-- I assume the last name in PRIO_ARRAY that we can match to some UnitID is the end of PRIO_ARRAY
+		-- since we got rid of "empty" UnitIDs on previous step
+		local lastValidInPrio = 0
+		for i = getn(RINSE_CONFIG.PRIO_ARRAY), 1, -1 do
+			if NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name) then
+				lastValidInPrio = i
+				break
 			end
-			startIndex = lastValidInPrio + 1
 		end
-		for a = startIndex, endIndex do
-			local temp = Prio[a]
-			local b = random(startIndex, endIndex)
-			if Prio[a] and Prio[b] then
-				Prio[a] = Prio[b]
-				Prio[b] = temp
-			end
+		startIndex = lastValidInPrio + 1
+	end
+	for a = startIndex, endIndex do
+		local temp = Prio[a]
+		local b = random(startIndex, endIndex)
+		if Prio[a] and Prio[b] then
+			Prio[a] = Prio[b]
+			Prio[b] = temp
 		end
 	end
 end
@@ -566,8 +569,9 @@ end
 
 local info = {}
 info.textHeight = 12
-info.notCheckable = true
-info.hasArrow = false
+info.notCheckable = 1
+info.hasArrow = nil
+info.checked = nil
 info.func = AddGroupOrClass
 
 local function ClassMenu()
@@ -729,9 +733,7 @@ local function UpdateBlacklist()
 		Blacklist[k] = v
 	end
 	for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST_CLASS) do
-		if not RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] then
-			RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] = {}
-		end
+		RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] = RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] or {}
 		for k2, v2 in pairs(RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k]) do
 			ClassBlacklist[k][k2] = v2
 		end
@@ -1089,21 +1091,24 @@ function RinseFrame_OnEvent()
 		UpdateSpells()
 		UpdatePrio()
 	elseif event == "SPELL_QUEUE_EVENT" then
-		if RINSE_CONFIG.PRINT then
-			-- arg1 is eventCode, arg2 is spellId
-			-- NORMAL_QUEUE_POPPED = 3
-			if arg1 == 3 then
-				local spellName = GetSpellNameAndRankForId(arg2)
-				if lastSpellName and lastButton and lastSpellName == spellName then
-					-- If button unit no longer set, don't print
-					if not lastButton.unit or lastButton.unit == "" then
-						return
-					end
-					local debuff = _G[lastButton:GetName().."Name"]:GetText()
-					ChatMessage(DebuffColor[lastButton.type].hex..debuff.."|r - "..ClassColors[lastButton.unitClass]..UnitName(lastButton.unit).."|r")
-				end
-			end
+		if not RINSE_CONFIG.PRINT then
+			return
 		end
+		-- arg1 is eventCode, arg2 is spellId
+		-- NORMAL_QUEUE_POPPED = 3
+		if arg1 ~= 3 then
+			return
+		end
+		local spellName = GetSpellNameAndRankForId(arg2)
+		if not (lastSpellName and lastButton and lastSpellName == spellName) then
+			return
+		end
+		-- If button unit no longer set, don't print
+		if not lastButton.unit or lastButton.unit == "" then
+			return
+		end
+		local debuff = _G[lastButton:GetName().."Name"]:GetText()
+		ChatMessage(DebuffColor[lastButton.type].hex..debuff.."|r - "..ClassColors[lastButton.unitClass]..UnitName(lastButton.unit).."|r")
 	elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
 		needUpdatePrio = true
 		prioTimer = 2
