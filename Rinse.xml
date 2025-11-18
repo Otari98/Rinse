@@ -740,7 +740,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleWyvernSting()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -757,7 +757,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleMutatingInjection()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -774,7 +774,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleIgnoreAbolish()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -791,7 +791,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleShadowform()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -808,7 +808,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_TogglePets()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -825,7 +825,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_TogglePrint()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -842,7 +842,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleMSBT()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -859,7 +859,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleSound()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -876,7 +876,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleBackdrop()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -893,7 +893,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleHeader()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -910,7 +910,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleLock()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -927,7 +927,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleDirection()
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -1136,7 +1136,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleFilter("Magic")
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -1153,7 +1153,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleFilter("Disease")
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -1170,7 +1170,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleFilter("Poison")
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>
@@ -1187,7 +1187,7 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleFilter("Curse")
-						PlayClickSound()
+						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
 			</CheckButton>

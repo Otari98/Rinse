@@ -24,6 +24,7 @@ local stopCastCooldown = 0
 local prioTimer = 0
 local needUpdatePrio = false
 local shadowform
+local autoattack
 local selectedClass = "WARRIOR"
 local BlacklistArray = {}
 local ClassBlacklistArray = {}
@@ -164,6 +165,7 @@ DefaultBlacklist["Sanctum Mind Decay"] = true
 -- Poison
 DefaultBlacklist["Wyvern Sting"] = true
 DefaultBlacklist["Poison Mushroom"] = true
+DefaultBlacklist["Gastronomic Guilt"] = true
 ----------------------------------------------------
 
 local Blacklist = {}
@@ -719,12 +721,14 @@ function RinseFrameOptions_OnClick()
 end
 
 local function DisableCheckBox(checkBox)
-	OptionsFrame_DisableCheckBox(checkBox)
+	checkBox:Disable();
+	_G[checkBox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
 	_G[checkBox:GetName().."TooltipPreserve"]:Show()
 end
 
 local function EnableCheckBox(checkBox)
-	OptionsFrame_EnableCheckBox(checkBox)
+	checkBox:Enable()
+	_G[checkBox:GetName().."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
 	_G[checkBox:GetName().."TooltipPreserve"]:Hide()
 end
 
@@ -957,13 +961,18 @@ function RinseFrame_OnLoad()
 	if playerClass == "PRIEST" then
 		RinseFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
 	end
+	if not superwow then
+		-- For restoring auto attack
+		RinseFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
+		RinseFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
+	end
 	RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
 end
 
 -- Check if unit can be cleansed
 local function CanBeCleansed(unit)
-	return (UnitCanAssist("player",unit) and not UnitIsCharmed(unit))
-	    or (not UnitCanAssist("player",unit) and UnitIsCharmed(unit))
+	return (UnitCanAssist("player", unit) and not UnitIsCharmed(unit))
+	    or (not UnitCanAssist("player", unit) and UnitIsCharmed(unit))
 end
 
 local function GoodUnit(unit)
@@ -1116,6 +1125,10 @@ function RinseFrame_OnEvent()
 		UpdateSpells()
 	elseif event == "PLAYER_AURAS_CHANGED" then
 		shadowform = HasShadowform()
+	elseif event == "PLAYER_ENTER_COMBAT" then
+		autoattack = UnitName("target")
+	elseif event == "PLAYER_LEAVE_COMBAT" then
+		autoattack = nil
 	end
 end
 
@@ -1271,9 +1284,7 @@ function RinseFrame_OnUpdate(elapsed)
 		if Debuffs[i].name ~= "" and not Debuffs[i].shown and PriorityDebuffs[Debuffs[i].name] then
 			if i ~= frontIndex then
 				-- Swap priority debuff to front
-				local temp = Debuffs[frontIndex]
-				Debuffs[frontIndex] = Debuffs[i]
-				Debuffs[i] = temp
+				Debuffs[frontIndex], Debuffs[i] = Debuffs[i], Debuffs[frontIndex]
 			end
 			frontIndex = frontIndex + 1
 		end
@@ -1384,8 +1395,11 @@ function Rinse_Cleanse(button, attemptedCast)
 		CastSpellByName(spellName, button.unit)
 	else
 		local selfcast = GetCVar("autoselfcast")
+		local assist = GetCVar("assistattack")
 		local lastTarget = UnitName("target")
+		local restore = lastTarget and autoattack and autoattack == lastTarget
 		SetCVar("autoselfcast", 0)
+		SetCVar("assistattack", 1)
 		TargetUnit(button.unit)
 		if UnitExists("target") and UnitIsUnit("target", button.unit) then
 			CastSpellByName(spellName)
@@ -1394,7 +1408,11 @@ function Rinse_Cleanse(button, attemptedCast)
 				TargetLastTarget()
 			end
 		end
+		if restore and lastTarget and UnitExists("target") and UnitName("target") == lastTarget then
+			AssistUnit("player")
+		end
 		SetCVar("autoselfcast", selfcast)
+		SetCVar("assistattack", assist)
 	end
 	return true
 end
@@ -1517,7 +1535,6 @@ end
 local function SelectClass()
 	selectedClass = this.value
 	local text = this:GetText()
-	-- text = gsub(text, "|cff%x%x%x%x%x%x", "")
 	RinseOptionsFrameSelectClassText:SetText(text)
 	RinseOptionsFrameClassBlacklistScrollFrame_Update()
 end
@@ -1666,7 +1683,6 @@ function RinseOptionsFrameFilterScrollFrame_Update()
 			end
 		end
 	end
-	-- sort(FilterArray)
 	local numEntries = getn(FilterArray)
 	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
 	for i = 1, OptionsScrollMaxButtons do
