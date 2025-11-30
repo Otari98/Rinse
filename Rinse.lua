@@ -16,6 +16,7 @@ local GetTime = GetTime
 local CheckInteractDistance = CheckInteractDistance
 local updateInterval = 0.1
 local timeElapsed = 0
+local lastDebuffCount = 0
 local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
 local errorSound = "Sound\\Interface\\Error.wav"
 local playNoticeSound = true
@@ -139,6 +140,9 @@ Prio[5] = "party4"
 for i = 1, 40 do
 	tinsert(Prio, "raid"..i)
 end
+
+-- Skip list hash for O(1) lookup (rebuilt when SKIP_ARRAY changes)
+local SkipNames = {}
 
 -- Spells to ignore always (these will block other debuffs of the same type from showing)
 local DefaultBlacklist = {}
@@ -408,14 +412,16 @@ local function UpdatePrio()
 		tinsert(Prio, (gsub(Prio[i], "(%a+)(%d*)", "%1pet%2")))
 	end
 	-- Get rid of duplicates and UnitIDs that we can't match to names in our raid/party
-	wipe(Seen)
-	for i = 1, getn(Prio) do
-		local name = UnitName(Prio[i])
-		if not name or arrcontains(Seen, name) then
+	wipelist(Seen)
+	local prioLen = getn(Prio)
+	for i = 1, prioLen do
+		local unit = Prio[i]
+		local name = UnitName(unit)
+		if not name or Seen[name] then
 			-- Don't delete yet, just flag
 			Prio[i] = false
-		elseif name then
-			tinsert(Seen, name)
+		else
+			Seen[name] = true
 		end
 	end
 	-- Delete now
@@ -454,7 +460,18 @@ local function UpdatePrio()
 	end
 end
 
+local function RebuildSkipNames()
+	wipelist(SkipNames)
+	local arr = RINSE_CONFIG.SKIP_ARRAY
+	for i = 1, getn(arr) do
+		if arr[i] and arr[i].name then
+			SkipNames[arr[i].name] = true
+		end
+	end
+end
+
 function RinseSkipListScrollFrame_Update()
+	RebuildSkipNames()
 	local offset = FauxScrollFrame_GetOffset(RinseSkipListScrollFrame)
 	local arrayIndex = 1
 	local numPlayers = getn(RINSE_CONFIG.SKIP_ARRAY)
@@ -976,15 +993,14 @@ local function CanBeCleansed(unit)
 end
 
 local function GoodUnit(unit)
-	if not (unit and UnitExists(unit) and UnitName(unit)) then
+	if not (unit and UnitExists(unit)) then
 		return false
 	end
-	if UnitIsVisible(unit) and CanBeCleansed(unit) then
-		if not arrcontains(RINSE_CONFIG.SKIP_ARRAY, UnitName(unit)) and (arrcontains(Prio, unit) or (unit == "target")) then
-			return true
-		end
+	local name = UnitName(unit)
+	if not name or SkipNames[name] then
+		return false
 	end
-	return false
+	return UnitIsVisible(unit) and CanBeCleansed(unit)
 end
 
 function RinseFrame_OnEvent()
@@ -997,6 +1013,7 @@ function RinseFrame_OnEvent()
 		RINSE_CHAR_CONFIG = RINSE_CHAR_CONFIG or {}
 		RINSE_CONFIG.SKIP_ARRAY = RINSE_CONFIG.SKIP_ARRAY or {}
 		RINSE_CONFIG.PRIO_ARRAY = RINSE_CONFIG.PRIO_ARRAY or {}
+		RebuildSkipNames()
 		RINSE_CONFIG.POSITION = RINSE_CONFIG.POSITION or {x = 0, y = 0}
 		RINSE_CONFIG.SCALE = RINSE_CONFIG.SCALE or 0.85
 		RINSE_CONFIG.OPACITY = RINSE_CONFIG.OPACITY or 1.0
@@ -1191,17 +1208,18 @@ function RinseFrame_OnUpdate(elapsed)
 		return
 	end
 	timeElapsed = 0
-	-- Clear debuffs info
-	for i = 1, DEBUFFS_MAX do
-		Debuffs[i].name = ""
-		Debuffs[i].type = ""
-		Debuffs[i].texture = ""
-		Debuffs[i].stacks = 0
-		Debuffs[i].unit = ""
-		Debuffs[i].unitName = ""
-		Debuffs[i].unitClass = ""
-		Debuffs[i].shown = false
-		Debuffs[i].debuffIndex = 0
+	-- Clear only entries that were used last tick
+	for i = 1, lastDebuffCount do
+		local d = Debuffs[i]
+		d.name = ""
+		d.type = ""
+		d.texture = ""
+		d.stacks = 0
+		d.unit = ""
+		d.unitName = ""
+		d.unitClass = ""
+		d.shown = false
+		d.debuffIndex = 0
 	end
 	local debuffIndex = 1
 	-- Get new info
@@ -1223,7 +1241,8 @@ function RinseFrame_OnUpdate(elapsed)
 		end
 	end
 	-- Scan units in Prio array (pets are included, filtered in SaveDebuffInfo)
-	for index = 1, getn(Prio) do
+	local prioCount = getn(Prio)
+	for index = 1, prioCount do
 		local unit = Prio[index]
 		if GoodUnit(unit) and not UnitIsUnit("target", unit) then
 			local _, class = UnitClass(unit)
@@ -1242,46 +1261,50 @@ function RinseFrame_OnUpdate(elapsed)
 			end
 		end
 	end
-	-- Find blacklisted debuffs, if found, mark all debuffs of the same type of that unit as shown
-	for k, v in pairs(Debuffs) do
-		if Blacklist[v.name] or (ClassBlacklist[v.unitClass] and ClassBlacklist[v.unitClass][v.name]) then
-			for k2, v2 in pairs(Debuffs) do
-				if v2.unitName == v.unitName and (v2.type == v.type or SpellNameToRemove[v.type] == "Cleanse") then
-					v2.shown = true
+	-- Process debuffs: blacklist, priority, shadowform, and filter logic
+	-- Only iterate up to debuffIndex (actual found debuffs), cache table lookups
+	local debuffCount = debuffIndex - 1
+	if debuffCount < 0 then debuffCount = 0 end
+	lastDebuffCount = debuffCount
+	for i = 1, debuffCount do
+		local d = Debuffs[i]
+		local dName, dType, dUnitName, dUnitClass = d.name, d.type, d.unitName, d.unitClass
+		local classBlacklist = ClassBlacklist[dUnitClass]
+		-- Check if this debuff is blacklisted
+		if Blacklist[dName] or (classBlacklist and classBlacklist[dName]) then
+			-- Hide all debuffs of same type on same unit
+			for j = 1, debuffCount do
+				local d2 = Debuffs[j]
+				if d2.unitName == dUnitName and (d2.type == dType or SpellNameToRemove[dType] == "Cleanse") then
+					d2.shown = true
 				end
 			end
 		end
-	end
-	-- Handle priority debuffs: if a unit has a priority debuff, hide ALL non-priority debuffs on that unit
-	for k, v in pairs(Debuffs) do
-		if PriorityDebuffs[v.name] and v.type ~= "" then
-			-- This is a priority debuff, hide all other non-priority debuffs on the same unit (regardless of type)
-			for k2, v2 in pairs(Debuffs) do
-				if v2.unitName == v.unitName and not PriorityDebuffs[v2.name] then
-					v2.shown = true
+		-- Check if this is a priority debuff
+		if PriorityDebuffs[dName] and dType ~= "" then
+			-- Hide all non-priority debuffs on same unit
+			for j = 1, debuffCount do
+				local d2 = Debuffs[j]
+				if d2.unitName == dUnitName and not PriorityDebuffs[d2.name] then
+					d2.shown = true
 				end
 			end
 		end
-	end
-	-- Don't show diseases in Shadowform
-	if shadowform and RINSE_CONFIG.SHADOWFORM then
-		for k, v in pairs(Debuffs) do
-			if v.type == "Disease" then
-				v.shown = true
-			end
+		-- Shadowform: hide diseases
+		if shadowform and RINSE_CONFIG.SHADOWFORM and dType == "Disease" then
+			d.shown = true
 		end
-	end
-	-- Find player defined debuffs that should be hidden
-	for k, v in pairs(Debuffs) do
-		if Filter[v.name] or Filter[v.type] then
-			v.shown = true
+		-- Player filter
+		if Filter[dName] or Filter[dType] then
+			d.shown = true
 		end
 	end
 	-- Move priority debuffs to the front of the list
 	-- This is CRITICAL so that priority debuffs are removed first raidwide
 	local frontIndex = 1
-	for i = 1, DEBUFFS_MAX do
-		if Debuffs[i].name ~= "" and not Debuffs[i].shown and PriorityDebuffs[Debuffs[i].name] then
+	for i = 1, debuffCount do
+		local d = Debuffs[i]
+		if not d.shown and PriorityDebuffs[d.name] then
 			if i ~= frontIndex then
 				-- Swap priority debuff to front
 				Debuffs[frontIndex], Debuffs[i] = Debuffs[i], Debuffs[frontIndex]
