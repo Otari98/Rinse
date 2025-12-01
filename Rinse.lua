@@ -738,7 +738,7 @@ function RinseFrameOptions_OnClick()
 end
 
 local function DisableCheckBox(checkBox)
-	checkBox:Disable();
+	checkBox:Disable()
 	_G[checkBox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
 	_G[checkBox:GetName().."TooltipPreserve"]:Show()
 end
