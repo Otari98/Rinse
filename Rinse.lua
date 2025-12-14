@@ -451,11 +451,9 @@ local function UpdatePrio()
 		startIndex = lastValidInPrio + 1
 	end
 	for a = startIndex, endIndex do
-		local temp = Prio[a]
 		local b = random(startIndex, endIndex)
 		if Prio[a] and Prio[b] then
-			Prio[a] = Prio[b]
-			Prio[b] = temp
+			Prio[a], Prio[b] = Prio[b], Prio[a]
 		end
 	end
 end
@@ -670,41 +668,33 @@ if playerClass == "WARLOCK" then
 	bookType = BOOKTYPE_PET
 end
 
+local AllSpells = {}
+
 local function UpdateSpells()
 	if not Spells[playerClass] then
 		return
 	end
-	if not (playerClass == "PALADIN" and RINSE_CHAR_CONFIG.FILTER.Magic) then
-		local found = false
-		for tab = 1, GetNumSpellTabs() do
-			local _, _, offset, numSpells = GetSpellTabInfo(tab)
-			for s = offset + 1, offset + numSpells do
-				local spell = GetSpellName(s, bookType)
-				if spell then
-					for dispelType, v in pairs(Spells[playerClass]) do
-						if v[1] == spell then
-							SpellNameToRemove[dispelType] = spell
-							SpellSlotForName[spell] = s
-							found = true
-						end
-					end
-				end
-			end
-		end
-		if found then
-			return
-		end
-	end
+	-- Gather all spells and their spellBookID
+	wipelist(AllSpells)
 	for tab = 1, GetNumSpellTabs() do
 		local _, _, offset, numSpells = GetSpellTabInfo(tab)
-		for s = offset + 1, offset + numSpells do
-			local spell = GetSpellName(s, bookType)
+		for spellBookID = offset + 1, offset + numSpells do
+			local spell = GetSpellName(spellBookID, bookType)
 			if spell then
-				for dispelType, v in pairs(Spells[playerClass]) do
-					if v[2] and v[2] == spell then
-						SpellNameToRemove[dispelType] = spell
-						SpellSlotForName[spell] = s
-					end
+				AllSpells[spell] = spellBookID
+			end
+		end
+	end
+	-- Search AllSpells for cleansing spells
+	for dispelType, possibleSpells in pairs(Spells[playerClass]) do
+		-- Search in reverse order to finish at more powerful spell which should be at index 1 in Spells[playerClass][debuffType]
+		for i = getn(possibleSpells), 1, -1 do
+			local spellToFind = possibleSpells[i]
+			for spellName, spellSLot in pairs(AllSpells) do
+				if spellName == spellToFind then
+					SpellNameToRemove[dispelType] = spellName
+					SpellSlotForName[spellName] = spellSLot
+					break
 				end
 			end
 		end
