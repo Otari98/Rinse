@@ -731,12 +731,14 @@ function RinseFrameOptions_OnClick()
 end
 
 local function DisableCheckBox(checkBox)
+	if not checkBox then return end
 	checkBox:Disable()
 	_G[checkBox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
 	_G[checkBox:GetName().."TooltipPreserve"]:Show()
 end
 
 local function EnableCheckBox(checkBox)
+	if not checkBox then return end
 	checkBox:Enable()
 	_G[checkBox:GetName().."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
 	_G[checkBox:GetName().."TooltipPreserve"]:Hide()
@@ -951,6 +953,7 @@ local function UpdateHeader()
 		RinseFrameTitle:Hide()
 		RinseFrame:SetHeight(BUTTONS_MAX * 42 + 10)
 		RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+		ChatFrame1:AddMessage(BLUE.."[Rinse]|r Buttons are hidden, to access option and lists use /rinse options, /rinse skip or /rinse prio.")
 	end
 end
 
