@@ -174,7 +174,47 @@
 				</Scripts>
 			</Frame>
 		</Frames>
+		<Scripts>
+			<OnEnter>
+				local text = getglobal(this:GetName().."Text")
+				this.r, this.g, this.b = text:GetTextColor()
+				text:SetTextColor(1, 1, 1)
+				if this.tooltipText then
+					GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+					GameTooltip:SetText(this.tooltipText, nil, nil, nil, nil, 1)
+				end
+				if this.tooltipRequirement then
+					GameTooltip:AddLine(this.tooltipRequirement, nil, nil, nil, 1)
+					GameTooltip:Show()
+				end
+			</OnEnter>
+			<OnLeave>
+				getglobal(this:GetName().."Text"):SetTextColor(this.r, this.g, this.b)
+				GameTooltip:Hide()
+			</OnLeave>
+		</Scripts>
 	</CheckButton>
+	<Slider name="RinseOptionsSliderTemplate" inherits="OptionsSliderTemplate" virtual="true">
+		<Scripts>
+			<OnEnter>
+				local text = getglobal(this:GetName().."Text")
+				this.r, this.g, this.b = text:GetTextColor()
+				text:SetTextColor(1, 1, 1)
+				if this.tooltipText then
+					GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
+					GameTooltip:SetText(this.tooltipText, nil, nil, nil, nil, 1)
+				end
+				if this.tooltipRequirement then
+					GameTooltip:AddLine(this.tooltipRequirement, nil, nil, nil, 1)
+					GameTooltip:Show()
+				end
+			</OnEnter>
+			<OnLeave>
+				getglobal(this:GetName().."Text"):SetTextColor(this.r, this.g, this.b)
+				GameTooltip:Hide()
+			</OnLeave>
+		</Scripts>
+	</Slider>
 	<ScrollFrame name="RinseScrollFrameTemplate" inherits="FauxScrollFrameTemplate" virtual="true">
 		<Frames>
 			<Frame enableMouse="false">

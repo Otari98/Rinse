@@ -68,7 +68,7 @@ ClassColors["HUNTER"]  = "|cffabd473"
 ClassColors["SHAMAN"]  = "|cff0070de"
 
 local DebuffColor = {}
-DebuffColor["none"]    = { r = 0.8, g = 0.0, b = 0.0, hex = "|cffCC0000" }
+DebuffColor["Snare"]   = { r = 0.8, g = 0.0, b = 0.0, hex = "|cffCC0000" }
 DebuffColor["Magic"]   = { r = 0.2, g = 0.6, b = 1.0, hex = "|cff3399FF" }
 DebuffColor["Curse"]   = { r = 0.6, g = 0.0, b = 1.0, hex = "|cff9900FF" }
 DebuffColor["Disease"] = { r = 0.6, g = 0.4, b = 0.0, hex = "|cff996600" }
@@ -78,7 +78,7 @@ local BLUE = DebuffColor["Magic"].hex
 
 -- Spells that remove stuff, for each class
 local Spells = {}
-Spells["PALADIN"] = { Magic = {"Cleanse"}, Poison = {"Cleanse", "Purify"}, Disease = {"Cleanse", "Purify"} }
+Spells["PALADIN"] = { Magic = {"Cleanse"}, Poison = {"Cleanse", "Purify"}, Disease = {"Cleanse", "Purify"}, Snare = {"Hand of Freedom"} }
 Spells["DRUID"]   = { Curse = {"Remove Curse"}, Poison = {"Abolish Poison", "Cure Poison"} }
 Spells["PRIEST"]  = { Magic = {"Dispel Magic"}, Disease = {"Abolish Disease", "Cure Disease"} }
 Spells["SHAMAN"]  = { Poison = {"Cure Poison"}, Disease = {"Cure Disease"} }
@@ -87,6 +87,7 @@ Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
 Spells["WARRIOR"] = {}
 Spells["ROGUE"]   = {}
 Spells["HUNTER"]  = {}
+
 -- Spells that we have
 -- SpellNameToRemove[debuffType] = "spellName"
 local SpellNameToRemove = {}
@@ -226,11 +227,21 @@ DefaultFilter["Magic"] = Spells[playerClass].Magic == nil
 DefaultFilter["Disease"] = Spells[playerClass].Disease == nil
 DefaultFilter["Poison"] = Spells[playerClass].Poison == nil
 DefaultFilter["Curse"] = Spells[playerClass].Curse == nil
+DefaultFilter["Snare"] = Spells[playerClass].Snare == nil
 
 local Filter = {}
 for k, v in pairs(DefaultFilter) do
 	Filter[k] = v
 end
+
+-- Spells that can be removed with paladins freedom
+-- Probably do not want AoE slows here like Piercing Howl
+local SnareDebuffs = {}
+SnareDebuffs["Hamstring"] = true
+SnareDebuffs["Wing Clip"] = true
+SnareDebuffs["Mind Flay"] = true
+SnareDebuffs["Web"] = true
+SnareDebuffs["Surge of Mana"] = true
 
 local function wipe(array)
 	if type(array) ~= "table" then
@@ -689,10 +700,14 @@ local function UpdateSpells()
 		end
 	end
 	-- Search AllSpells for cleansing spells
-	for dispelType, possibleSpells in pairs(Spells[playerClass]) do
+	for dispelType, spells in pairs(Spells[playerClass]) do
 		-- Search in reverse order to finish at more powerful spell which should be at index 1 in Spells[playerClass][debuffType]
-		for i = getn(possibleSpells), 1, -1 do
-			local spellToFind = possibleSpells[i]
+		for i = getn(spells), 1, -1 do
+			local spellToFind = spells[i]
+			if spellToFind == "Cleanse" and RINSE_CHAR_CONFIG.FILTER.Magic then
+				-- In this case use Purify
+				break
+			end
 			for spellName, spellSLot in pairs(AllSpells) do
 				if spellName == spellToFind then
 					SpellNameToRemove[dispelType] = spellName
@@ -1040,6 +1055,7 @@ function RinseFrame_OnEvent()
 			Magic = Spells[playerClass].Magic == nil,
 			Disease = Spells[playerClass].Disease == nil,
 			Poison = Spells[playerClass].Poison == nil,
+			Snare = Spells[playerClass].Snare == nil,
 			Curse = Spells[playerClass].Curse == nil,
 		}
 		RinseFrame:ClearAllPoints()
@@ -1069,10 +1085,11 @@ function RinseFrame_OnEvent()
 		RinseOptionsFrameFilterMagic:SetChecked(not Filter.Magic)
 		RinseOptionsFrameFilterDisease:SetChecked(not Filter.Disease)
 		RinseOptionsFrameFilterPoison:SetChecked(not Filter.Poison)
+		RinseOptionsFrameFilterSnare:SetChecked(not Filter.Snare)
 		RinseOptionsFrameFilterCurse:SetChecked(not Filter.Curse)
 		for k in pairs(DebuffColor) do
-			if k ~= "none" then
-				local checkBox = _G["RinseOptionsFrameFilter"..k]
+			local checkBox = _G["RinseOptionsFrameFilter"..k]
+			if checkBox then
 				if Spells[playerClass] and Spells[playerClass][k] then
 					EnableCheckBox(checkBox)
 				else
@@ -1163,6 +1180,9 @@ local function GetDebuffInfo(unit, i)
 		debuffName = RinseScanTooltipTextLeft1:GetText() or ""
 		debuffType = RinseScanTooltipTextRight1:GetText() or ""
 		texture, applications, debuffType = UnitDebuff(unit, i)
+	end
+	if debuffName and SnareDebuffs[debuffName] and not debuffType then
+		debuffType = "Snare"
 	end
 	return debuffType, debuffName, texture, applications
 end
@@ -1317,7 +1337,7 @@ function RinseFrame_OnUpdate(elapsed)
 	debuffIndex = 1
 	for buttonIndex = 1, BUTTONS_MAX do
 		-- Find next debuff to show
-		while debuffIndex < DEBUFFS_MAX and Debuffs[debuffIndex].shown ~= false do
+		while debuffIndex < DEBUFFS_MAX and Debuffs[debuffIndex].shown do
 			debuffIndex = debuffIndex + 1
 		end
 		local name = Debuffs[debuffIndex].name
@@ -1658,7 +1678,7 @@ StaticPopupDialogs["RINSE_ADD_TO_BLACKLIST"] = {
 
 function RinseOptionsScrollFrameButton_OnClick()
 	local text = this:GetText()
-	if DebuffColor[text] and text ~= "none" and Spells[playerClass][text] == nil then
+	if DebuffColor[text] and Spells[playerClass][text] == nil then
 		return
 	end
 	local buttonType = gsub(gsub(this:GetName(), "^RinseOptions", ""), "Button%d+$", "")

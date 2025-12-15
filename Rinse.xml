@@ -663,7 +663,7 @@
 				<FontString name="$parentFilterText" inherits="GameFontHighlight" text="Filter" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
-							<Offset x="-90" y="125"/>
+							<Offset x="-90" y="145"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
@@ -684,7 +684,7 @@
 					</Anchor>
 				</Anchors>
 			</Button>
-			<Slider name="$parentScaleSlider" inherits="OptionsSliderTemplate">
+			<Slider name="$parentScaleSlider" inherits="RinseOptionsSliderTemplate">
 				<Size x="160" y="16"/>
 				<Anchors>
 					<Anchor point="TOPLEFT">
@@ -704,7 +704,7 @@
 					</OnValueChanged>
 				</Scripts>
 			</Slider>
-			<Slider name="$parentOpacitySlider" inherits="OptionsSliderTemplate">
+			<Slider name="$parentOpacitySlider" inherits="RinseOptionsSliderTemplate">
 				<Size x="160" y="16"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentScaleSlider" relativePoint="BOTTOMLEFT">
@@ -931,7 +931,7 @@
 					</OnClick>
 				</Scripts>
 			</CheckButton>
-			<Slider name="$parentButtonsSlider" inherits="OptionsSliderTemplate">
+			<Slider name="$parentButtonsSlider" inherits="RinseOptionsSliderTemplate">
 				<Size x="160" y="16"/>
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentFlip" relativePoint="BOTTOMLEFT">
@@ -1126,7 +1126,7 @@
 			<CheckButton name="$parentFilterMagic" inherits="RinseOptionsCheckButtonTemplate">
 				<Anchors>
 					<Anchor point="TOPLEFT" relativeTo="$parentButtonsSlider" relativePoint="BOTTOMLEFT">
-						<Offset x="0" y="-47"/>
+						<Offset x="0" y="-27"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
@@ -1187,6 +1187,23 @@
 					</OnLoad>
 					<OnClick>
 						Rinse_ToggleFilter("Curse")
+						PlaySound("igMainMenuOptionCheckBoxOn")
+					</OnClick>
+				</Scripts>
+			</CheckButton>
+			<CheckButton name="$parentFilterSnare" inherits="RinseOptionsCheckButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeTo="$parentFilterCurse" relativePoint="BOTTOMLEFT">
+						<Offset x="0" y="7"/>
+					</Anchor>
+				</Anchors>
+				<Scripts>
+					<OnLoad>
+						getglobal(this:GetName().."Text"):SetText("Cure Snare")
+						this.tooltipText = "Check this to cure some slow and root effects with Hand of Freedom."
+					</OnLoad>
+					<OnClick>
+						Rinse_ToggleFilter("Snare")
 						PlaySound("igMainMenuOptionCheckBoxOn")
 					</OnClick>
 				</Scripts>
