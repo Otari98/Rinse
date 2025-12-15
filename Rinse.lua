@@ -393,19 +393,19 @@ end
 local Seen = {}
 
 local function UpdatePrio()
-	-- Reset Prio to default
 	wipe(Prio)
-	for i = 1, getn(DefaultPrio) do
-		tinsert(Prio, DefaultPrio[i])
-	end
+	-- If there is a user defined prio, add it first
 	if RINSE_CONFIG.PRIO_ARRAY[1] then
-		-- Copy from user defined PRIO_ARRAY into internal Prio
 		for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
 			local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
-			if unit and Prio[i] ~= unit then
+			if unit then
 				tinsert(Prio, i, unit)
 			end
 		end
+	end
+	-- Add default prio
+	for i = 1, getn(DefaultPrio) do
+		tinsert(Prio, DefaultPrio[i])
 	end
 	-- Always add pets to scan list (filtering happens during save based on RINSE_CONFIG.PETS)
 	for i = 1, getn(Prio) do
@@ -413,10 +413,8 @@ local function UpdatePrio()
 	end
 	-- Get rid of duplicates and UnitIDs that we can't match to names in our raid/party
 	wipelist(Seen)
-	local prioLen = getn(Prio)
-	for i = 1, prioLen do
-		local unit = Prio[i]
-		local name = UnitName(unit)
+	for i = 1, getn(Prio) do
+		local name = UnitName(Prio[i])
 		if not name or Seen[name] then
 			-- Don't delete yet, just flag
 			Prio[i] = false
@@ -439,16 +437,21 @@ local function UpdatePrio()
 	local endIndex = getn(Prio)
 	if RINSE_CONFIG.PRIO_ARRAY[1] then
 		-- PRIO_ARRAY can contain names that are not in our raid/party
-		-- I assume the last name in PRIO_ARRAY that we can match to some UnitID is the end of PRIO_ARRAY
-		-- since we got rid of "empty" UnitIDs on previous step
-		local lastValidInPrio = 0
+		-- To find index in Prio from where we can start randomization,
+		-- find last unitID from PRIO_ARRAY that can be matched to any member of our raid/party,
+		-- get index of that unitID in Prio and add 1 to it
 		for i = getn(RINSE_CONFIG.PRIO_ARRAY), 1, -1 do
-			if NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name) then
-				lastValidInPrio = i
+			local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
+			if unit then
+				for j = 1, endIndex do
+					if Prio[j] == unit then
+						startIndex = j + 1
+						break
+					end
+				end
 				break
 			end
 		end
-		startIndex = lastValidInPrio + 1
 	end
 	for a = startIndex, endIndex do
 		local b = random(startIndex, endIndex)
