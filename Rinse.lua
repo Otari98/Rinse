@@ -410,7 +410,7 @@ local function UpdatePrio()
 		for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
 			local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
 			if unit then
-				tinsert(Prio, i, unit)
+				tinsert(Prio, unit)
 			end
 		end
 	end
