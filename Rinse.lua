@@ -380,7 +380,7 @@ local function InRange(unit, spell)
 			end
 			-- Ignore result == -1
 		end
-		if unitxp and UnitIsVisible(unit) then
+		if unitxp then
 			-- Accounts for true reach. A tauren can dispell a male tauren at 38y!
 			return UnitXP("distanceBetween", "player", unit) < 30
 		elseif superwow then
@@ -399,6 +399,22 @@ local function InRange(unit, spell)
 		-- The above can't check mc'd players, this is the backup
 		return CheckInteractDistance(unit, 4)
 	end
+end
+
+local function HasLos(unit)
+    if unitxp then
+        return UnitXP("inSight", "player", unit)
+    end
+    return UnitIsVisible(unit)
+end
+
+local function CanCast(unit, spell)
+    local inRange = InRange(unit, spell)
+    if not inRange then
+        return false
+    end
+    
+    return HasLos(unit)
 end
 
 local Seen = {}
@@ -1374,7 +1390,7 @@ function RinseFrame_OnUpdate(elapsed)
 					Debuffs[i].shown = true
 				end
 			end
-			if not InRange(unit, SpellNameToRemove[button.type]) then
+			if not CanCast(unit, SpellNameToRemove[button.type]) then
 				button:SetAlpha(0.5)
 			else
 				button:SetAlpha(1)
@@ -1403,7 +1419,7 @@ function Rinse_Cleanse(button, attemptedCast)
 		-- Otherwise don't bother trying to cast
 		return false
 	end
-	if not InRange(button.unit, spellName) then
+	if not CanCast(button.unit, spellName) then
 		if errorCooldown <= 0 then
 			playsound(errorSound)
 			errorCooldown = 0.1
