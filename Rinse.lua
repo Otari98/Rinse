@@ -1,7 +1,7 @@
 local _G = _G or getfenv(0)
 local _, playerClass = UnitClass("player")
 local superwow = SUPERWOW_VERSION
-local unitxp = pcall(UnitXP, "nop")
+local unitxp = pcall(UnitXP, "nop", "nop")
 local getn = table.getn
 local UnitExists = UnitExists
 local UnitIsFriend = UnitIsFriend
