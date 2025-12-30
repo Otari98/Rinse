@@ -89,16 +89,16 @@ Spells["ROGUE"]   = {}
 Spells["HUNTER"]  = {}
 
 -- Spells that we have
--- SpellNameToRemove[debuffType] = "spellName"
-local SpellNameToRemove = {}
+-- ["debuffType"] = "spellName"
+local UsableSpells = {}
 
--- SpellSlotForName[spellName] = spellSlot
-local SpellSlotForName = {}
+-- ["spellName"] = spellBookID
+local UsableSpellBookIDs = {}
 
 local lastSpellName = nil
 local lastButton = nil
 
--- Number of buttons shown, can be overridden by saved variables
+-- Number of buttons shown, can be overwritten by saved variables
 local BUTTONS_MAX = 5
 
 -- Maximum number of dispellable debuffs that we hold on to
@@ -332,7 +332,7 @@ local function HasAbolish(unit, debuffType)
 	if not UnitExists(unit) or not debuffType then
 		return false
 	end
-	if not SpellNameToRemove[debuffType] then
+	if not UsableSpells[debuffType] then
 		return false
 	end
 	if not (debuffType == "Poison" or debuffType == "Disease") then
@@ -368,53 +368,40 @@ local function HasShadowform()
 	return false
 end
 
-local function InRange(unit, spell)
+local function CanCast(unit, spell)
 	if not unit then return false end
-	if UnitIsFriend(unit, "player") and not UnitCanAttack("player", unit) then
+
+	local inRange
+
+	if UnitIsFriend("player", unit) and not UnitCanAttack("player", unit) then
 		if spell and IsSpellInRange then
-			local result = IsSpellInRange(spell, unit)
-			if result == 1 then
-				return true
-			elseif result == 0 then
-				return false
-			end
-			-- Ignore result == -1
+			inRange = IsSpellInRange(spell, unit) == 1
 		end
 		if unitxp then
 			-- Accounts for true reach. A tauren can dispell a male tauren at 38y!
-			return UnitXP("distanceBetween", "player", unit) < 30
+			inRange = UnitXP("distanceBetween", "player", unit) < 30
 		elseif superwow then
 			local myX, myY, myZ = UnitPosition("player")
 			local uX, uY, uZ = UnitPosition(unit)
 			if uX then
 				local dx, dy, dz = uX - myX, uY - myY, uZ - myZ
 				-- sqrt(1089) == 33, smallest max dispell range not accounting for true melee reach
-				return ((dx * dx) + (dy * dy) + (dz * dz)) <= 1089
+				inRange = ((dx * dx) + (dy * dy) + (dz * dz)) <= 1089
 			end
 		else
 			-- Not as accurate
-			return CheckInteractDistance(unit, 4)
+			inRange = CheckInteractDistance(unit, 4)
 		end
 	else
 		-- The above can't check mc'd players, this is the backup
-		return CheckInteractDistance(unit, 4)
+		inRange = CheckInteractDistance(unit, 4)
 	end
-end
 
-local function HasLos(unit)
-    if unitxp then
-        return UnitXP("inSight", "player", unit)
-    end
-    return UnitIsVisible(unit)
-end
+	if inRange then
+		return unitxp and UnitXP("inSight", "player", unit) or UnitIsVisible(unit)
+	end
 
-local function CanCast(unit, spell)
-    local inRange = InRange(unit, spell)
-    if not inRange then
-        return false
-    end
-    
-    return HasLos(unit)
+	return false
 end
 
 local Seen = {}
@@ -726,8 +713,8 @@ local function UpdateSpells()
 			end
 			for spellName, spellSLot in pairs(AllSpells) do
 				if spellName == spellToFind then
-					SpellNameToRemove[dispelType] = spellName
-					SpellSlotForName[spellName] = spellSLot
+					UsableSpells[dispelType] = spellName
+					UsableSpellBookIDs[spellName] = spellSLot
 					break
 				end
 			end
@@ -1213,7 +1200,7 @@ local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffNam
 	end
 
 	-- Check if debuff can be removed and respect abolish setting
-	if SpellNameToRemove[debuffType] and (RINSE_CONFIG.IGNORE_ABOLISH or not HasAbolish(unit, debuffType)) then
+	if UsableSpells[debuffType] and (RINSE_CONFIG.IGNORE_ABOLISH or not HasAbolish(unit, debuffType)) then
 		Debuffs[debuffIndex].name = debuffName or ""
 		Debuffs[debuffIndex].type = debuffType or ""
 		Debuffs[debuffIndex].texture = texture or ""
@@ -1307,7 +1294,7 @@ function RinseFrame_OnUpdate(elapsed)
 			-- Hide all debuffs of same type on same unit
 			for j = 1, debuffCount do
 				local d2 = Debuffs[j]
-				if d2.unitName == dUnitName and (d2.type == dType or SpellNameToRemove[dType] == "Cleanse") then
+				if d2.unitName == dUnitName and (d2.type == dType or UsableSpells[dType] == "Cleanse") then
 					d2.shown = true
 				end
 			end
@@ -1390,7 +1377,7 @@ function RinseFrame_OnUpdate(elapsed)
 					Debuffs[i].shown = true
 				end
 			end
-			if not CanCast(unit, SpellNameToRemove[button.type]) then
+			if not CanCast(unit, UsableSpells[button.type]) then
 				button:SetAlpha(0.5)
 			else
 				button:SetAlpha(1)
@@ -1408,8 +1395,8 @@ function Rinse_Cleanse(button, attemptedCast)
 		return false
 	end
 	local debuff = _G[button:GetName().."Name"]:GetText()
-	local spellName = SpellNameToRemove[button.type]
-	local spellSlot = SpellSlotForName[spellName]
+	local spellName = UsableSpells[button.type]
+	local spellSlot = UsableSpellBookIDs[spellName]
 	-- Check if on gcd
 	-- If gcd active this will return 1.5 for all the relevant spells
 	local _, duration = GetSpellCooldown(spellSlot, bookType)
