@@ -398,7 +398,11 @@ local function CanCast(unit, spell)
 	end
 
 	if inRange then
-		return unitxp and UnitXP("inSight", "player", unit) or UnitIsVisible(unit)
+        if unitxp then
+            return UnitXP("inSight", "player", unit)
+        else
+            return UnitIsVisible(unit)
+        end
 	end
 
 	return false
