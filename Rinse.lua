@@ -32,6 +32,8 @@ local ClassBlacklistArray = {}
 local FilterArray = {}
 local OptionsScrollMaxButtons = 8
 local AddToList
+local versionsCheckTimer
+local AddonVersions
 
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
@@ -989,6 +991,7 @@ function RinseFrame_OnLoad()
 	RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
 	RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 	RinseFrame:RegisterEvent("SPELLS_CHANGED")
+	RinseFrame:RegisterEvent("CHAT_MSG_ADDON")
 	if GetNampowerVersion then
 		-- Announce queued decurses
 		RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
@@ -1166,6 +1169,14 @@ function RinseFrame_OnEvent()
 		autoattack = UnitName("target")
 	elseif event == "PLAYER_LEAVE_COMBAT" then
 		autoattack = nil
+	elseif event == "CHAT_MSG_ADDON" and arg1 == "Rinse" and arg4 ~= UnitName("player") then
+		if arg2 == "REPORT_ADDON_VERSION" then
+			SendAddonMessage("Rinse", "V_"..GetAddOnMetadata("Rinse", "Version"), "RAID")
+		elseif versionsCheckTimer and strfind(arg2, "^V_") then
+			AddonVersions = AddonVersions or {}
+			local v = strsub(arg2, 3) or ""
+			tinsert(AddonVersions, { name = arg4, vString = format("%s: %s", arg4, v), vValue = tonumber((gsub(v, "%.", "0"))) or 0 })
+		end
 	end
 end
 
@@ -1226,6 +1237,13 @@ function RinseFrame_OnUpdate(elapsed)
 	if needUpdatePrio and prioTimer <= 0 then
 		UpdatePrio()
 		needUpdatePrio = false
+	end
+	if versionsCheckTimer then
+		versionsCheckTimer = versionsCheckTimer - elapsed
+		if versionsCheckTimer <= 0 then
+			versionsCheckTimer = nil
+			Rinse_OutputVersionsCheckResults()
+		end
 	end
 	if timeElapsed < updateInterval then
 		return
@@ -1482,8 +1500,10 @@ SlashCmdList["RINSE"] = function(cmd)
 		RinseFrameSkipList_OnClick()
 	elseif cmd == "prio" then
 		RinseFramePrioList_OnClick()
+	elseif cmd == "versions" then
+		Rinse_StartVersionsCheck()
 	else
-		ChatFrame1:AddMessage(BLUE.."[Rinse]|r Unknown command. Use /rinse, /rinse options, /rinse skip or /rinse prio.")
+		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r Unknown command. Use /rinse, /rinse options, /rinse skip, /rinse prio or /rinse versions.")
 	end
 end
 
@@ -1796,3 +1816,73 @@ StaticPopupDialogs["RINSE_ADD_TO_FILTER"] = {
 	exclusive = 1,
 	hideOnEscape = 1
 }
+
+function Rinse_StartVersionsCheck()
+	if versionsCheckTimer then
+		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r Version check is already in progress.")
+		return
+	end
+	local channel
+	if GetNumRaidMembers() > 0 then
+		channel = "RAID"
+	elseif GetNumPartyMembers() > 0 then
+		channel = "PARTY"
+	end
+	if channel then
+		SendAddonMessage("Rinse", "REPORT_ADDON_VERSION", channel)
+		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r Version check start...")
+		versionsCheckTimer = 3
+	else
+		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r You are not in a raid or party.")
+	end
+end
+
+function Rinse_OutputVersionsCheckResults()
+	if not AddonVersions then
+		AddonVersions = {}
+	end
+	local myVersionString = GetAddOnMetadata("Rinse", "Version")
+	local myVersionValue = tonumber((gsub(myVersionString, "%.", "0")))
+	local myName = UnitName("player")
+	tinsert(AddonVersions, { name = myName, vString = format("%s: %s", myName, myVersionString), vValue = myVersionValue })
+	if GetNumRaidMembers() > 0 then
+		for i = 1, 40 do
+			local name = GetRaidRosterInfo(i)
+			if name then
+				if not arrcontains(AddonVersions, name) then
+					tinsert(AddonVersions, { name = name, vString = format("%s: %s", name, "unknown"), vValue = 0 })
+				end
+			end
+		end
+	elseif GetNumPartyMembers() > 0 then
+		for i = 1, 4 do
+			local name = UnitName("party"..i)
+			if name then
+				if not arrcontains(AddonVersions, name) then
+					tinsert(AddonVersions, { name = name, vString = format("%s: %s", name, "unknown"), vValue = 0 })
+				end
+			end
+		end
+	end
+	sort(AddonVersions, function(a, b)
+		return a.vValue > b.vValue
+	end)
+	local orange = "|cffff7f3f"
+	local green = "|cff3fbf3f"
+	local grey = "|cffff2020"
+	local msg = BLUE.."[Rinse]|r Version check results:\n"
+	local size = getn(AddonVersions)
+	for i = 1, size do
+		local value = AddonVersions[i].vValue
+		if value > myVersionValue then
+			AddonVersions[i].vString = orange..AddonVersions[i].vString.."|r"
+		elseif value == myVersionValue then
+			AddonVersions[i].vString = green..AddonVersions[i].vString.."|r"
+		elseif value < myVersionValue then
+			AddonVersions[i].vString = grey..AddonVersions[i].vString.."|r"
+		end
+		msg = msg..AddonVersions[i].vString..(i ~= size and "\n" or "")
+	end
+	DEFAULT_CHAT_FRAME:AddMessage(msg)
+	AddonVersions = nil
+end
