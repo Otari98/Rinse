@@ -646,28 +646,28 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentBlacklistText" inherits="GameFontHighlight" text="Blacklist" justifyH="CENTER">
+				<FontString name="$parentFilterText" inherits="GameFontHighlight" text="Hidden Debuffs" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="90" y="-40"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentClassBlacklistText" inherits="GameFontHighlight" text="Class Blacklist" justifyH="CENTER">
+				<FontString name="$parentClassFilterText" inherits="GameFontHighlight" text="Class Hidden" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="TOP">
 							<Offset x="95" y="-222"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentFilterText" inherits="GameFontHighlight" text="Filter" justifyH="CENTER">
+				<FontString name="$parentBlacklistText" inherits="GameFontHighlight" text="Blacklist" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
 							<Offset x="-90" y="145"/>
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentHiddenDebuffsText" inherits="GameFontHighlight" text="Hidden Debuffs" justifyH="CENTER">
+				<FontString name="$parentHiddenDebuffsText" inherits="GameFontHighlight" text="Blacklisted Debuffs" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
 							<Offset x="90" y="180"/>
@@ -951,7 +951,7 @@
 					</OnValueChanged>
 				</Scripts>
 			</Slider>
-			<ScrollFrame name="$parentBlacklistScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
+			<ScrollFrame name="$parentFilterScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
 				<Size x="150" y="128"/>
 				<Anchors>
 					<Anchor point="TOP">
@@ -960,36 +960,36 @@
 				</Anchors>
 				<Scripts>
 					<OnVerticalScroll>
-						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameBlacklistScrollFrame_Update)
+						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameFilterScrollFrame_Update)
 					</OnVerticalScroll>
 					<OnShow>
-						RinseOptionsFrameBlacklistScrollFrame_Update()
+						RinseOptionsFrameFilterScrollFrame_Update()
 					</OnShow>
 				</Scripts>
 			</ScrollFrame>
-			<Button name="$parentAddToBlacklist" inherits="UIPanelButtonTemplate2" text="Add">
+			<Button name="$parentAddToFilter" inherits="UIPanelButtonTemplate2" text="Add">
 				<Size x="93" y="22"/>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
+					<Anchor point="TOPLEFT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMLEFT">
 						<Offset x="-5" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						RinseOptionsFrameAddToBlacklist_OnClick()
+						RinseOptionsFrameAddToFilter_OnClick()
 					</OnClick>
 				</Scripts>
 			</Button>
-			<Button name="$parentResetBlacklist" inherits="UIPanelButtonTemplate2" text="Reset">
+			<Button name="$parentResetFilter" inherits="UIPanelButtonTemplate2" text="Reset">
 				<Size x="93" y="22"/>
 				<Anchors>
-					<Anchor point="TOPRIGHT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
+					<Anchor point="TOPRIGHT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMRIGHT">
 						<Offset x="30" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						RinseOptionsFrameResetBlacklist_OnClick()
+						RinseOptionsFrameResetFilter_OnClick()
 					</OnClick>
 				</Scripts>
 			</Button>
@@ -1081,7 +1081,7 @@
 					</OnClick>
 				</Scripts>
 			</Button>
-			<ScrollFrame name="$parentFilterScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
+			<ScrollFrame name="$parentBlacklistScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
 				<Size x="150" y="128"/>
 				<Anchors>
 					<Anchor point="BOTTOM">
@@ -1090,36 +1090,36 @@
 				</Anchors>
 				<Scripts>
 					<OnVerticalScroll>
-						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameFilterScrollFrame_Update)
+						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameBlacklistScrollFrame_Update)
 					</OnVerticalScroll>
 					<OnShow>
-						RinseOptionsFrameFilterScrollFrame_Update()
+						RinseOptionsFrameBlacklistScrollFrame_Update()
 					</OnShow>
 				</Scripts>
 			</ScrollFrame>
-			<Button name="$parentAddToFilter" inherits="UIPanelButtonTemplate2" text="Add">
+			<Button name="$parentAddToBlacklist" inherits="UIPanelButtonTemplate2" text="Add">
 				<Size x="93" y="22"/>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMLEFT">
+					<Anchor point="TOPLEFT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
 						<Offset x="-5" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						RinseOptionsFrameAddToFilter_OnClick()
+						RinseOptionsFrameAddToBlacklist_OnClick()
 					</OnClick>
 				</Scripts>
 			</Button>
-			<Button name="$parentResetFilter" inherits="UIPanelButtonTemplate2" text="Reset">
+			<Button name="$parentResetBlacklist" inherits="UIPanelButtonTemplate2" text="Reset">
 				<Size x="93" y="22"/>
 				<Anchors>
-					<Anchor point="TOPRIGHT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMRIGHT">
+					<Anchor point="TOPRIGHT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
 						<Offset x="30" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						RinseOptionsFrameResetFilter_OnClick()
+						RinseOptionsFrameResetBlacklist_OnClick()
 					</OnClick>
 				</Scripts>
 			</Button>
@@ -1211,12 +1211,12 @@
 			<Frame>
 				<Size x="60" y="25"/>
 				<Anchors>
-					<Anchor point="CENTER" relativeTo="RinseOptionsFrameBlacklistText"/>
+					<Anchor point="CENTER" relativeTo="RinseOptionsFrameFilterText"/>
 				</Anchors>
 				<Scripts>
 					<OnEnter>
 						GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-						GameTooltip:SetText("These will be hidden and will block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
+						GameTooltip:SetText("These will be hidden but will NOT block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
 						GameTooltip:Show()
 					</OnEnter>
 					<OnLeave>
@@ -1227,12 +1227,12 @@
 			<Frame>
 				<Size x="60" y="25"/>
 				<Anchors>
-					<Anchor point="CENTER" relativeTo="RinseOptionsFrameClassBlacklistText"/>
+					<Anchor point="CENTER" relativeTo="RinseOptionsFrameClassFilterText"/>
 				</Anchors>
 				<Scripts>
 					<OnEnter>
 						GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-						GameTooltip:SetText("These will be hidden and will block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
+						GameTooltip:SetText("These will be hidden per-class but will NOT block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
 						GameTooltip:Show()
 					</OnEnter>
 					<OnLeave>
@@ -1248,7 +1248,7 @@
 				<Scripts>
 					<OnEnter>
 						GameTooltip:SetOwner(this, "ANCHOR_RIGHT")
-						GameTooltip:SetText("These will be hidden but will NOT block other debuffs of the same type from showing.", nil, nil, nil, nil, true)
+						GameTooltip:SetText("These will be hidden and will block other debuffs of the same type from showing. Prevents accidental removal.", nil, nil, nil, nil, true)
 						GameTooltip:Show()
 					</OnEnter>
 					<OnLeave>

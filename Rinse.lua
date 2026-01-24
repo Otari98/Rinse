@@ -155,18 +155,8 @@ DefaultBlacklist["Delusions of Jin'do"] = true
 DefaultBlacklist["Dread of Outland"] = true
 DefaultBlacklist["Curse of Legion"] = true
 -- Magic
-DefaultBlacklist["Dreamless Sleep"] = true
-DefaultBlacklist["Greater Dreamless Sleep"] = true
-DefaultBlacklist["Songflower Serenade"] = true
-DefaultBlacklist["Mol'dar's Moxie"] = true
-DefaultBlacklist["Fengus' Ferocity"] = true
-DefaultBlacklist["Slip'kik's Savvy"] = true
-DefaultBlacklist["Thunderfury"] = true
-DefaultBlacklist["Magma Shackles"] = true
-DefaultBlacklist["Icicles"] = true
 DefaultBlacklist["Phase Shifted"] = true
 DefaultBlacklist["Unstable Mana"] = true
-DefaultBlacklist["Arcane Overload"] = true
 -- Disease
 DefaultBlacklist["Mutating Injection"] = true
 DefaultBlacklist["Sanctum Mind Decay"] = true
@@ -192,38 +182,6 @@ PriorityDebuffs["Mana Buildup"] = true
 PriorityDebuffs["Enveloped Flames"] = true -- prio so it shows up for pets!
 PriorityDebuffs["Poison Charge"] = true -- to prio it over curses for druids
 
--- Spells to ignore on certain classes (these will block other debuffs of the same type from showing)
-local DefaultClassBlacklist = {}
-for k in pairs(ClassColors) do
-	DefaultClassBlacklist[k] = {}
-end
-----------------------------------------------------
-DefaultClassBlacklist["WARRIOR"]["Ancient Hysteria"] = true
-DefaultClassBlacklist["WARRIOR"]["Ignite Mana"] = true
-DefaultClassBlacklist["WARRIOR"]["Tainted Mind"] = true
-DefaultClassBlacklist["WARRIOR"]["Moroes Curse"] = true
-DefaultClassBlacklist["WARRIOR"]["Curse of Manascale"] = true
-----------------------------------------------------
-DefaultClassBlacklist["ROGUE"]["Silence"] = true
-DefaultClassBlacklist["ROGUE"]["Ancient Hysteria"] = true
-DefaultClassBlacklist["ROGUE"]["Ignite Mana"] = true
-DefaultClassBlacklist["ROGUE"]["Tainted Mind"] = true
-DefaultClassBlacklist["ROGUE"]["Smoke Bomb"] = true
-DefaultClassBlacklist["ROGUE"]["Screams of the Past"] = true
-DefaultClassBlacklist["ROGUE"]["Moroes Curse"] = true
-DefaultClassBlacklist["ROGUE"]["Curse of Manascale"] = true
-----------------------------------------------------
-DefaultClassBlacklist["WARLOCK"]["Rift Entanglement"] = true
-----------------------------------------------------
-
-local ClassBlacklist = {}
-for k in pairs(ClassColors) do
-	ClassBlacklist[k] = {}
-	for k2, v2 in pairs(DefaultClassBlacklist[k]) do
-		ClassBlacklist[k][k2] = v2
-	end
-end
-
 -- Spells that player doesnt want to see (these will NOT block any other debuffs from showing)
 -- Can be name of the debuff or a type
 local DefaultFilter = {}
@@ -233,9 +191,53 @@ DefaultFilter["Poison"] = Spells[playerClass].Poison == nil
 DefaultFilter["Curse"] = Spells[playerClass].Curse == nil
 DefaultFilter["Snare"] = Spells[playerClass].Snare == nil
 
+DefaultFilter["Icicles"] = true
+DefaultFilter["Arcane Overload"] = true
+
+DefaultFilter["Dreamless Sleep"] = true
+DefaultFilter["Greater Dreamless Sleep"] = true
+DefaultFilter["Songflower Serenade"] = true
+DefaultFilter["Mol'dar's Moxie"] = true
+DefaultFilter["Fengus' Ferocity"] = true
+DefaultFilter["Slip'kik's Savvy"] = true
+DefaultFilter["Thunderfury"] = true
+DefaultFilter["Magma Shackles"] = true
+
 local Filter = {}
 for k, v in pairs(DefaultFilter) do
 	Filter[k] = v
+end
+
+-- Debuffs to filter on certain classes (these will NOT block other debuffs from showing)
+local DefaultClassFilter = {}
+for k in pairs(ClassColors) do
+	DefaultClassFilter[k] = {}
+end
+----------------------------------------------------
+DefaultClassFilter["WARRIOR"]["Ancient Hysteria"] = true
+DefaultClassFilter["WARRIOR"]["Ignite Mana"] = true
+DefaultClassFilter["WARRIOR"]["Tainted Mind"] = true
+DefaultClassFilter["WARRIOR"]["Moroes Curse"] = true
+DefaultClassFilter["WARRIOR"]["Curse of Manascale"] = true
+----------------------------------------------------
+DefaultClassFilter["ROGUE"]["Silence"] = true
+DefaultClassFilter["ROGUE"]["Ancient Hysteria"] = true
+DefaultClassFilter["ROGUE"]["Ignite Mana"] = true
+DefaultClassFilter["ROGUE"]["Tainted Mind"] = true
+DefaultClassFilter["ROGUE"]["Smoke Bomb"] = true
+DefaultClassFilter["ROGUE"]["Screams of the Past"] = true
+DefaultClassFilter["ROGUE"]["Moroes Curse"] = true
+DefaultClassFilter["ROGUE"]["Curse of Manascale"] = true
+----------------------------------------------------
+DefaultClassFilter["WARLOCK"]["Rift Entanglement"] = true
+----------------------------------------------------
+
+local ClassFilter = {}
+for k in pairs(ClassColors) do
+	ClassFilter[k] = {}
+	for k2, v2 in pairs(DefaultClassFilter[k]) do
+		ClassFilter[k][k2] = v2
+	end
 end
 
 -- Spells that can be removed with paladins freedom
@@ -774,17 +776,17 @@ local function UpdateBlacklist()
 	for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST) do
 		Blacklist[k] = v
 	end
-	for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST_CLASS) do
-		RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] = RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k] or {}
-		for k2, v2 in pairs(RINSE_CHAR_CONFIG.BLACKLIST_CLASS[k]) do
-			ClassBlacklist[k][k2] = v2
-		end
-	end
 end
 
 local function UpdateFilter()
 	for k, v in pairs(RINSE_CHAR_CONFIG.FILTER) do
 		Filter[k] = v
+	end
+	for k, v in pairs(RINSE_CHAR_CONFIG.FILTER_CLASS) do
+		RINSE_CHAR_CONFIG.FILTER_CLASS[k] = RINSE_CHAR_CONFIG.FILTER_CLASS[k] or {}
+		for k2, v2 in pairs(RINSE_CHAR_CONFIG.FILTER_CLASS[k]) do
+			ClassFilter[k][k2] = v2
+		end
 	end
 	UpdateSpells()
 end
@@ -1052,7 +1054,14 @@ function RinseFrame_OnEvent()
 		RINSE_CONFIG.IGNORE_ABOLISH = RINSE_CONFIG.IGNORE_ABOLISH == nil and true or RINSE_CONFIG.IGNORE_ABOLISH
 		RINSE_CONFIG.PETS = RINSE_CONFIG.PETS == nil and false or RINSE_CONFIG.PETS
 		RINSE_CHAR_CONFIG.BLACKLIST = RINSE_CHAR_CONFIG.BLACKLIST or {}
-		RINSE_CHAR_CONFIG.BLACKLIST_CLASS = RINSE_CHAR_CONFIG.BLACKLIST_CLASS or {
+		RINSE_CHAR_CONFIG.FILTER = RINSE_CHAR_CONFIG.FILTER or {
+			Magic = Spells[playerClass].Magic == nil,
+			Disease = Spells[playerClass].Disease == nil,
+			Poison = Spells[playerClass].Poison == nil,
+			Snare = Spells[playerClass].Snare == nil,
+			Curse = Spells[playerClass].Curse == nil,
+		}
+		RINSE_CHAR_CONFIG.FILTER_CLASS = RINSE_CHAR_CONFIG.FILTER_CLASS or {
 			WARRIOR = {},
 			DRUID   = {},
 			PALADIN = {},
@@ -1062,13 +1071,6 @@ function RinseFrame_OnEvent()
 			ROGUE   = {},
 			HUNTER  = {},
 			SHAMAN  = {},
-		}
-		RINSE_CHAR_CONFIG.FILTER = RINSE_CHAR_CONFIG.FILTER or {
-			Magic = Spells[playerClass].Magic == nil,
-			Disease = Spells[playerClass].Disease == nil,
-			Poison = Spells[playerClass].Poison == nil,
-			Snare = Spells[playerClass].Snare == nil,
-			Curse = Spells[playerClass].Curse == nil,
 		}
 		RinseFrame:ClearAllPoints()
 		RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
@@ -1312,9 +1314,8 @@ function RinseFrame_OnUpdate(elapsed)
 	for i = 1, debuffCount do
 		local d = Debuffs[i]
 		local dName, dType, dUnitName, dUnitClass = d.name, d.type, d.unitName, d.unitClass
-		local classBlacklist = ClassBlacklist[dUnitClass]
 		-- Check if this debuff is blacklisted
-		if Blacklist[dName] or (classBlacklist and classBlacklist[dName]) then
+		if Blacklist[dName] then
 			-- Hide all debuffs of same type on same unit
 			for j = 1, debuffCount do
 				local d2 = Debuffs[j]
@@ -1337,8 +1338,9 @@ function RinseFrame_OnUpdate(elapsed)
 		if shadowform and RINSE_CONFIG.SHADOWFORM and dType == "Disease" then
 			d.shown = true
 		end
-		-- Player filter
-		if Filter[dName] or Filter[dType] then
+		-- Player filter (includes class-specific filters)
+		local classFilter = ClassFilter[dUnitClass]
+		if Filter[dName] or Filter[dType] or (classFilter and classFilter[dName]) then
 			d.shown = true
 		end
 	end
@@ -1578,8 +1580,8 @@ function RinseOptionsFrameClassBlacklistScrollFrame_Update()
 	local offset = FauxScrollFrame_GetOffset(frame)
 	local arrayIndex = 1
 	wipe(ClassBlacklistArray)
-	for k in pairs(ClassBlacklist[selectedClass]) do
-		if ClassBlacklist[selectedClass][k] then
+	for k in pairs(ClassFilter[selectedClass]) do
+		if ClassFilter[selectedClass][k] then
 			tinsert(ClassBlacklistArray, k)
 		end
 	end
@@ -1658,10 +1660,10 @@ function RinseOptionsFrameAddToClassBlacklist_OnClick()
 end
 
 function RinseOptionsFrameResetClassBlacklist_OnClick()
-	wipelist(RINSE_CHAR_CONFIG.BLACKLIST_CLASS[selectedClass])
-	wipelist(ClassBlacklist[selectedClass])
-	for k, v in pairs(DefaultClassBlacklist[selectedClass]) do
-		ClassBlacklist[selectedClass][k] = v
+	wipelist(RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass])
+	wipelist(ClassFilter[selectedClass])
+	for k, v in pairs(DefaultClassFilter[selectedClass]) do
+		ClassFilter[selectedClass][k] = v
 	end
 	RinseOptionsFrameClassBlacklistScrollFrame:SetVerticalScroll(0)
 	RinseOptionsFrameClassBlacklistScrollFrame_Update()
@@ -1680,10 +1682,11 @@ StaticPopupDialogs["RINSE_ADD_TO_BLACKLIST"] = {
 			if _G["RinseOptionsFrame"..gsub(text, "%s", "")] then
 				_G["RinseOptionsFrame"..gsub(text, "%s", "")]:SetChecked(false)
 			end
+			UpdateBlacklist()
 		elseif AddToList == 2 then
-			RINSE_CHAR_CONFIG.BLACKLIST_CLASS[selectedClass][text] = true
+			RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = true
+			UpdateFilter()
 		end
-		UpdateBlacklist()
 		RinseOptionsFrameBlacklistScrollFrame_Update()
 		RinseOptionsFrameClassBlacklistScrollFrame_Update()
 	end,
@@ -1712,7 +1715,7 @@ function RinseOptionsScrollFrameButton_OnClick()
 	end
 	local buttonType = gsub(gsub(this:GetName(), "^RinseOptions", ""), "Button%d+$", "")
 	local scrollFrame = "RinseOptionsFrame"..buttonType.."ScrollFrame"
-	if buttonType == "Blacklist" or buttonType == "ClassBlacklist" then
+	if buttonType == "Blacklist" then
 		if text == "Wyvern Sting" or text == "Mutating Injection" then
 			text = gsub(text, "%s", "")
 			if _G["RinseOptionsFrame"..text]:IsEnabled() == 1 then
@@ -1720,12 +1723,11 @@ function RinseOptionsScrollFrameButton_OnClick()
 				return
 			end
 		end
-		if buttonType == "ClassBlacklist" then
-			RINSE_CHAR_CONFIG.BLACKLIST_CLASS[selectedClass][text] = false
-		elseif buttonType == "Blacklist" then
-			RINSE_CHAR_CONFIG.BLACKLIST[text] = false
-		end
+		RINSE_CHAR_CONFIG.BLACKLIST[text] = false
 		UpdateBlacklist()
+	elseif buttonType == "ClassBlacklist" then
+		RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = false
+		UpdateFilter()
 	elseif buttonType == "Filter" then
 		RINSE_CHAR_CONFIG.FILTER[text] = false
 		if _G["RinseOptionsFrameFilter"..text] then
