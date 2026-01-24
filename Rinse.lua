@@ -166,6 +166,7 @@ DefaultBlacklist["Magma Shackles"] = true
 DefaultBlacklist["Icicles"] = true
 DefaultBlacklist["Phase Shifted"] = true
 DefaultBlacklist["Unstable Mana"] = true
+DefaultBlacklist["Arcane Overload"] = true
 -- Disease
 DefaultBlacklist["Mutating Injection"] = true
 DefaultBlacklist["Sanctum Mind Decay"] = true
@@ -185,6 +186,7 @@ end
 -- typically, not worth having an entire configuration section for.
 local PriorityDebuffs = {}
 PriorityDebuffs["Tranquilizing Poison"] = true -- warriors will thank you
+PriorityDebuffs["Wyrmkins Venom"] = true
 PriorityDebuffs["Slowing Poison"] = true
 PriorityDebuffs["Mana Buildup"] = true
 PriorityDebuffs["Enveloped Flames"] = true -- prio so it shows up for pets!
