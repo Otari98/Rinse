@@ -660,13 +660,6 @@
 						</Anchor>
 					</Anchors>
 				</FontString>
-				<FontString name="$parentBlacklistText" inherits="GameFontHighlight" text="Blacklist" justifyH="CENTER">
-					<Anchors>
-						<Anchor point="BOTTOM">
-							<Offset x="-90" y="145"/>
-						</Anchor>
-					</Anchors>
-				</FontString>
 				<FontString name="$parentHiddenDebuffsText" inherits="GameFontHighlight" text="Blacklisted Debuffs" justifyH="CENTER">
 					<Anchors>
 						<Anchor point="BOTTOM">
