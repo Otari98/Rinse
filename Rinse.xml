@@ -986,7 +986,7 @@
 					</OnClick>
 				</Scripts>
 			</Button>
-			<ScrollFrame name="$parentClassBlacklistScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
+			<ScrollFrame name="$parentClassFilterScrollFrame" inherits="RinseScrollFrameTemplate" hidden="false">
 				<Size x="150" y="128"/>
 				<Anchors>
 					<Anchor point="TOP">
@@ -995,17 +995,17 @@
 				</Anchors>
 				<Scripts>
 					<OnVerticalScroll>
-						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameClassBlacklistScrollFrame_Update)
+						FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameClassFilterScrollFrame_Update)
 					</OnVerticalScroll>
 					<OnShow>
-						RinseOptionsFrameClassBlacklistScrollFrame_Update()
+						RinseOptionsFrameClassFilterScrollFrame_Update()
 					</OnShow>
 				</Scripts>
 			</ScrollFrame>
 			<Button name="$parentSelectClass">
 				<Size x="24" y="24"/>
 				<Anchors>
-					<Anchor point="BOTTOM" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="TOP">
+					<Anchor point="BOTTOM" relativeTo="$parentClassFilterScrollFrame" relativePoint="TOP">
 						<Offset x="38" y="7"/>
 					</Anchor>
 				</Anchors>
@@ -1048,29 +1048,29 @@
 					</OnClick>
 				</Scripts>
 			</Button>
-			<Button name="$parentAddToClassBlacklist" inherits="UIPanelButtonTemplate2" text="Add">
+			<Button name="$parentAddToClassFilter" inherits="UIPanelButtonTemplate2" text="Add">
 				<Size x="93" y="22"/>
 				<Anchors>
-					<Anchor point="TOPLEFT" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
+					<Anchor point="TOPLEFT" relativeTo="$parentClassFilterScrollFrame" relativePoint="BOTTOMLEFT">
 						<Offset x="-5" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						RinseOptionsFrameAddToClassBlacklist_OnClick()
+						RinseOptionsFrameAddToClassFilter_OnClick()
 					</OnClick>
 				</Scripts>
 			</Button>
-			<Button name="$parentResetClassBlacklist" inherits="UIPanelButtonTemplate2" text="Reset">
+			<Button name="$parentResetClassFilter" inherits="UIPanelButtonTemplate2" text="Reset">
 				<Size x="93" y="22"/>
 				<Anchors>
-					<Anchor point="TOPRIGHT" relativeTo="$parentClassBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
+					<Anchor point="TOPRIGHT" relativeTo="$parentClassFilterScrollFrame" relativePoint="BOTTOMRIGHT">
 						<Offset x="30" y="-5"/>
 					</Anchor>
 				</Anchors>
 				<Scripts>
 					<OnClick>
-						RinseOptionsFrameResetClassBlacklist_OnClick()
+						RinseOptionsFrameResetClassFilter_OnClick()
 					</OnClick>
 				</Scripts>
 			</Button>

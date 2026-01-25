@@ -28,7 +28,7 @@ local shadowform
 local autoattack
 local selectedClass = "WARRIOR"
 local BlacklistArray = {}
-local ClassBlacklistArray = {}
+local ClassFilterArray = {}
 local FilterArray = {}
 local OptionsScrollMaxButtons = 8
 local AddToList
@@ -1518,9 +1518,9 @@ function RinseOptionsFrame_OnLoad()
 		frame:SetPoint("TOPLEFT", RinseOptionsFrameBlacklistScrollFrame, 0, -16 * (i-1))
 	end
 	for i = 1, OptionsScrollMaxButtons do
-		local frame = CreateFrame("Button", "RinseOptionsClassBlacklistButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
+		local frame = CreateFrame("Button", "RinseOptionsClassFilterButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
 		frame:SetID(i)
-		frame:SetPoint("TOPLEFT", RinseOptionsFrameClassBlacklistScrollFrame, 0, -16 * (i-1))
+		frame:SetPoint("TOPLEFT", RinseOptionsFrameClassFilterScrollFrame, 0, -16 * (i-1))
 	end
 	for i = 1, OptionsScrollMaxButtons do
 		local frame = CreateFrame("Button", "RinseOptionsFilterButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
@@ -1575,25 +1575,25 @@ function RinseOptionsFrameResetBlacklist_OnClick()
 	RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
-function RinseOptionsFrameClassBlacklistScrollFrame_Update()
-	local frame = RinseOptionsFrameClassBlacklistScrollFrame or this
+function RinseOptionsFrameClassFilterScrollFrame_Update()
+	local frame = RinseOptionsFrameClassFilterScrollFrame or this
 	local offset = FauxScrollFrame_GetOffset(frame)
 	local arrayIndex = 1
-	wipe(ClassBlacklistArray)
+	wipe(ClassFilterArray)
 	for k in pairs(ClassFilter[selectedClass]) do
 		if ClassFilter[selectedClass][k] then
-			tinsert(ClassBlacklistArray, k)
+			tinsert(ClassFilterArray, k)
 		end
 	end
-	sort(ClassBlacklistArray)
-	local numEntries = getn(ClassBlacklistArray)
+	sort(ClassFilterArray)
+	local numEntries = getn(ClassFilterArray)
 	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
 	for i = 1, OptionsScrollMaxButtons do
-		local button = _G["RinseOptionsClassBlacklistButton"..i]
-		local buttonText = _G["RinseOptionsClassBlacklistButton"..i.."Text"]
+		local button = _G["RinseOptionsClassFilterButton"..i]
+		local buttonText = _G["RinseOptionsClassFilterButton"..i.."Text"]
 		arrayIndex = i + offset
-		if ClassBlacklistArray[arrayIndex] then
-			buttonText:SetText(ClassBlacklistArray[arrayIndex])
+		if ClassFilterArray[arrayIndex] then
+			buttonText:SetText(ClassFilterArray[arrayIndex])
 			button:SetID(arrayIndex)
 			button:Show()
 		else
@@ -1606,7 +1606,7 @@ local function SelectClass()
 	selectedClass = this.value
 	local text = this:GetText()
 	RinseOptionsFrameSelectClassText:SetText(text)
-	RinseOptionsFrameClassBlacklistScrollFrame_Update()
+	RinseOptionsFrameClassFilterScrollFrame_Update()
 end
 
 local info2 = {}
@@ -1654,19 +1654,19 @@ function RinseOptionsFrameSelectClass_OnClick()
 	PlaySound("igMainMenuOptionCheckBoxOn")
 end
 
-function RinseOptionsFrameAddToClassBlacklist_OnClick()
+function RinseOptionsFrameAddToClassFilter_OnClick()
 	AddToList = 2
 	StaticPopup_Show("RINSE_ADD_TO_BLACKLIST")
 end
 
-function RinseOptionsFrameResetClassBlacklist_OnClick()
+function RinseOptionsFrameResetClassFilter_OnClick()
 	wipelist(RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass])
 	wipelist(ClassFilter[selectedClass])
 	for k, v in pairs(DefaultClassFilter[selectedClass]) do
 		ClassFilter[selectedClass][k] = v
 	end
-	RinseOptionsFrameClassBlacklistScrollFrame:SetVerticalScroll(0)
-	RinseOptionsFrameClassBlacklistScrollFrame_Update()
+	RinseOptionsFrameClassFilterScrollFrame:SetVerticalScroll(0)
+	RinseOptionsFrameClassFilterScrollFrame_Update()
 end
 
 StaticPopupDialogs["RINSE_ADD_TO_BLACKLIST"] = {
@@ -1688,7 +1688,7 @@ StaticPopupDialogs["RINSE_ADD_TO_BLACKLIST"] = {
 			UpdateFilter()
 		end
 		RinseOptionsFrameBlacklistScrollFrame_Update()
-		RinseOptionsFrameClassBlacklistScrollFrame_Update()
+		RinseOptionsFrameClassFilterScrollFrame_Update()
 	end,
 	EditBoxOnEnterPressed = function()
 		StaticPopupDialogs[this:GetParent().which].OnAccept()
@@ -1725,7 +1725,7 @@ function RinseOptionsScrollFrameButton_OnClick()
 		end
 		RINSE_CHAR_CONFIG.BLACKLIST[text] = false
 		UpdateBlacklist()
-	elseif buttonType == "ClassBlacklist" then
+	elseif buttonType == "ClassFilter" then
 		RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = false
 		UpdateFilter()
 	elseif buttonType == "Filter" then
