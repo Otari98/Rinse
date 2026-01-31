@@ -990,12 +990,17 @@ function Rinse_ToggleHeader()
 	UpdateHeader()
 end
 
+-- Shutdown flag to prevent SuperWoW API calls during logout (crash prevention)
+local Rinse_isShuttingDown = false
+
 function RinseFrame_OnLoad()
 	RinseFrame:RegisterEvent("ADDON_LOADED")
 	RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
 	RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 	RinseFrame:RegisterEvent("SPELLS_CHANGED")
 	RinseFrame:RegisterEvent("CHAT_MSG_ADDON")
+	RinseFrame:RegisterEvent("PLAYER_LOGOUT")
+	RinseFrame:RegisterEvent("PLAYER_LEAVING_WORLD")
 	if GetNampowerVersion then
 		-- Announce queued decurses
 		RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
@@ -1029,6 +1034,14 @@ local function GoodUnit(unit)
 end
 
 function RinseFrame_OnEvent()
+	-- Handle shutdown to prevent SuperWoW API crashes during logout
+	if event == "PLAYER_LOGOUT" or event == "PLAYER_LEAVING_WORLD" then
+		Rinse_isShuttingDown = true
+		RinseFrame:UnregisterAllEvents()
+		RinseFrame:SetScript("OnUpdate", nil)
+		RinseFrame:SetScript("OnEvent", nil)
+		return
+	end
 	if event == "ADDON_LOADED" and arg1 == "Rinse" then
 		tinsert(UISpecialFrames, "RinsePrioListFrame")
 		tinsert(UISpecialFrames, "RinseSkipListFrame")
@@ -1234,6 +1247,9 @@ local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffNam
 end
 
 function RinseFrame_OnUpdate(elapsed)
+	-- Prevent SuperWoW API calls during shutdown (crash prevention)
+	if Rinse_isShuttingDown then return end
+
 	timeElapsed = timeElapsed + elapsed
 	errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
 	stopCastCooldown = (stopCastCooldown > 0) and (stopCastCooldown - elapsed) or 0
