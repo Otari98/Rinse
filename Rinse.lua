@@ -388,9 +388,10 @@ local function CanCast(unit, spell)
 	local inRange
 
 	if UnitIsFriend("player", unit) and not UnitCanAttack("player", unit) then
-		if spell and IsSpellInRange then
-			inRange = IsSpellInRange(spell, unit) == 1
-		end
+		-- https://gitea.com/avitasia/nampower/issues/56
+		-- if spell and IsSpellInRange then
+		-- 	inRange = IsSpellInRange(spell, unit) == 1
+		-- end
 		if unitxp then
 			-- Accounts for true reach. A tauren can dispell a male tauren at 38y!
 			inRange = UnitXP("distanceBetween", "player", unit) < 30
