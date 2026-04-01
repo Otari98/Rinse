@@ -38,6 +38,7 @@ local AddonVersions
 local movingInList
 local movingDestID
 local movingButtonID
+local L = RinseLocalization
 
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
@@ -85,12 +86,12 @@ local BLUE = DebuffColor["Magic"].hex
 
 -- Spells that remove stuff, for each class
 local Spells = {}
-Spells["PALADIN"] = { Magic = {"Cleanse"}, Poison = {"Cleanse", "Purify"}, Disease = {"Cleanse", "Purify"}, Snare = {"Hand of Freedom"} }
-Spells["DRUID"]   = { Curse = {"Remove Curse"}, Poison = {"Abolish Poison", "Cure Poison"} }
-Spells["PRIEST"]  = { Magic = {"Dispel Magic"}, Disease = {"Abolish Disease", "Cure Disease"} }
-Spells["SHAMAN"]  = { Poison = {"Cure Poison"}, Disease = {"Cure Disease"} }
-Spells["MAGE"]    = { Curse = {"Remove Lesser Curse"} }
-Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
+Spells["PALADIN"] = { Magic = {L["Cleanse"]}, Poison = {L["Cleanse"], L["Purify"]}, Disease = {L["Cleanse"], L["Purify"]}, Snare = {L["Hand of Freedom"]} }
+Spells["DRUID"]   = { Curse = {L["Remove Curse"]}, Poison = {L["Abolish Poison"], L["Cure Poison"]} }
+Spells["PRIEST"]  = { Magic = {L["Dispel Magic"]}, Disease = {L["Abolish Disease"], L["Cure Disease"]} }
+Spells["SHAMAN"]  = { Poison = {L["Cure Poison"]}, Disease = {L["Cure Disease"]} }
+Spells["MAGE"]    = { Curse = {L["Remove Lesser Curse"]} }
+Spells["WARLOCK"] = { Magic = {L["Devour Magic"]} }
 Spells["WARRIOR"] = {}
 Spells["ROGUE"]   = {}
 Spells["HUNTER"]  = {}
