@@ -6,5 +6,6 @@
 ## SavedVariables: RINSE_CONFIG
 ## SavedVariablesPerCharacter: RINSE_CHAR_CONFIG
 
+Localization.lua
 Templates.xml
 Rinse.xml
