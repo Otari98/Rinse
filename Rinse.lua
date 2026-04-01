@@ -38,6 +38,7 @@ local AddonVersions
 local movingInList
 local movingDestID
 local movingButtonID
+local L = RinseLocalization
 
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
@@ -85,27 +86,15 @@ local BLUE = DebuffColor["Magic"].hex
 
 -- Spells that remove stuff, for each class
 local Spells = {}
-if locale == "zhCN" then
-    Spells["PALADIN"] = { Magic = {"清洁术"}, Poison = {"清洁术", "纯净术"}, Disease = {"清洁术", "纯净术"}, Snare = {"自由祝福"} }
-    Spells["DRUID"]   = { Curse = {"移除诅咒"}, Poison = {"驱毒术", "解毒术"} }
-    Spells["PRIEST"]  = { Magic = {"驱散魔法"}, Disease = {"祛病术", "解病术"} }
-    Spells["SHAMAN"]  = { Poison = {"解毒术"}, Disease = {"祛病术"} }
-    Spells["MAGE"]    = { Curse = {"解除次级诅咒"} }
-    Spells["WARLOCK"] = { Magic = {"吞噬魔法"} }
-	Spells["WARRIOR"] = {}
-	Spells["ROGUE"]   = {}
-	Spells["HUNTER"]  = {}
-else
-    Spells["PALADIN"] = { Magic = {"Cleanse"}, Poison = {"Cleanse", "Purify"}, Disease = {"Cleanse", "Purify"}, Snare = {"Hand of Freedom"} }
-    Spells["DRUID"]   = { Curse = {"Remove Curse"}, Poison = {"Abolish Poison", "Cure Poison"} }
-    Spells["PRIEST"]  = { Magic = {"Dispel Magic"}, Disease = {"Abolish Disease", "Cure Disease"} }
-    Spells["SHAMAN"]  = { Poison = {"Cure Poison"}, Disease = {"Cure Disease"} }
-    Spells["MAGE"]    = { Curse = {"Remove Lesser Curse"} }
-    Spells["WARLOCK"] = { Magic = {"Devour Magic"} }
-	Spells["WARRIOR"] = {}
-	Spells["ROGUE"]   = {}
-	Spells["HUNTER"]  = {}
-end
+Spells["PALADIN"] = { Magic = {L["Cleanse"]}, Poison = {L["Cleanse"], L["Purify"]}, Disease = {L["Cleanse"], L["Purify"]}, Snare = {L["Hand of Freedom"]} }
+Spells["DRUID"]   = { Curse = {L["Remove Curse"]}, Poison = {L["Abolish Poison"], L["Cure Poison"]} }
+Spells["PRIEST"]  = { Magic = {L["Dispel Magic"]}, Disease = {L["Abolish Disease"], L["Cure Disease"]} }
+Spells["SHAMAN"]  = { Poison = {L["Cure Poison"]}, Disease = {L["Cure Disease"]} }
+Spells["MAGE"]    = { Curse = {L["Remove Lesser Curse"]} }
+Spells["WARLOCK"] = { Magic = {L["Devour Magic"]} }
+Spells["WARRIOR"] = {}
+Spells["ROGUE"]   = {}
+Spells["HUNTER"]  = {}
 
 -- Spells that we have
 -- ["debuffType"] = "spellName"
