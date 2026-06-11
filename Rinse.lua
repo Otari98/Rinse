@@ -314,14 +314,14 @@ local function HasAbolish(unit, debuffType)
 	if not UsableSpells[debuffType] then
 		return false
 	end
-	if not (debuffType == "Poison" or debuffType == "Disease") then
+	if not (debuffType == L["Poison"] or debuffType == L["Disease"]) then
 		return false
 	end
 	local i = 1
 	local buff, icon
-	if debuffType == "Poison" then
+	if debuffType == L["Poison"] then
 		icon = "Interface\\Icons\\Spell_Nature_NullifyPoison_02"
-	elseif debuffType == "Disease" then
+	elseif debuffType == L["Disease"] then
 		icon = "Interface\\Icons\\Spell_Nature_NullifyDisease"
 	end
 	repeat
