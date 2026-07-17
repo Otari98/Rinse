@@ -251,6 +251,8 @@ SnareDebuffs[L["Hamstring"]] = true
 SnareDebuffs[L["Wing Clip"]] = true
 SnareDebuffs[L["Mind Flay"]] = true
 SnareDebuffs[L["Web"]] = true
+SnareDebuffs[L["Enveloping Web"]] = true
+SnareDebuffs[L["Encasing Webs"]] = true
 SnareDebuffs[L["Surge of Mana"]] = true
 
 local function wipe(array)
