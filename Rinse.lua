@@ -254,6 +254,7 @@ SnareDebuffs[L["Web"]] = true
 SnareDebuffs[L["Enveloping Web"]] = true
 SnareDebuffs[L["Encasing Webs"]] = true
 SnareDebuffs[L["Surge of Mana"]] = true
+SnareDebuffs[L["Hooked Net"]] = true
 
 local function wipe(array)
 	if type(array) ~= "table" then return end

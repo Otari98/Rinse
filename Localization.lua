@@ -64,6 +64,7 @@ Rinse.L = {
     ["Enveloping Web"] = 1,
     ["Encasing Webs"] = 1,
     ["Surge of Mana"] = 1,
+    ["Hooked Net"] = 1,
     ["Warriors"] = 1,
     ["Druids"] = 1,
     ["Paladins"] = 1,
