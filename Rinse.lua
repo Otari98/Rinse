@@ -1301,26 +1301,12 @@ local function GetDebuffInfo(unit, i)
 	local debuffType
 	local texture
 	local applications
-	if C_UnitAuras and C_UnitAuras.UnitAura then
-		-- Positional form of GetAuraDataByIndex: same values, but it allocates nothing.
-		-- This runs for every debuff of every group member 10 times per second, and
-		-- GetAuraDataByIndex returns a new table each time, which made Rinse one of the
-		-- biggest sources of Lua garbage (and garbage collection hitches) in raids.
+	if C_UnitAuras then
 		debuffName, texture, applications, debuffType = C_UnitAuras.UnitAura(unit, i, "HARMFUL")
-	elseif C_UnitAuras then
-		local data = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
-		if data then
-			debuffName = data.name
-			debuffType = data.dispelName
-			texture = data.icon
-			applications = data.applications
-		end
 	elseif superwow then
 		local spellId
 		texture, applications, debuffType, spellId = UnitDebuff(unit, i)
-		if spellId then
-			debuffName = SpellInfo(spellId)
-		end
+		if spellId then debuffName = SpellInfo(spellId) end
 	else
 		RinseScanTooltipTextLeft1:SetText("")
 		RinseScanTooltipTextRight1:SetText("")
