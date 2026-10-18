@@ -15,6 +15,14 @@ local UnitName = UnitName
 local CheckInteractDistance = CheckInteractDistance
 local updateInterval = 0.1
 local timeElapsed = 0
+-- [OctoWoW] Event-driven scanning: rescan at most every 0.1s when an aura changed
+-- on a group member or the target, and otherwise only every 0.5s (to catch
+-- range/visibility changes). Before this it rescanned the whole raid 10x/s.
+local idleInterval = 0.5
+local scanDirty = true
+local auraUnits = { player = true, pet = true, target = true }
+for i = 1, 4 do auraUnits["party"..i] = true; auraUnits["partypet"..i] = true end
+for i = 1, 40 do auraUnits["raid"..i] = true; auraUnits["raidpet"..i] = true end
 local lastDebuffCount = 0
 local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
 local errorSound = "Sound\\Interface\\Error.wav"
@@ -1117,6 +1125,8 @@ function RinseFrame_OnLoad()
 	RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 	RinseFrame:RegisterEvent("SPELLS_CHANGED")
 	RinseFrame:RegisterEvent("CHAT_MSG_ADDON")
+	RinseFrame:RegisterEvent("UNIT_AURA")
+	RinseFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 	if GetNampowerVersion then
 		-- Announce queued decurses
 		RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
@@ -1133,6 +1143,13 @@ function RinseFrame_OnLoad()
 end
 
 function RinseFrame_OnEvent()
+	if event == "UNIT_AURA" then
+		if auraUnits[arg1] then scanDirty = true end
+		return
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		scanDirty = true
+		return
+	end
 	if event == "ADDON_LOADED" and arg1 == "Rinse" then
 		tinsert(UISpecialFrames, "RinsePrioListFrame")
 		tinsert(UISpecialFrames, "RinseSkipListFrame")
@@ -1277,6 +1294,7 @@ function RinseFrame_OnEvent()
 	elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
 		needUpdatePrio = true
 		prioTimer = 2
+		scanDirty = true
 	elseif event == "SPELLS_CHANGED" then
 		UpdateSpells()
 	elseif event == "PLAYER_AURAS_CHANGED" then
@@ -1302,19 +1320,11 @@ local function GetDebuffInfo(unit, i)
 	local texture
 	local applications
 	if C_UnitAuras then
-		local data = C_UnitAuras.GetAuraDataByIndex(unit, i, "HARMFUL")
-		if data then
-			debuffName = data.name
-			debuffType = data.dispelName
-			texture = data.icon
-			applications = data.applications
-		end
+		debuffName, texture, applications, debuffType = C_UnitAuras.UnitAura(unit, i, "HARMFUL")
 	elseif superwow then
 		local spellId
 		texture, applications, debuffType, spellId = UnitDebuff(unit, i)
-		if spellId then
-			debuffName = SpellInfo(spellId)
-		end
+		if spellId then debuffName = SpellInfo(spellId) end
 	else
 		RinseScanTooltipTextLeft1:SetText("")
 		RinseScanTooltipTextRight1:SetText("")
@@ -1369,6 +1379,7 @@ function RinseFrame_OnUpdate(elapsed)
 	if needUpdatePrio and prioTimer <= 0 then
 		UpdatePrio()
 		needUpdatePrio = false
+		scanDirty = true
 	end
 	if versionsCheckTimer then
 		versionsCheckTimer = versionsCheckTimer - elapsed
@@ -1380,6 +1391,10 @@ function RinseFrame_OnUpdate(elapsed)
 	if timeElapsed < updateInterval then
 		return
 	end
+	if not scanDirty and timeElapsed < idleInterval then
+		return
+	end
+	scanDirty = false
 	timeElapsed = 0
 	-- Clear only entries that were used last tick
 	for i = 1, lastDebuffCount do
