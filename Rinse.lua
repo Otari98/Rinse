@@ -43,19 +43,19 @@ BINDING_NAME_RINSE_TOGGLE_PRIO = L["Toggle Prio List"]
 BINDING_NAME_RINSE_TOGGLE_SKIP = L["Toggle Skip List"]
 
 local Backdrop = {
-	bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-	tile = true,
-	tileSize = 16,
-	edgeSize = 16,
-	insets = { left = 5, right = 5, top = 5, bottom = 5 },
+    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true,
+    tileSize = 16,
+    edgeSize = 16,
+    insets = { left = 5, right = 5, top = 5, bottom = 5 },
 }
 
 -- Frames that should scale together
 local Frames = {
-	"RinseFrame",
-	"RinsePrioListFrame",
-	"RinseSkipListFrame",
+    "RinseFrame",
+    "RinsePrioListFrame",
+    "RinseSkipListFrame",
 }
 
 local ClassColors = {}
@@ -82,28 +82,28 @@ local BLUE = "|cff3399FF"
 -- Spells that remove stuff, for each class
 local Spells = {}
 Spells["PALADIN"] = {
-	[L["Magic"]] = {L["Cleanse"]},
-	[L["Poison"]] = {L["Cleanse"], L["Purify"]},
-	[L["Disease"]] = {L["Cleanse"], L["Purify"]},
-	[L["Snare"]] = {L["Hand of Freedom"]}
+    [L["Magic"]] = {L["Cleanse"]},
+    [L["Poison"]] = {L["Cleanse"], L["Purify"]},
+    [L["Disease"]] = {L["Cleanse"], L["Purify"]},
+    [L["Snare"]] = {L["Hand of Freedom"]}
 }
 Spells["DRUID"] = {
-	[L["Curse"]] = {L["Remove Curse"]},
-	[L["Poison"]] = {L["Abolish Poison"], L["Cure Poison"]}
+    [L["Curse"]] = {L["Remove Curse"]},
+    [L["Poison"]] = {L["Abolish Poison"], L["Cure Poison"]}
 }
 Spells["PRIEST"] = {
-	[L["Magic"]] = {L["Dispel Magic"]},
-	[L["Disease"]] = {L["Abolish Disease"], L["Cure Disease"]}
+    [L["Magic"]] = {L["Dispel Magic"]},
+    [L["Disease"]] = {L["Abolish Disease"], L["Cure Disease"]}
 }
 Spells["SHAMAN"] = {
-	[L["Poison"]] = {L["Cure Poison"]},
-	[L["Disease"]] = {L["Cure Disease"]}
+    [L["Poison"]] = {L["Cure Poison"]},
+    [L["Disease"]] = {L["Cure Disease"]}
 }
 Spells["MAGE"] = {
-	[L["Curse"]] = {L["Remove Lesser Curse"]}
+    [L["Curse"]] = {L["Remove Lesser Curse"]}
 }
 Spells["WARLOCK"] = {
-	[L["Magic"]] = {L["Devour Magic"]}
+    [L["Magic"]] = {L["Devour Magic"]}
 }
 Spells["WARRIOR"] = {}
 Spells["ROGUE"]   = {}
@@ -128,17 +128,17 @@ local DEBUFFS_MAX = 42
 -- Debuff info
 local Debuffs = {}
 for i = 1, DEBUFFS_MAX do
-	Debuffs[i] = {
-		name = "",
-		type = "",
-		texture = "",
-		stacks = 0,
-		debuffIndex = 0,
-		unit = "",
-		unitName = "",
-		unitClass = "",
-		hidden = false
-	}
+    Debuffs[i] = {
+        name = "",
+        type = "",
+        texture = "",
+        stacks = 0,
+        debuffIndex = 0,
+        unit = "",
+        unitName = "",
+        unitClass = "",
+        hidden = false
+    }
 end
 
 -- Default scan order
@@ -150,9 +150,9 @@ DefaultPrio[4] = "party3"
 DefaultPrio[5] = "party4"
 for i = 1, 40 do tinsert(DefaultPrio, "raid"..i) end
 for i = 1, getn(DefaultPrio) do
-	local unit = DefaultPrio[i]
-	local pet = unit == "player" and "pet" or (gsub(unit, "(%a+)(%d*)", "%1pet%2"))
-	tinsert(DefaultPrio, pet)
+    local unit = DefaultPrio[i]
+    local pet = unit == "player" and "pet" or (gsub(unit, "(%a+)(%d*)", "%1pet%2"))
+    tinsert(DefaultPrio, pet)
 end
 
 -- Scan order
@@ -234,10 +234,10 @@ DefaultClassFilter["WARLOCK"][L["Rift Entanglement"]] = true
 
 local ClassFilter = {}
 for k in pairs(ClassColors) do
-	ClassFilter[k] = {}
-	for k2, v2 in pairs(DefaultClassFilter[k]) do
-		ClassFilter[k][k2] = v2
-	end
+    ClassFilter[k] = {}
+    for k2, v2 in pairs(DefaultClassFilter[k]) do
+        ClassFilter[k][k2] = v2
+    end
 end
 
 -- Spells that can be removed with paladins freedom
@@ -254,317 +254,317 @@ SnareDebuffs[L["Surge of Mana"]] = true
 SnareDebuffs[L["Hooked Net"]] = true
 
 local function wipe(t)
-	if type(t) ~= "table" then return end
-	for k in pairs(t) do t[k] = nil end
-	table.setn(t, 0)
+    if type(t) ~= "table" then return end
+    for k in pairs(t) do t[k] = nil end
+    table.setn(t, 0)
 end
 
 local function arrcontains(array, value)
-	for i = 1, getn(array) do
-		if type(array[i]) == "table" then
-			for k in pairs(array[i]) do
-				if array[i][k] == value then return i end
-			end
-		end
-		if array[i] == value then return i end
-	end
-	return nil
+    for i = 1, getn(array) do
+        if type(array[i]) == "table" then
+            for k in pairs(array[i]) do
+                if array[i][k] == value then return i end
+            end
+        end
+        if array[i] == value then return i end
+    end
+    return nil
 end
 
 local function ChatMessage(msg)
-	if RINSE_CONFIG.PRINT then
-		if RINSE_CONFIG.MSBT and MikSBT then
-			MikSBT.DisplayMessage(msg, MikSBT.DISPLAYTYPE_NOTIFICATION, false, 255, 255, 255)
-		else
-			ChatFrame1:AddMessage(BLUE.."[Rinse]|r "..(tostring(msg)))
-		end
-	end
+    if RINSE_CONFIG.PRINT then
+        if RINSE_CONFIG.MSBT and MikSBT then
+            MikSBT.DisplayMessage(msg, MikSBT.DISPLAYTYPE_NOTIFICATION, false, 255, 255, 255)
+        else
+            ChatFrame1:AddMessage(BLUE.."[Rinse]|r "..(tostring(msg)))
+        end
+    end
 end
 
 local function playsound(file)
-	if RINSE_CONFIG.SOUND then PlaySoundFile(file) end
+    if RINSE_CONFIG.SOUND then PlaySoundFile(file) end
 end
 
 local function NameToUnitID(name)
-	if not name then return nil end
-	if UnitName("player") == name then return "player" end
-	for i = 1, 4 do
-		if UnitName("party"..i) == name then return "party"..i end
-	end
-	for i = 1, 40 do
-		if UnitName("raid"..i) == name then return "raid"..i end
-	end
+    if not name then return nil end
+    if UnitName("player") == name then return "player" end
+    for i = 1, 4 do
+        if UnitName("party"..i) == name then return "party"..i end
+    end
+    for i = 1, 40 do
+        if UnitName("raid"..i) == name then return "raid"..i end
+    end
 end
 
 local function HasAbolish(unit, debuffType)
-	if not (UnitExists(unit) and debuffType and UsableSpells[debuffType] and (debuffType == L["Poison"] or debuffType == L["Disease"])) then
-		return false
-	end
-	local icon
-	if debuffType == L["Poison"] then
-		icon = "Interface\\Icons\\Spell_Nature_NullifyPoison_02"
-	elseif debuffType == L["Disease"] then
-		icon = "Interface\\Icons\\Spell_Nature_NullifyDisease"
-	end
-	for i = 1, 32 do
-		local buff = UnitBuff(unit, i)
-		if not buff then break end
-		if buff == icon then return true end
-	end
-	return false
+    if not (UnitExists(unit) and debuffType and UsableSpells[debuffType] and (debuffType == L["Poison"] or debuffType == L["Disease"])) then
+        return false
+    end
+    local icon
+    if debuffType == L["Poison"] then
+        icon = "Interface\\Icons\\Spell_Nature_NullifyPoison_02"
+    elseif debuffType == L["Disease"] then
+        icon = "Interface\\Icons\\Spell_Nature_NullifyDisease"
+    end
+    for i = 1, 32 do
+        local buff = UnitBuff(unit, i)
+        if not buff then break end
+        if buff == icon then return true end
+    end
+    return false
 end
 
 local function HasShadowform()
-	for i = 0, 31 do
-		local index = GetPlayerBuff(i, "HELPFUL")
-		if index > -1 then
-			if GetPlayerBuffTexture(index) == "Interface\\Icons\\Spell_Shadow_Shadowform" then
-				return true
-			end
-		end
-	end
-	return false
+    for i = 0, 31 do
+        local index = GetPlayerBuff(i, "HELPFUL")
+        if index > -1 then
+            if GetPlayerBuffTexture(index) == "Interface\\Icons\\Spell_Shadow_Shadowform" then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 local function CanCast(unit, spell)
-	if not unit then return false end
+    if not unit then return false end
 
-	local inRange
+    local inRange
 
-	if UnitIsFriend("player", unit) and not UnitCanAttack("player", unit) then
-		if C_Spell and spell then
-			inRange = C_Spell.IsSpellInRange(spell, unit)
-		elseif unitxp then
-			-- Accounts for true reach. A tauren can dispell a male tauren at 38y!
-			inRange = UnitXP("distanceBetween", "player", unit) < 30
-		elseif superwow then
-			local myX, myY, myZ = UnitPosition("player")
-			local uX, uY, uZ = UnitPosition(unit)
-			if uX then
-				local dx, dy, dz = uX - myX, uY - myY, uZ - myZ
-				-- sqrt(1089) == 33, smallest max dispell range not accounting for true melee reach
-				inRange = ((dx * dx) + (dy * dy) + (dz * dz)) <= 1089
-			end
-		else
-			-- Not as accurate
-			inRange = CheckInteractDistance(unit, 4)
-		end
-	else
-		-- The above can't check mc'd players, this is the backup
-		inRange = CheckInteractDistance(unit, 4)
-	end
+    if UnitIsFriend("player", unit) and not UnitCanAttack("player", unit) then
+        if C_Spell and spell then
+            inRange = C_Spell.IsSpellInRange(spell, unit)
+        elseif unitxp then
+            -- Accounts for true reach. A tauren can dispell a male tauren at 38y!
+            inRange = UnitXP("distanceBetween", "player", unit) < 30
+        elseif superwow then
+            local myX, myY, myZ = UnitPosition("player")
+            local uX, uY, uZ = UnitPosition(unit)
+            if uX then
+                local dx, dy, dz = uX - myX, uY - myY, uZ - myZ
+                -- sqrt(1089) == 33, smallest max dispell range not accounting for true melee reach
+                inRange = ((dx * dx) + (dy * dy) + (dz * dz)) <= 1089
+            end
+        else
+            -- Not as accurate
+            inRange = CheckInteractDistance(unit, 4)
+        end
+    else
+        -- The above can't check mc'd players, this is the backup
+        inRange = CheckInteractDistance(unit, 4)
+    end
 
-	if inRange then
-		if UnitInLineOfSight then
-			return UnitInLineOfSight(unit)
-		elseif unitxp then
+    if inRange then
+        if UnitInLineOfSight then
+            return UnitInLineOfSight(unit)
+        elseif unitxp then
             return UnitXP("inSight", "player", unit)
         else
             return UnitIsVisible(unit)
         end
-	end
+    end
 
-	return false
+    return false
 end
 
 local function UpdatePrio()
-	wipe(Prio)
-	-- If there is a user defined prio, add it first
-	if RINSE_CONFIG.PRIO_ARRAY[1] then
-		for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
-			local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
-			if unit then tinsert(Prio, unit) end
-		end
-	end
-	-- Add default prio
-	for i = 1, getn(DefaultPrio) do
-		local newUnit = DefaultPrio[i]
-		if UnitExists(newUnit) then
-			local insert = true
-			for _, oldUnit in pairs(Prio) do
-				if UnitIsUnit(oldUnit, newUnit) then insert = false; break end
-			end
-			if insert then tinsert(Prio, newUnit) end
-		end
-	end
-	aurasChanged = true
-	-- for i = 1, getn(Prio) do print(i, Prio[i]) end
+    wipe(Prio)
+    -- If there is a user defined prio, add it first
+    if RINSE_CONFIG.PRIO_ARRAY[1] then
+        for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
+            local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
+            if unit then tinsert(Prio, unit) end
+        end
+    end
+    -- Add default prio
+    for i = 1, getn(DefaultPrio) do
+        local newUnit = DefaultPrio[i]
+        if UnitExists(newUnit) then
+            local insert = true
+            for _, oldUnit in pairs(Prio) do
+                if UnitIsUnit(oldUnit, newUnit) then insert = false; break end
+            end
+            if insert then tinsert(Prio, newUnit) end
+        end
+    end
+    aurasChanged = true
+    -- for i = 1, getn(Prio) do print(i, Prio[i]) end
 end
 
 local function RebuildSkipNames()
-	wipe(SkipNames)
-	local arr = RINSE_CONFIG.SKIP_ARRAY
-	for i = 1, getn(arr) do
-		if arr[i] and arr[i].name then
-			SkipNames[arr[i].name] = true
-		end
-	end
+    wipe(SkipNames)
+    local arr = RINSE_CONFIG.SKIP_ARRAY
+    for i = 1, getn(arr) do
+        if arr[i] and arr[i].name then
+            SkipNames[arr[i].name] = true
+        end
+    end
 end
 
 function RinseSkipListScrollFrame_Update()
-	RebuildSkipNames()
-	local offset = FauxScrollFrame_GetOffset(RinseSkipListScrollFrame)
-	local arrayIndex = 1
-	local numPlayers = getn(RINSE_CONFIG.SKIP_ARRAY)
-	FauxScrollFrame_Update(RinseSkipListScrollFrame, numPlayers, 10, 16)
-	for i = 1, 10 do
-		local button = _G["RinseSkipListFrameButton"..i]
-		local buttonText = _G["RinseSkipListFrameButton"..i.."Text"]
-		arrayIndex = i + offset
-		if RINSE_CONFIG.SKIP_ARRAY[arrayIndex] then
-			buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.SKIP_ARRAY[arrayIndex].class]..RINSE_CONFIG.SKIP_ARRAY[arrayIndex].name)
-			button:SetID(arrayIndex)
-			if Moving.sourceID and Moving.sourceID == arrayIndex then
-				buttonText:SetText("")
-			end
-			button:Show()
-		else
-			button:Hide()
-		end
-	end
+    RebuildSkipNames()
+    local offset = FauxScrollFrame_GetOffset(RinseSkipListScrollFrame)
+    local arrayIndex = 1
+    local numPlayers = getn(RINSE_CONFIG.SKIP_ARRAY)
+    FauxScrollFrame_Update(RinseSkipListScrollFrame, numPlayers, 10, 16)
+    for i = 1, 10 do
+        local button = _G["RinseSkipListFrameButton"..i]
+        local buttonText = _G["RinseSkipListFrameButton"..i.."Text"]
+        arrayIndex = i + offset
+        if RINSE_CONFIG.SKIP_ARRAY[arrayIndex] then
+            buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.SKIP_ARRAY[arrayIndex].class]..RINSE_CONFIG.SKIP_ARRAY[arrayIndex].name)
+            button:SetID(arrayIndex)
+            if Moving.sourceID and Moving.sourceID == arrayIndex then
+                buttonText:SetText("")
+            end
+            button:Show()
+        else
+            button:Hide()
+        end
+    end
 end
 
 function RinsePrioListScrollFrame_Update()
-	local offset = FauxScrollFrame_GetOffset(RinsePrioListScrollFrame)
-	local arrayIndex = 1
-	local numPlayers = getn(RINSE_CONFIG.PRIO_ARRAY)
-	FauxScrollFrame_Update(RinsePrioListScrollFrame, numPlayers, 10, 16)
-	for i = 1, 10 do
-		local button = _G["RinsePrioListFrameButton"..i]
-		local buttonText = _G["RinsePrioListFrameButton"..i.."Text"]
-		arrayIndex = i + offset
-		if RINSE_CONFIG.PRIO_ARRAY[arrayIndex] then
-			buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.PRIO_ARRAY[arrayIndex].class]..RINSE_CONFIG.PRIO_ARRAY[arrayIndex].name)
-			button:SetID(arrayIndex)
-			if Moving.sourceID and Moving.sourceID == arrayIndex then
-				buttonText:SetText("")
-			end
-			button:Show()
-		else
-			button:Hide()
-		end
-	end
+    local offset = FauxScrollFrame_GetOffset(RinsePrioListScrollFrame)
+    local arrayIndex = 1
+    local numPlayers = getn(RINSE_CONFIG.PRIO_ARRAY)
+    FauxScrollFrame_Update(RinsePrioListScrollFrame, numPlayers, 10, 16)
+    for i = 1, 10 do
+        local button = _G["RinsePrioListFrameButton"..i]
+        local buttonText = _G["RinsePrioListFrameButton"..i.."Text"]
+        arrayIndex = i + offset
+        if RINSE_CONFIG.PRIO_ARRAY[arrayIndex] then
+            buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.PRIO_ARRAY[arrayIndex].class]..RINSE_CONFIG.PRIO_ARRAY[arrayIndex].name)
+            button:SetID(arrayIndex)
+            if Moving.sourceID and Moving.sourceID == arrayIndex then
+                buttonText:SetText("")
+            end
+            button:Show()
+        else
+            button:Hide()
+        end
+    end
 end
 
 function RinseListButton_OnClick()
-	if arg1 == "RightButton" then
-		local parent = this:GetParent()
-		if parent == RinseSkipListFrame then
-			tremove(RINSE_CONFIG.SKIP_ARRAY, this:GetID())
-			RinseSkipListScrollFrame_Update()
-		elseif parent == RinsePrioListFrame then
-			tremove(RINSE_CONFIG.PRIO_ARRAY, this:GetID())
-			RinsePrioListScrollFrame_Update()
-			UpdatePrio()
-		end
-		aurasChanged = true
-	end
+    if arg1 == "RightButton" then
+        local parent = this:GetParent()
+        if parent == RinseSkipListFrame then
+            tremove(RINSE_CONFIG.SKIP_ARRAY, this:GetID())
+            RinseSkipListScrollFrame_Update()
+        elseif parent == RinsePrioListFrame then
+            tremove(RINSE_CONFIG.PRIO_ARRAY, this:GetID())
+            RinsePrioListScrollFrame_Update()
+            UpdatePrio()
+        end
+        aurasChanged = true
+    end
 end
 
 function RinseListButton_OnDragStart()
-	Moving.list = this:GetParent()
-	Moving.sourceID = this:GetID()
-	local text = _G[this:GetName().."Text"]
-	RinseMovingButtonText:SetText(text:GetText())
-	text:SetText("")
-	RinseMovingButton:StartMoving()
-	RinseMovingButton:Show()
+    Moving.list = this:GetParent()
+    Moving.sourceID = this:GetID()
+    local text = _G[this:GetName().."Text"]
+    RinseMovingButtonText:SetText(text:GetText())
+    text:SetText("")
+    RinseMovingButton:StartMoving()
+    RinseMovingButton:Show()
 end
 
 function RinseListButton_OnDragStop()
-	if not Moving.list then return end
-	RinseMovingButton:StopMovingOrSizing()
-	RinseMovingButton:Hide()
-	local array, update
-	if Moving.list == RinsePrioListFrame then
-		array = RINSE_CONFIG.PRIO_ARRAY
-		update = RinsePrioListScrollFrame_Update
-	elseif Moving.list == RinseSkipListFrame then
-		array = RINSE_CONFIG.SKIP_ARRAY
-		update = RinseSkipListScrollFrame_Update
-	end
-	if Moving.destID and Moving.sourceID and array and array[Moving.sourceID] and array[Moving.destID] then
-		array[Moving.sourceID], array[Moving.destID] = array[Moving.destID], array[Moving.sourceID]
-	end
-	Moving.sourceID = nil
-	update()
-	UpdatePrio()
-	Moving.list = nil
+    if not Moving.list then return end
+    RinseMovingButton:StopMovingOrSizing()
+    RinseMovingButton:Hide()
+    local array, update
+    if Moving.list == RinsePrioListFrame then
+        array = RINSE_CONFIG.PRIO_ARRAY
+        update = RinsePrioListScrollFrame_Update
+    elseif Moving.list == RinseSkipListFrame then
+        array = RINSE_CONFIG.SKIP_ARRAY
+        update = RinseSkipListScrollFrame_Update
+    end
+    if Moving.destID and Moving.sourceID and array and array[Moving.sourceID] and array[Moving.destID] then
+        array[Moving.sourceID], array[Moving.destID] = array[Moving.destID], array[Moving.sourceID]
+    end
+    Moving.sourceID = nil
+    update()
+    UpdatePrio()
+    Moving.list = nil
 end
 
 function RinseMovingButton_OnUpdate()
-	if not Moving.list then return end
-	local cursorX, cursorY = GetCursorPosition()
-	cursorX = cursorX / UIParent:GetScale()
-	cursorY = cursorY / UIParent:GetScale()
-	RinseMovingButton:ClearAllPoints()
-	RinseMovingButton:SetPoint("LEFT", nil, "BOTTOMLEFT", cursorX - 30, cursorY)
-	Moving.destID = nil
-	for i = 1, 10 do
-		_G[Moving.list:GetName().."Button"..i.."Highlight"]:Hide()
-	end
-	for i = 1, 10 do
-		local button = _G[Moving.list:GetName().."Button"..i]
-		local highlight = _G[Moving.list:GetName().."Button"..i.."Highlight"]
-		if button:IsShown() and MouseIsOver(button) then
-			highlight:Show()
-			Moving.destID = button:GetID()
-		end
-	end
+    if not Moving.list then return end
+    local cursorX, cursorY = GetCursorPosition()
+    cursorX = cursorX / UIParent:GetScale()
+    cursorY = cursorY / UIParent:GetScale()
+    RinseMovingButton:ClearAllPoints()
+    RinseMovingButton:SetPoint("LEFT", nil, "BOTTOMLEFT", cursorX - 30, cursorY)
+    Moving.destID = nil
+    for i = 1, 10 do
+        _G[Moving.list:GetName().."Button"..i.."Highlight"]:Hide()
+    end
+    for i = 1, 10 do
+        local button = _G[Moving.list:GetName().."Button"..i]
+        local highlight = _G[Moving.list:GetName().."Button"..i.."Highlight"]
+        if button:IsShown() and MouseIsOver(button) then
+            highlight:Show()
+            Moving.destID = button:GetID()
+        end
+    end
 end
 
 function Rinse_AddUnitToList(array, unit)
-	local name = UnitName(unit)
-	local _, class = UnitClass(unit)
-	if name and UnitIsFriend(unit, "player") and UnitIsPlayer(unit) and not arrcontains(array, name) then
-		tinsert(array, {name = name, class = class})
-	end
-	if array == RINSE_CONFIG.SKIP_ARRAY then
-		RinseSkipListScrollFrame_Update()
-	elseif array == RINSE_CONFIG.PRIO_ARRAY then
-		RinsePrioListScrollFrame_Update()
-		UpdatePrio()
-	end
-	aurasChanged = true
+    local name = UnitName(unit)
+    local _, class = UnitClass(unit)
+    if name and UnitIsFriend(unit, "player") and UnitIsPlayer(unit) and not arrcontains(array, name) then
+        tinsert(array, {name = name, class = class})
+    end
+    if array == RINSE_CONFIG.SKIP_ARRAY then
+        RinseSkipListScrollFrame_Update()
+    elseif array == RINSE_CONFIG.PRIO_ARRAY then
+        RinsePrioListScrollFrame_Update()
+        UpdatePrio()
+    end
+    aurasChanged = true
 end
 
 local function AddGroupOrClass()
-	local array
-	if UIDROPDOWNMENU_MENU_VALUE == "Rinse_SkipList" then
-		array = RINSE_CONFIG.SKIP_ARRAY
-	elseif UIDROPDOWNMENU_MENU_VALUE == "Rinse_PrioList" then
-		array = RINSE_CONFIG.PRIO_ARRAY
-	end
-	if type(this.value) == "number" then
-		-- This is group number
-		if GetNumRaidMembers() > 0 then
-			for i = 1 , 40 do
-				local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
-				if name and subgroup == this.value then Rinse_AddUnitToList(array, "raid"..i) end
-			end
-		elseif GetNumPartyMembers() > 0 then
-			if this.value == 1 then
-				Rinse_AddUnitToList(array, "player")
-				for i = 1, 4 do
-					if UnitName("party"..i) then Rinse_AddUnitToList(array, "party"..i) end
-				end
-			end
-		end
-	elseif type(this.value) == "string" then
-		-- This is class
-		if GetNumRaidMembers() > 0 then
-			for i = 1 , 40 do
-				local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
-				if name and classFileName == this.value then Rinse_AddUnitToList(array, "raid"..i) end
-			end
-		elseif GetNumPartyMembers() > 0 then
-			if this.value == playerClass then Rinse_AddUnitToList(array, "player") end
-			for i = 1, 4 do
-				local _, class = UnitClass("party"..i)
-				if UnitName("party"..i) and class == this.value then Rinse_AddUnitToList(array, "party"..i) end
-			end
-		end
-	end
+    local array
+    if UIDROPDOWNMENU_MENU_VALUE == "Rinse_SkipList" then
+        array = RINSE_CONFIG.SKIP_ARRAY
+    elseif UIDROPDOWNMENU_MENU_VALUE == "Rinse_PrioList" then
+        array = RINSE_CONFIG.PRIO_ARRAY
+    end
+    if type(this.value) == "number" then
+        -- This is group number
+        if GetNumRaidMembers() > 0 then
+            for i = 1 , 40 do
+                local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
+                if name and subgroup == this.value then Rinse_AddUnitToList(array, "raid"..i) end
+            end
+        elseif GetNumPartyMembers() > 0 then
+            if this.value == 1 then
+                Rinse_AddUnitToList(array, "player")
+                for i = 1, 4 do
+                    if UnitName("party"..i) then Rinse_AddUnitToList(array, "party"..i) end
+                end
+            end
+        end
+    elseif type(this.value) == "string" then
+        -- This is class
+        if GetNumRaidMembers() > 0 then
+            for i = 1 , 40 do
+                local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
+                if name and classFileName == this.value then Rinse_AddUnitToList(array, "raid"..i) end
+            end
+        elseif GetNumPartyMembers() > 0 then
+            if this.value == playerClass then Rinse_AddUnitToList(array, "player") end
+            for i = 1, 4 do
+                local _, class = UnitClass("party"..i)
+                if UnitName("party"..i) and class == this.value then Rinse_AddUnitToList(array, "party"..i) end
+            end
+        end
+    end
 end
 
 local info = {}
@@ -575,1092 +575,1092 @@ info.checked = nil
 info.func = AddGroupOrClass
 
 local function ClassMenu()
-	if UIDROPDOWNMENU_MENU_LEVEL == 1 then
-		info.text = ClassColors["WARRIOR"]..L["Warriors"]
-		info.value = "WARRIOR"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["DRUID"]..L["Druids"]
-		info.value = "DRUID"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["PALADIN"]..L["Paladins"]
-		info.value = "PALADIN"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["WARLOCK"]..L["Warlocks"]
-		info.value = "WARLOCK"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["MAGE"]..L["Mages"]
-		info.value = "MAGE"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["PRIEST"]..L["Priests"]
-		info.value = "PRIEST"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["ROGUE"]..L["Rogues"]
-		info.value = "ROGUE"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["HUNTER"]..L["Hunters"]
-		info.value = "HUNTER"
-		UIDropDownMenu_AddButton(info)
-		info.text = ClassColors["SHAMAN"]..L["Shamans"]
-		info.value = "SHAMAN"
-		UIDropDownMenu_AddButton(info)
-	end
+    if UIDROPDOWNMENU_MENU_LEVEL == 1 then
+        info.text = ClassColors["WARRIOR"]..L["Warriors"]
+        info.value = "WARRIOR"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["DRUID"]..L["Druids"]
+        info.value = "DRUID"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["PALADIN"]..L["Paladins"]
+        info.value = "PALADIN"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["WARLOCK"]..L["Warlocks"]
+        info.value = "WARLOCK"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["MAGE"]..L["Mages"]
+        info.value = "MAGE"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["PRIEST"]..L["Priests"]
+        info.value = "PRIEST"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["ROGUE"]..L["Rogues"]
+        info.value = "ROGUE"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["HUNTER"]..L["Hunters"]
+        info.value = "HUNTER"
+        UIDropDownMenu_AddButton(info)
+        info.text = ClassColors["SHAMAN"]..L["Shamans"]
+        info.value = "SHAMAN"
+        UIDropDownMenu_AddButton(info)
+    end
 end
 
 local function GroupMenu()
-	if UIDROPDOWNMENU_MENU_LEVEL == 1 then
-		for i = 1, 8 do
-			info.text = GROUP.." "..i
-			info.value = i
-			UIDropDownMenu_AddButton(info)
-		end
-	end
+    if UIDROPDOWNMENU_MENU_LEVEL == 1 then
+        for i = 1, 8 do
+            info.text = GROUP.." "..i
+            info.value = i
+            UIDropDownMenu_AddButton(info)
+        end
+    end
 end
 
 function RinseSkipListAddGroup_OnClick()
-	UIDropDownMenu_Initialize(RinseGroupsDropDown, GroupMenu, "MENU")
-	ToggleDropDownMenu(1, "Rinse_SkipList", RinseGroupsDropDown, this, 0, 0)
+    UIDropDownMenu_Initialize(RinseGroupsDropDown, GroupMenu, "MENU")
+    ToggleDropDownMenu(1, "Rinse_SkipList", RinseGroupsDropDown, this, 0, 0)
 end
 
 function RinseSkipListAddClass_OnClick()
-	UIDropDownMenu_Initialize(RinseClassesDropDown, ClassMenu, "MENU")
-	ToggleDropDownMenu(1, "Rinse_SkipList", RinseClassesDropDown, this, 0, 0)
+    UIDropDownMenu_Initialize(RinseClassesDropDown, ClassMenu, "MENU")
+    ToggleDropDownMenu(1, "Rinse_SkipList", RinseClassesDropDown, this, 0, 0)
 end
 
 function RinsePrioListAddGroup_OnClick()
-	UIDropDownMenu_Initialize(RinseGroupsDropDown, GroupMenu, "MENU")
-	ToggleDropDownMenu(1, "Rinse_PrioList", RinseGroupsDropDown, this, 0, 0)
+    UIDropDownMenu_Initialize(RinseGroupsDropDown, GroupMenu, "MENU")
+    ToggleDropDownMenu(1, "Rinse_PrioList", RinseGroupsDropDown, this, 0, 0)
 end
 
 function RinsePrioListAddClass_OnClick()
-	UIDropDownMenu_Initialize(RinseClassesDropDown, ClassMenu, "MENU")
-	ToggleDropDownMenu(1, "Rinse_PrioList", RinseClassesDropDown, this, 0, 0)
+    UIDropDownMenu_Initialize(RinseClassesDropDown, ClassMenu, "MENU")
+    ToggleDropDownMenu(1, "Rinse_PrioList", RinseClassesDropDown, this, 0, 0)
 end
 
 StaticPopupDialogs["RINSE_ADD_PLAYER_TO_LIST"] = {
-	text = "Enter player name:",
-	button1 = OKAY,
-	button2 = CANCEL,
-	hasEditBox = 1,
-	maxLetters = 12,
-	OnAccept = function()
-		local dialog = this:GetParent()
-		local name = _G[dialog:GetName().."EditBox"]:GetText()
-		if not name or name == "" then return end
-		local array
-		if dialog.data == "skip" then
-			array = RINSE_CONFIG.SKIP_ARRAY
-		elseif dialog.data == "prio" then
-			array = RINSE_CONFIG.PRIO_ARRAY
-		end
-		if not array then return end
-		if arrcontains(array, name) then return end
-		local class = "UNKNOWN"
-		local unit = NameToUnitID(name)
-		if unit then
-			local _, c = UnitClass(unit)
-			if c then class = c end
-		end
-		tinsert(array, {name = name, class = class})
-		if array == RINSE_CONFIG.SKIP_ARRAY then
-			RinseSkipListScrollFrame_Update()
-		elseif array == RINSE_CONFIG.PRIO_ARRAY then
-			RinsePrioListScrollFrame_Update()
-			UpdatePrio()
-		end
-	end,
-	EditBoxOnEnterPressed = function()
-		StaticPopupDialogs[this:GetParent().which].OnAccept()
-		this:GetParent():Hide()
-	end,
-	EditBoxOnEscapePressed = function()
-		this:GetParent():Hide()
-	end,
-	OnShow = function()
-		_G[this:GetName().."EditBox"]:SetFocus()
-	end,
-	OnHide = function()
-		_G[this:GetName().."EditBox"]:SetText("")
-	end,
-	timeout = 0,
-	exclusive = 1,
-	hideOnEscape = 1
+    text = "Enter player name:",
+    button1 = OKAY,
+    button2 = CANCEL,
+    hasEditBox = 1,
+    maxLetters = 12,
+    OnAccept = function()
+        local dialog = this:GetParent()
+        local name = _G[dialog:GetName().."EditBox"]:GetText()
+        if not name or name == "" then return end
+        local array
+        if dialog.data == "skip" then
+            array = RINSE_CONFIG.SKIP_ARRAY
+        elseif dialog.data == "prio" then
+            array = RINSE_CONFIG.PRIO_ARRAY
+        end
+        if not array then return end
+        if arrcontains(array, name) then return end
+        local class = "UNKNOWN"
+        local unit = NameToUnitID(name)
+        if unit then
+            local _, c = UnitClass(unit)
+            if c then class = c end
+        end
+        tinsert(array, {name = name, class = class})
+        if array == RINSE_CONFIG.SKIP_ARRAY then
+            RinseSkipListScrollFrame_Update()
+        elseif array == RINSE_CONFIG.PRIO_ARRAY then
+            RinsePrioListScrollFrame_Update()
+            UpdatePrio()
+        end
+    end,
+    EditBoxOnEnterPressed = function()
+        StaticPopupDialogs[this:GetParent().which].OnAccept()
+        this:GetParent():Hide()
+    end,
+    EditBoxOnEscapePressed = function()
+        this:GetParent():Hide()
+    end,
+    OnShow = function()
+        _G[this:GetName().."EditBox"]:SetFocus()
+    end,
+    OnHide = function()
+        _G[this:GetName().."EditBox"]:SetText("")
+    end,
+    timeout = 0,
+    exclusive = 1,
+    hideOnEscape = 1
 }
 
 function RinseSkipListAddName_OnClick()
-	local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "skip")
-	if dialog then dialog.data = "skip" end
+    local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "skip")
+    if dialog then dialog.data = "skip" end
 end
 
 function RinsePrioListAddName_OnClick()
-	local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "prio")
-	if dialog then dialog.data = "prio" end
+    local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "prio")
+    if dialog then dialog.data = "prio" end
 end
 
 function Rinse_ClearButton_OnClick()
-	if this:GetParent() == RinseSkipListFrame then
-		wipe(RINSE_CONFIG.SKIP_ARRAY)
-		RinseSkipListScrollFrame_Update()
-	elseif this:GetParent() == RinsePrioListFrame then
-		wipe(RINSE_CONFIG.PRIO_ARRAY)
-		RinsePrioListScrollFrame_Update()
-	end
-	UpdatePrio()
+    if this:GetParent() == RinseSkipListFrame then
+        wipe(RINSE_CONFIG.SKIP_ARRAY)
+        RinseSkipListScrollFrame_Update()
+    elseif this:GetParent() == RinsePrioListFrame then
+        wipe(RINSE_CONFIG.PRIO_ARRAY)
+        RinsePrioListScrollFrame_Update()
+    end
+    UpdatePrio()
 end
 
 local bookType = BOOKTYPE_SPELL
 if playerClass == "WARLOCK" then
-	bookType = BOOKTYPE_PET
+    bookType = BOOKTYPE_PET
 end
 
 local AllSpells = {}
 
 local function UpdateSpells()
-	if not Spells[playerClass] then
-		return
-	end
-	-- Gather all spells and their spellBookID
-	wipe(AllSpells)
-	for tab = 1, GetNumSpellTabs() do
-		local _, _, offset, numSpells = GetSpellTabInfo(tab)
-		for spellBookID = offset + 1, offset + numSpells do
-			local spell = GetSpellName(spellBookID, bookType)
-			if spell then
-				AllSpells[spell] = spellBookID
-			end
-		end
-	end
-	-- Search AllSpells for cleansing spells
-	for dispelType, spells in pairs(Spells[playerClass]) do
-		-- Search in reverse order to finish at more powerful spell which should be at index 1 in Spells[playerClass][debuffType]
-		for i = getn(spells), 1, -1 do
-			local spellToFind = spells[i]
-			if spellToFind == L["Cleanse"] and RINSE_CHAR_CONFIG.FILTER[L["Magic"]] then
-				-- In this case use Purify
-				break
-			end
-			for spellName, spellSLot in pairs(AllSpells) do
-				if spellName == spellToFind then
-					UsableSpells[dispelType] = spellName
-					UsableSpellBookIDs[spellName] = spellSLot
-					break
-				end
-			end
-		end
-	end
+    if not Spells[playerClass] then
+        return
+    end
+    -- Gather all spells and their spellBookID
+    wipe(AllSpells)
+    for tab = 1, GetNumSpellTabs() do
+        local _, _, offset, numSpells = GetSpellTabInfo(tab)
+        for spellBookID = offset + 1, offset + numSpells do
+            local spell = GetSpellName(spellBookID, bookType)
+            if spell then
+                AllSpells[spell] = spellBookID
+            end
+        end
+    end
+    -- Search AllSpells for cleansing spells
+    for dispelType, spells in pairs(Spells[playerClass]) do
+        -- Search in reverse order to finish at more powerful spell which should be at index 1 in Spells[playerClass][debuffType]
+        for i = getn(spells), 1, -1 do
+            local spellToFind = spells[i]
+            if spellToFind == L["Cleanse"] and RINSE_CHAR_CONFIG.FILTER[L["Magic"]] then
+                -- In this case use Purify
+                break
+            end
+            for spellName, spellSLot in pairs(AllSpells) do
+                if spellName == spellToFind then
+                    UsableSpells[dispelType] = spellName
+                    UsableSpellBookIDs[spellName] = spellSLot
+                    break
+                end
+            end
+        end
+    end
 end
 
 local function ResolvePlayerClasses(array)
-	for i = 1, getn(array) do
-		if array[i].class == "UNKNOWN" then
-			local unit = NameToUnitID(array[i].name)
-			if unit then
-				local _, c = UnitClass(unit)
-				if c then array[i].class = c end
-			end
-		end
-	end
+    for i = 1, getn(array) do
+        if array[i].class == "UNKNOWN" then
+            local unit = NameToUnitID(array[i].name)
+            if unit then
+                local _, c = UnitClass(unit)
+                if c then array[i].class = c end
+            end
+        end
+    end
 end
 
 function RinseFramePrioList_OnClick()
-	if RinsePrioListFrame:IsShown() then
-		RinsePrioListFrame:Hide()
-	else
-		ResolvePlayerClasses(RINSE_CONFIG.PRIO_ARRAY)
-		RinsePrioListFrame:Show()
-		RinsePrioListScrollFrame_Update()
-	end
+    if RinsePrioListFrame:IsShown() then
+        RinsePrioListFrame:Hide()
+    else
+        ResolvePlayerClasses(RINSE_CONFIG.PRIO_ARRAY)
+        RinsePrioListFrame:Show()
+        RinsePrioListScrollFrame_Update()
+    end
 end
 
 function RinseFrameSkipList_OnClick()
-	if RinseSkipListFrame:IsShown() then
-		RinseSkipListFrame:Hide()
-	else
-		ResolvePlayerClasses(RINSE_CONFIG.SKIP_ARRAY)
-		RinseSkipListFrame:Show()
-		RinseSkipListScrollFrame_Update()
-	end
+    if RinseSkipListFrame:IsShown() then
+        RinseSkipListFrame:Hide()
+    else
+        ResolvePlayerClasses(RINSE_CONFIG.SKIP_ARRAY)
+        RinseSkipListFrame:Show()
+        RinseSkipListScrollFrame_Update()
+    end
 end
 
 function RinseFrameOptions_OnClick()
-	if not RinseOptionsFrame:IsShown() then
-		RinseOptionsFrame:Show()
-	else
-		RinseOptionsFrame:Hide()
-	end
+    if not RinseOptionsFrame:IsShown() then
+        RinseOptionsFrame:Show()
+    else
+        RinseOptionsFrame:Hide()
+    end
 end
 
 local function DisableCheckBox(checkBox)
-	if not checkBox then return end
-	checkBox:Disable()
-	_G[checkBox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
-	_G[checkBox:GetName().."TooltipPreserve"]:Show()
+    if not checkBox then return end
+    checkBox:Disable()
+    _G[checkBox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
+    _G[checkBox:GetName().."TooltipPreserve"]:Show()
 end
 
 local function EnableCheckBox(checkBox)
-	if not checkBox then return end
-	checkBox:Enable()
-	_G[checkBox:GetName().."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-	_G[checkBox:GetName().."TooltipPreserve"]:Hide()
+    if not checkBox then return end
+    checkBox:Enable()
+    _G[checkBox:GetName().."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+    _G[checkBox:GetName().."TooltipPreserve"]:Hide()
 end
 
 local function UpdateBlacklist()
-	for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST) do
-		Blacklist[k] = v
-	end
-	aurasChanged = true
+    for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST) do
+        Blacklist[k] = v
+    end
+    aurasChanged = true
 end
 
 local function UpdateFilter()
-	for k, v in pairs(RINSE_CHAR_CONFIG.FILTER) do
-		Filter[k] = v
-	end
-	for k, v in pairs(RINSE_CHAR_CONFIG.FILTER_CLASS) do
-		RINSE_CHAR_CONFIG.FILTER_CLASS[k] = RINSE_CHAR_CONFIG.FILTER_CLASS[k] or {}
-		for k2, v2 in pairs(RINSE_CHAR_CONFIG.FILTER_CLASS[k]) do
-			ClassFilter[k][k2] = v2
-		end
-	end
-	UpdateSpells()
-	aurasChanged = true
+    for k, v in pairs(RINSE_CHAR_CONFIG.FILTER) do
+        Filter[k] = v
+    end
+    for k, v in pairs(RINSE_CHAR_CONFIG.FILTER_CLASS) do
+        RINSE_CHAR_CONFIG.FILTER_CLASS[k] = RINSE_CHAR_CONFIG.FILTER_CLASS[k] or {}
+        for k2, v2 in pairs(RINSE_CHAR_CONFIG.FILTER_CLASS[k]) do
+            ClassFilter[k][k2] = v2
+        end
+    end
+    UpdateSpells()
+    aurasChanged = true
 end
 
 function Rinse_ToggleFilter(filter)
-	RINSE_CHAR_CONFIG.FILTER[filter] = not RINSE_CHAR_CONFIG.FILTER[filter]
-	RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
-	RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
-	RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
-	RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
-	RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
-	UpdateFilter()
-	RinseOptionsFrameFilterScrollFrame_Update()
+    RINSE_CHAR_CONFIG.FILTER[filter] = not RINSE_CHAR_CONFIG.FILTER[filter]
+    RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
+    RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
+    RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
+    RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
+    RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
+    UpdateFilter()
+    RinseOptionsFrameFilterScrollFrame_Update()
 end
 
 function Rinse_ToggleWyvernSting()
-	RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]] = not RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]]
-	RinseOptionsFrameWyvernSting:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]])
-	UpdateBlacklist()
-	RinseOptionsFrameBlacklistScrollFrame_Update()
+    RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]] = not RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]]
+    RinseOptionsFrameWyvernSting:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]])
+    UpdateBlacklist()
+    RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
 function Rinse_ToggleMutatingInjection()
-	RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]] = not RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]]
-	RinseOptionsFrameMutatingInjection:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]])
-	UpdateBlacklist()
-	RinseOptionsFrameBlacklistScrollFrame_Update()
+    RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]] = not RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]]
+    RinseOptionsFrameMutatingInjection:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]])
+    UpdateBlacklist()
+    RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
 function Rinse_ToggleIgnoreAbolish()
-	RINSE_CONFIG.IGNORE_ABOLISH = not RINSE_CONFIG.IGNORE_ABOLISH
+    RINSE_CONFIG.IGNORE_ABOLISH = not RINSE_CONFIG.IGNORE_ABOLISH
 end
 
 function Rinse_ToggleShadowform()
-	RINSE_CONFIG.SHADOWFORM = not RINSE_CONFIG.SHADOWFORM
+    RINSE_CONFIG.SHADOWFORM = not RINSE_CONFIG.SHADOWFORM
 end
 
 function Rinse_TogglePets()
-	RINSE_CONFIG.PETS = not RINSE_CONFIG.PETS
-	UpdatePrio()
+    RINSE_CONFIG.PETS = not RINSE_CONFIG.PETS
+    UpdatePrio()
 end
 
 function Rinse_TogglePrint()
-	RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
-	if RINSE_CONFIG.PRINT and MikSBT then
-		EnableCheckBox(RinseOptionsFrameMSBT)
-	else
-		DisableCheckBox(RinseOptionsFrameMSBT)
-	end
+    RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
+    if RINSE_CONFIG.PRINT and MikSBT then
+        EnableCheckBox(RinseOptionsFrameMSBT)
+    else
+        DisableCheckBox(RinseOptionsFrameMSBT)
+    end
 end
 
 function Rinse_ToggleMSBT()
-	RINSE_CONFIG.MSBT = not RINSE_CONFIG.MSBT
+    RINSE_CONFIG.MSBT = not RINSE_CONFIG.MSBT
 end
 
 function Rinse_ToggleSound()
-	RINSE_CONFIG.SOUND = not RINSE_CONFIG.SOUND
+    RINSE_CONFIG.SOUND = not RINSE_CONFIG.SOUND
 end
 
 function Rinse_ToggleLock()
-	RINSE_CONFIG.LOCK = not RINSE_CONFIG.LOCK
-	RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
-	RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
+    RINSE_CONFIG.LOCK = not RINSE_CONFIG.LOCK
+    RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
+    RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
 end
 
 local function UpdateBackdrop()
-	if RINSE_CONFIG.BACKDROP then
-		RinseFrame:SetBackdrop(Backdrop)
-		RinseFrame:SetBackdropBorderColor(1, 1, 1)
-		RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
-	else
-		RinseFrame:SetBackdrop(nil)
-	end
+    if RINSE_CONFIG.BACKDROP then
+        RinseFrame:SetBackdrop(Backdrop)
+        RinseFrame:SetBackdropBorderColor(1, 1, 1)
+        RinseFrame:SetBackdropColor(0, 0, 0, 0.5)
+    else
+        RinseFrame:SetBackdrop(nil)
+    end
 end
 
 function Rinse_ToggleBackdrop()
-	RINSE_CONFIG.BACKDROP = not RINSE_CONFIG.BACKDROP
-	UpdateBackdrop()
+    RINSE_CONFIG.BACKDROP = not RINSE_CONFIG.BACKDROP
+    UpdateBackdrop()
 end
 
 local function UpdateFramesScale()
-	for _, frame in pairs(Frames) do
-		_G[frame]:SetScale(RINSE_CONFIG.SCALE)
-	end
+    for _, frame in pairs(Frames) do
+        _G[frame]:SetScale(RINSE_CONFIG.SCALE)
+    end
 end
 
 function RinseOptionsFrameScaleSLider_OnValueChanged()
-	local scale = tonumber(format("%.2f", this:GetValue()))
-	RINSE_CONFIG.SCALE = scale
-	RinseFrame:SetScale(scale)
-	RinseDebuffsFrame:SetScale(scale)
-	_G[this:GetName().."Text"]:SetText(format(L.FMT_SCALE, scale))
-	UpdateFramesScale()
+    local scale = tonumber(format("%.2f", this:GetValue()))
+    RINSE_CONFIG.SCALE = scale
+    RinseFrame:SetScale(scale)
+    RinseDebuffsFrame:SetScale(scale)
+    _G[this:GetName().."Text"]:SetText(format(L.FMT_SCALE, scale))
+    UpdateFramesScale()
 end
 
 local function UpdateDirection()
-	if not RINSE_CONFIG.FLIP then
-		-- Normal direction (from top to bottom)
-		RinseFrameBackground:ClearAllPoints()
-		RinseFrameBackground:SetPoint("TOP", 0, -5)
-		RinseFrameTitle:ClearAllPoints()
-		RinseFrameTitle:SetPoint("TOPLEFT", 12, -12)
-		if RINSE_CONFIG.SHOW_HEADER then
-			RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -35)
-		else
-			RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
-		end
-		for i = 1, BUTTONS_MAX do
-			local frame = _G["RinseFrameDebuff"..i]
-			if i == 1 then
-				frame:ClearAllPoints()
-				frame:SetPoint("TOP", RinseDebuffsFrame, "TOP", 0, 0)
-			else
-				local prevFrame = _G["RinseFrameDebuff"..(i - 1)]
-				frame:ClearAllPoints()
-				frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 0)
-			end
-		end
-	else
-		-- Inverted (from bottom to top)
-		RinseFrameBackground:ClearAllPoints()
-		RinseFrameBackground:SetPoint("BOTTOM", 0, 5)
-		RinseFrameTitle:ClearAllPoints()
-		RinseFrameTitle:SetPoint("BOTTOMLEFT", 12, 12)
-		RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
-		for i = 1, BUTTONS_MAX do
-			local frame = _G["RinseFrameDebuff"..i]
-			if i == 1 then
-				frame:ClearAllPoints()
-				frame:SetPoint("BOTTOM", RinseDebuffsFrame, "BOTTOM", 0, 0)
-			else
-				local prevFrame = _G["RinseFrameDebuff"..(i - 1)]
-				frame:ClearAllPoints()
-				frame:SetPoint("BOTTOM", prevFrame, "TOP", 0, 0)
-			end
-		end
-	end
+    if not RINSE_CONFIG.FLIP then
+        -- Normal direction (from top to bottom)
+        RinseFrameBackground:ClearAllPoints()
+        RinseFrameBackground:SetPoint("TOP", 0, -5)
+        RinseFrameTitle:ClearAllPoints()
+        RinseFrameTitle:SetPoint("TOPLEFT", 12, -12)
+        if RINSE_CONFIG.SHOW_HEADER then
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -35)
+        else
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+        end
+        for i = 1, BUTTONS_MAX do
+            local frame = _G["RinseFrameDebuff"..i]
+            if i == 1 then
+                frame:ClearAllPoints()
+                frame:SetPoint("TOP", RinseDebuffsFrame, "TOP", 0, 0)
+            else
+                local prevFrame = _G["RinseFrameDebuff"..(i - 1)]
+                frame:ClearAllPoints()
+                frame:SetPoint("TOP", prevFrame, "BOTTOM", 0, 0)
+            end
+        end
+    else
+        -- Inverted (from bottom to top)
+        RinseFrameBackground:ClearAllPoints()
+        RinseFrameBackground:SetPoint("BOTTOM", 0, 5)
+        RinseFrameTitle:ClearAllPoints()
+        RinseFrameTitle:SetPoint("BOTTOMLEFT", 12, 12)
+        RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+        for i = 1, BUTTONS_MAX do
+            local frame = _G["RinseFrameDebuff"..i]
+            if i == 1 then
+                frame:ClearAllPoints()
+                frame:SetPoint("BOTTOM", RinseDebuffsFrame, "BOTTOM", 0, 0)
+            else
+                local prevFrame = _G["RinseFrameDebuff"..(i - 1)]
+                frame:ClearAllPoints()
+                frame:SetPoint("BOTTOM", prevFrame, "TOP", 0, 0)
+            end
+        end
+    end
 end
 
 function Rinse_ToggleDirection()
-	RINSE_CONFIG.FLIP = not RINSE_CONFIG.FLIP
-	UpdateDirection()
+    RINSE_CONFIG.FLIP = not RINSE_CONFIG.FLIP
+    UpdateDirection()
 end
 
 local function UpdateNumButtons()
-	local num = RINSE_CONFIG.BUTTONS
-	RinseDebuffsFrame:SetHeight(num * 42)
-	if num > BUTTONS_MAX then
-		-- Adding buttons
-		RinseFrame:SetHeight(RinseFrame:GetHeight() + (num - BUTTONS_MAX) * 42)
-		local btn, prevBtn
-		for i = BUTTONS_MAX + 1, num do
-			btn = _G["RinseFrameDebuff"..i]
-			if not btn then
-				btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
-			end
-			prevBtn = _G["RinseFrameDebuff"..(i - 1)]
-			btn:ClearAllPoints()
-			if not RINSE_CONFIG.FLIP then
-				btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 0)
-			else
-				btn:SetPoint("BOTTOM", prevBtn, "TOP", 0, 0)
-			end
-		end
-	elseif num < BUTTONS_MAX then
-		-- Removing buttons
-		RinseFrame:SetHeight(RinseFrame:GetHeight() - (BUTTONS_MAX - num) * 42)
-		for i = num + 1, BUTTONS_MAX do
-			_G["RinseFrameDebuff"..i]:Hide()
-		end
-	end
-	BUTTONS_MAX = num
+    local num = RINSE_CONFIG.BUTTONS
+    RinseDebuffsFrame:SetHeight(num * 42)
+    if num > BUTTONS_MAX then
+        -- Adding buttons
+        RinseFrame:SetHeight(RinseFrame:GetHeight() + (num - BUTTONS_MAX) * 42)
+        local btn, prevBtn
+        for i = BUTTONS_MAX + 1, num do
+            btn = _G["RinseFrameDebuff"..i]
+            if not btn then
+                btn = CreateFrame("Button", "RinseFrameDebuff"..i, RinseDebuffsFrame, "RinseDebuffButtonTemplate")
+            end
+            prevBtn = _G["RinseFrameDebuff"..(i - 1)]
+            btn:ClearAllPoints()
+            if not RINSE_CONFIG.FLIP then
+                btn:SetPoint("TOP", prevBtn, "BOTTOM", 0, 0)
+            else
+                btn:SetPoint("BOTTOM", prevBtn, "TOP", 0, 0)
+            end
+        end
+    elseif num < BUTTONS_MAX then
+        -- Removing buttons
+        RinseFrame:SetHeight(RinseFrame:GetHeight() - (BUTTONS_MAX - num) * 42)
+        for i = num + 1, BUTTONS_MAX do
+            _G["RinseFrameDebuff"..i]:Hide()
+        end
+    end
+    BUTTONS_MAX = num
 end
 
 function RinseOptionsFrameButtonsSlider_OnValueChanged()
-	local numButtons = tonumber(format("%d", this:GetValue()))
-	RINSE_CONFIG.BUTTONS = numButtons
-	UpdateNumButtons()
-	_G[this:GetName().."Text"]:SetText(format(L.FMT_DEBUFFS_SHOWN, numButtons))
+    local numButtons = tonumber(format("%d", this:GetValue()))
+    RINSE_CONFIG.BUTTONS = numButtons
+    UpdateNumButtons()
+    _G[this:GetName().."Text"]:SetText(format(L.FMT_DEBUFFS_SHOWN, numButtons))
 end
 
 local function UpdateHeader()
-	if RINSE_CONFIG.SHOW_HEADER then
-		RinseFrameHitRect:Show()
-		RinseFrameBackground:Show()
-		RinseFrameTitle:Show()
-		RinseFrame:SetHeight(BUTTONS_MAX * 42 + 40)
-		if RINSE_CONFIG.FLIP then
-			RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
-		else
-			RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -35)
-		end
-	else
-		RinseFrameHitRect:Hide()
-		RinseFrameBackground:Hide()
-		RinseFrameTitle:Hide()
-		RinseFrame:SetHeight(BUTTONS_MAX * 42 + 10)
-		RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
-		ChatFrame1:AddMessage(BLUE.."[Rinse]|r "..L["Buttons are hidden, to access option and lists use /rinse options, /rinse skip or /rinse prio."])
-	end
+    if RINSE_CONFIG.SHOW_HEADER then
+        RinseFrameHitRect:Show()
+        RinseFrameBackground:Show()
+        RinseFrameTitle:Show()
+        RinseFrame:SetHeight(BUTTONS_MAX * 42 + 40)
+        if RINSE_CONFIG.FLIP then
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+        else
+            RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -35)
+        end
+    else
+        RinseFrameHitRect:Hide()
+        RinseFrameBackground:Hide()
+        RinseFrameTitle:Hide()
+        RinseFrame:SetHeight(BUTTONS_MAX * 42 + 10)
+        RinseDebuffsFrame:SetPoint("TOP", RinseFrame, "TOP", 0, -5)
+        ChatFrame1:AddMessage(BLUE.."[Rinse]|r "..L["Buttons are hidden, to access option and lists use /rinse options, /rinse skip or /rinse prio."])
+    end
 end
 
 function Rinse_ToggleHeader()
-	RINSE_CONFIG.SHOW_HEADER = not RINSE_CONFIG.SHOW_HEADER
-	UpdateHeader()
+    RINSE_CONFIG.SHOW_HEADER = not RINSE_CONFIG.SHOW_HEADER
+    UpdateHeader()
 end
 
 function RinseFrame_OnLoad()
-	RinseFrame:RegisterEvent("ADDON_LOADED")
-	RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
-	RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
-	RinseFrame:RegisterEvent("SPELLS_CHANGED")
-	RinseFrame:RegisterEvent("CHAT_MSG_ADDON")
-	RinseFrame:RegisterEvent("UNIT_AURA")
-	RinseFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-	if GetNampowerVersion then
-		-- Announce queued decurses
-		RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
-	end
-	if playerClass == "PRIEST" then
-		RinseFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
-	end
-	if not superwow and not C_Spell then
-		-- For restoring auto attack
-		RinseFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
-		RinseFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
-	end
-	RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
+    RinseFrame:RegisterEvent("ADDON_LOADED")
+    RinseFrame:RegisterEvent("RAID_ROSTER_UPDATE")
+    RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
+    RinseFrame:RegisterEvent("SPELLS_CHANGED")
+    RinseFrame:RegisterEvent("CHAT_MSG_ADDON")
+    RinseFrame:RegisterEvent("UNIT_AURA")
+    RinseFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
+    if GetNampowerVersion then
+        -- Announce queued decurses
+        RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
+    end
+    if playerClass == "PRIEST" then
+        RinseFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
+    end
+    if not superwow and not C_Spell then
+        -- For restoring auto attack
+        RinseFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
+        RinseFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
+    end
+    RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
 end
 
 function RinseFrame_OnEvent(event, arg1, arg2)
-	if event == "ADDON_LOADED" then
-		if arg1 ~= "Rinse" then return end
-		RinseFrame:UnregisterEvent(event)
-		tinsert(UISpecialFrames, "RinsePrioListFrame")
-		tinsert(UISpecialFrames, "RinseSkipListFrame")
-		tinsert(UISpecialFrames, "RinseOptionsFrame")
-		RINSE_CONFIG = RINSE_CONFIG or {}
-		RINSE_CHAR_CONFIG = RINSE_CHAR_CONFIG or {}
-		RINSE_CONFIG.SKIP_ARRAY = RINSE_CONFIG.SKIP_ARRAY or {}
-		RINSE_CONFIG.PRIO_ARRAY = RINSE_CONFIG.PRIO_ARRAY or {}
-		RebuildSkipNames()
-		RINSE_CONFIG.POSITION = RINSE_CONFIG.POSITION or {x = 0, y = 0}
-		RINSE_CONFIG.SCALE = RINSE_CONFIG.SCALE or 0.85
-		RINSE_CONFIG.OPACITY = RINSE_CONFIG.OPACITY or 1.0
-		RINSE_CONFIG.PRINT = RINSE_CONFIG.PRINT == nil and true or RINSE_CONFIG.PRINT
-		RINSE_CONFIG.MSBT = RINSE_CONFIG.MSBT == nil and true or RINSE_CONFIG.MSBT
-		RINSE_CONFIG.SOUND = RINSE_CONFIG.SOUND == nil and true or RINSE_CONFIG.SOUND
-		RINSE_CONFIG.LOCK = RINSE_CONFIG.LOCK == nil and false or RINSE_CONFIG.LOCK
-		RINSE_CONFIG.BACKDROP = RINSE_CONFIG.BACKDROP == nil and true or RINSE_CONFIG.BACKDROP
-		RINSE_CONFIG.FLIP = RINSE_CONFIG.FLIP == nil and false or RINSE_CONFIG.FLIP
-		RINSE_CONFIG.BUTTONS = RINSE_CONFIG.BUTTONS == nil and BUTTONS_MAX or RINSE_CONFIG.BUTTONS
-		RINSE_CONFIG.SHOW_HEADER = RINSE_CONFIG.SHOW_HEADER == nil and true or RINSE_CONFIG.SHOW_HEADER
-		RINSE_CONFIG.SHADOWFORM = RINSE_CONFIG.SHADOWFORM == nil and true or RINSE_CONFIG.SHADOWFORM
-		RINSE_CONFIG.IGNORE_ABOLISH = RINSE_CONFIG.IGNORE_ABOLISH == nil and true or RINSE_CONFIG.IGNORE_ABOLISH
-		RINSE_CONFIG.PETS = RINSE_CONFIG.PETS == nil and false or RINSE_CONFIG.PETS
-		RINSE_CHAR_CONFIG.BLACKLIST = RINSE_CHAR_CONFIG.BLACKLIST or {}
-		RINSE_CHAR_CONFIG.FILTER = RINSE_CHAR_CONFIG.FILTER or {
-			[L["Magic"]] = Spells[playerClass][L["Magic"]] == nil,
-			[L["Disease"]] = Spells[playerClass][L["Disease"]] == nil,
-			[L["Poison"]] = Spells[playerClass][L["Poison"]] == nil,
-			[L["Snare"]] = Spells[playerClass][L["Snare"]] == nil,
-			[L["Curse"]] = Spells[playerClass][L["Curse"]] == nil,
-		}
-		RINSE_CHAR_CONFIG.FILTER_CLASS = RINSE_CHAR_CONFIG.FILTER_CLASS or {
-			WARRIOR = {},
-			DRUID   = {},
-			PALADIN = {},
-			WARLOCK = {},
-			MAGE    = {},
-			PRIEST  = {},
-			ROGUE   = {},
-			HUNTER  = {},
-			SHAMAN  = {},
-		}
-		RinseFrame:ClearAllPoints()
-		RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
-		RinseFrame:SetScale(RINSE_CONFIG.SCALE)
-		RinseDebuffsFrame:SetScale(RINSE_CONFIG.SCALE)
-		RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
-		RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
-		RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
-		RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
-		RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
-		RinseOptionsFrameIgnoreAbolish:SetChecked(RINSE_CONFIG.IGNORE_ABOLISH)
-		RinseOptionsFrameShadowform:SetChecked(RINSE_CONFIG.SHADOWFORM)
-		RinseOptionsFramePets:SetChecked(RINSE_CONFIG.PETS)
-		RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
-		RinseOptionsFrameMSBT:SetChecked(RINSE_CONFIG.MSBT)
-		RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)
-		RinseOptionsFrameLock:SetChecked(RINSE_CONFIG.LOCK)
-		RinseOptionsFrameBackdrop:SetChecked(RINSE_CONFIG.BACKDROP)
-		RinseOptionsFrameShowHeader:SetChecked(RINSE_CONFIG.SHOW_HEADER)
-		RinseOptionsFrameFlip:SetChecked(RINSE_CONFIG.FLIP)
-		RinseOptionsFrameButtonsSlider:SetValue(RINSE_CONFIG.BUTTONS)
-		UpdateBlacklist()
-		RinseOptionsFrameWyvernSting:SetChecked(not Blacklist[L["Wyvern Sting"]])
-		RinseOptionsFrameMutatingInjection:SetChecked(not Blacklist[L["Mutating Injection"]])
-		UpdateFilter()
-		RinseOptionsFrameFilterMagic:SetChecked(not Filter[L["Magic"]])
-		RinseOptionsFrameFilterDisease:SetChecked(not Filter[L["Disease"]])
-		RinseOptionsFrameFilterPoison:SetChecked(not Filter[L["Poison"]])
-		RinseOptionsFrameFilterSnare:SetChecked(not Filter[L["Snare"]])
-		RinseOptionsFrameFilterCurse:SetChecked(not Filter[L["Curse"]])
-		for k in pairs(DebuffColor) do
-			local checkBox = _G["RinseOptionsFrameFilter"..k]
-			if checkBox then
-				if Spells[playerClass] and Spells[playerClass][k] then
-					EnableCheckBox(checkBox)
-				else
-					DisableCheckBox(checkBox)
-					checkBox.tooltipRequirement = L["Not available to your class."]
-				end
-			end
-		end
-		if Spells[playerClass] and Spells[playerClass][L["Poison"]] then
-			EnableCheckBox(RinseOptionsFrameWyvernSting)
-		else
-			DisableCheckBox(RinseOptionsFrameWyvernSting)
-			RinseOptionsFrameWyvernSting.tooltipRequirement = L["Not available to your class."]
-		end
-		if Spells[playerClass] and Spells[playerClass][L["Disease"]] then
-			EnableCheckBox(RinseOptionsFrameMutatingInjection)
-		else
-			DisableCheckBox(RinseOptionsFrameMutatingInjection)
-			RinseOptionsFrameMutatingInjection.tooltipRequirement = L["Not available to your class."]
-		end
-		if playerClass == "PRIEST" then
-			EnableCheckBox(RinseOptionsFrameShadowform)
-		else
-			DisableCheckBox(RinseOptionsFrameShadowform)
-			RinseOptionsFrameShadowform.tooltipRequirement = L["Not available to your class."]
-		end
-		if RINSE_CONFIG.PRINT and MikSBT then
-			EnableCheckBox(RinseOptionsFrameMSBT)
-		else
-			DisableCheckBox(RinseOptionsFrameMSBT)
-			RinseOptionsFrameMSBT.tooltipRequirement = not MikSBT and L["MSBT missing."] or nil
-		end
-		UpdateBackdrop()
-		UpdateFramesScale()
-		UpdateDirection()
-		UpdateNumButtons()
-		UpdateHeader()
-		UpdateSpells()
-		UpdatePrio()
-		RinseSkipListFrameTitle:SetText(L["Skip List"])
-		RinseSkipListFrameClear:SetText(L["Clear"])
-		RinsePrioListFrameTitle:SetText(L["Priority List"])
-		RinsePrioListFrameClear:SetText(L["Clear"])
-		RinseOptionsFrameTitle:SetText("Rinse".." "..L["Options"])
-		RinseOptionsFrameFilterText:SetText(L["Hidden Debuffs"])
-		RinseOptionsFrameClassFilterText:SetText(L["Class Hidden"])
-		RinseOptionsFrameHiddenDebuffsText:SetText(L["Blacklisted Debuffs"])
-		RinseOptionsFrameAddToFilter:SetText(L["Add"])
-		RinseOptionsFrameAddToBlacklist:SetText(L["Add"])
-		RinseOptionsFrameAddToClassFilter:SetText(L["Add"])
-		RinseOptionsFrameSelectClassText:SetText(ClassColors["WARRIOR"]..L["Warriors"])
-	elseif event == "SPELL_QUEUE_EVENT" then
-		if not RINSE_CONFIG.PRINT then return end
+    if event == "ADDON_LOADED" then
+        if arg1 ~= "Rinse" then return end
+        RinseFrame:UnregisterEvent(event)
+        tinsert(UISpecialFrames, "RinsePrioListFrame")
+        tinsert(UISpecialFrames, "RinseSkipListFrame")
+        tinsert(UISpecialFrames, "RinseOptionsFrame")
+        RINSE_CONFIG = RINSE_CONFIG or {}
+        RINSE_CHAR_CONFIG = RINSE_CHAR_CONFIG or {}
+        RINSE_CONFIG.SKIP_ARRAY = RINSE_CONFIG.SKIP_ARRAY or {}
+        RINSE_CONFIG.PRIO_ARRAY = RINSE_CONFIG.PRIO_ARRAY or {}
+        RebuildSkipNames()
+        RINSE_CONFIG.POSITION = RINSE_CONFIG.POSITION or {x = 0, y = 0}
+        RINSE_CONFIG.SCALE = RINSE_CONFIG.SCALE or 0.85
+        RINSE_CONFIG.OPACITY = RINSE_CONFIG.OPACITY or 1.0
+        RINSE_CONFIG.PRINT = RINSE_CONFIG.PRINT == nil and true or RINSE_CONFIG.PRINT
+        RINSE_CONFIG.MSBT = RINSE_CONFIG.MSBT == nil and true or RINSE_CONFIG.MSBT
+        RINSE_CONFIG.SOUND = RINSE_CONFIG.SOUND == nil and true or RINSE_CONFIG.SOUND
+        RINSE_CONFIG.LOCK = RINSE_CONFIG.LOCK == nil and false or RINSE_CONFIG.LOCK
+        RINSE_CONFIG.BACKDROP = RINSE_CONFIG.BACKDROP == nil and true or RINSE_CONFIG.BACKDROP
+        RINSE_CONFIG.FLIP = RINSE_CONFIG.FLIP == nil and false or RINSE_CONFIG.FLIP
+        RINSE_CONFIG.BUTTONS = RINSE_CONFIG.BUTTONS == nil and BUTTONS_MAX or RINSE_CONFIG.BUTTONS
+        RINSE_CONFIG.SHOW_HEADER = RINSE_CONFIG.SHOW_HEADER == nil and true or RINSE_CONFIG.SHOW_HEADER
+        RINSE_CONFIG.SHADOWFORM = RINSE_CONFIG.SHADOWFORM == nil and true or RINSE_CONFIG.SHADOWFORM
+        RINSE_CONFIG.IGNORE_ABOLISH = RINSE_CONFIG.IGNORE_ABOLISH == nil and true or RINSE_CONFIG.IGNORE_ABOLISH
+        RINSE_CONFIG.PETS = RINSE_CONFIG.PETS == nil and false or RINSE_CONFIG.PETS
+        RINSE_CHAR_CONFIG.BLACKLIST = RINSE_CHAR_CONFIG.BLACKLIST or {}
+        RINSE_CHAR_CONFIG.FILTER = RINSE_CHAR_CONFIG.FILTER or {
+            [L["Magic"]] = Spells[playerClass][L["Magic"]] == nil,
+            [L["Disease"]] = Spells[playerClass][L["Disease"]] == nil,
+            [L["Poison"]] = Spells[playerClass][L["Poison"]] == nil,
+            [L["Snare"]] = Spells[playerClass][L["Snare"]] == nil,
+            [L["Curse"]] = Spells[playerClass][L["Curse"]] == nil,
+        }
+        RINSE_CHAR_CONFIG.FILTER_CLASS = RINSE_CHAR_CONFIG.FILTER_CLASS or {
+            WARRIOR = {},
+            DRUID   = {},
+            PALADIN = {},
+            WARLOCK = {},
+            MAGE    = {},
+            PRIEST  = {},
+            ROGUE   = {},
+            HUNTER  = {},
+            SHAMAN  = {},
+        }
+        RinseFrame:ClearAllPoints()
+        RinseFrame:SetPoint("CENTER", UIParent, "BOTTOMLEFT", RINSE_CONFIG.POSITION.x, RINSE_CONFIG.POSITION.y)
+        RinseFrame:SetScale(RINSE_CONFIG.SCALE)
+        RinseDebuffsFrame:SetScale(RINSE_CONFIG.SCALE)
+        RinseFrame:SetAlpha(RINSE_CONFIG.OPACITY)
+        RinseFrame:SetMovable(not RINSE_CONFIG.LOCK)
+        RinseFrame:EnableMouse(not RINSE_CONFIG.LOCK)
+        RinseOptionsFrameScaleSlider:SetValue(RINSE_CONFIG.SCALE)
+        RinseOptionsFrameOpacitySlider:SetValue(RINSE_CONFIG.OPACITY)
+        RinseOptionsFrameIgnoreAbolish:SetChecked(RINSE_CONFIG.IGNORE_ABOLISH)
+        RinseOptionsFrameShadowform:SetChecked(RINSE_CONFIG.SHADOWFORM)
+        RinseOptionsFramePets:SetChecked(RINSE_CONFIG.PETS)
+        RinseOptionsFramePrint:SetChecked(RINSE_CONFIG.PRINT)
+        RinseOptionsFrameMSBT:SetChecked(RINSE_CONFIG.MSBT)
+        RinseOptionsFrameSound:SetChecked(RINSE_CONFIG.SOUND)
+        RinseOptionsFrameLock:SetChecked(RINSE_CONFIG.LOCK)
+        RinseOptionsFrameBackdrop:SetChecked(RINSE_CONFIG.BACKDROP)
+        RinseOptionsFrameShowHeader:SetChecked(RINSE_CONFIG.SHOW_HEADER)
+        RinseOptionsFrameFlip:SetChecked(RINSE_CONFIG.FLIP)
+        RinseOptionsFrameButtonsSlider:SetValue(RINSE_CONFIG.BUTTONS)
+        UpdateBlacklist()
+        RinseOptionsFrameWyvernSting:SetChecked(not Blacklist[L["Wyvern Sting"]])
+        RinseOptionsFrameMutatingInjection:SetChecked(not Blacklist[L["Mutating Injection"]])
+        UpdateFilter()
+        RinseOptionsFrameFilterMagic:SetChecked(not Filter[L["Magic"]])
+        RinseOptionsFrameFilterDisease:SetChecked(not Filter[L["Disease"]])
+        RinseOptionsFrameFilterPoison:SetChecked(not Filter[L["Poison"]])
+        RinseOptionsFrameFilterSnare:SetChecked(not Filter[L["Snare"]])
+        RinseOptionsFrameFilterCurse:SetChecked(not Filter[L["Curse"]])
+        for k in pairs(DebuffColor) do
+            local checkBox = _G["RinseOptionsFrameFilter"..k]
+            if checkBox then
+                if Spells[playerClass] and Spells[playerClass][k] then
+                    EnableCheckBox(checkBox)
+                else
+                    DisableCheckBox(checkBox)
+                    checkBox.tooltipRequirement = L["Not available to your class."]
+                end
+            end
+        end
+        if Spells[playerClass] and Spells[playerClass][L["Poison"]] then
+            EnableCheckBox(RinseOptionsFrameWyvernSting)
+        else
+            DisableCheckBox(RinseOptionsFrameWyvernSting)
+            RinseOptionsFrameWyvernSting.tooltipRequirement = L["Not available to your class."]
+        end
+        if Spells[playerClass] and Spells[playerClass][L["Disease"]] then
+            EnableCheckBox(RinseOptionsFrameMutatingInjection)
+        else
+            DisableCheckBox(RinseOptionsFrameMutatingInjection)
+            RinseOptionsFrameMutatingInjection.tooltipRequirement = L["Not available to your class."]
+        end
+        if playerClass == "PRIEST" then
+            EnableCheckBox(RinseOptionsFrameShadowform)
+        else
+            DisableCheckBox(RinseOptionsFrameShadowform)
+            RinseOptionsFrameShadowform.tooltipRequirement = L["Not available to your class."]
+        end
+        if RINSE_CONFIG.PRINT and MikSBT then
+            EnableCheckBox(RinseOptionsFrameMSBT)
+        else
+            DisableCheckBox(RinseOptionsFrameMSBT)
+            RinseOptionsFrameMSBT.tooltipRequirement = not MikSBT and L["MSBT missing."] or nil
+        end
+        UpdateBackdrop()
+        UpdateFramesScale()
+        UpdateDirection()
+        UpdateNumButtons()
+        UpdateHeader()
+        UpdateSpells()
+        UpdatePrio()
+        RinseSkipListFrameTitle:SetText(L["Skip List"])
+        RinseSkipListFrameClear:SetText(L["Clear"])
+        RinsePrioListFrameTitle:SetText(L["Priority List"])
+        RinsePrioListFrameClear:SetText(L["Clear"])
+        RinseOptionsFrameTitle:SetText("Rinse".." "..L["Options"])
+        RinseOptionsFrameFilterText:SetText(L["Hidden Debuffs"])
+        RinseOptionsFrameClassFilterText:SetText(L["Class Hidden"])
+        RinseOptionsFrameHiddenDebuffsText:SetText(L["Blacklisted Debuffs"])
+        RinseOptionsFrameAddToFilter:SetText(L["Add"])
+        RinseOptionsFrameAddToBlacklist:SetText(L["Add"])
+        RinseOptionsFrameAddToClassFilter:SetText(L["Add"])
+        RinseOptionsFrameSelectClassText:SetText(ClassColors["WARRIOR"]..L["Warriors"])
+    elseif event == "SPELL_QUEUE_EVENT" then
+        if not RINSE_CONFIG.PRINT then return end
 
-		-- arg1 is eventCode, arg2 is spellId
-		-- NORMAL_QUEUE_POPPED = 3
-		if arg1 ~= 3 then return end
+        -- arg1 is eventCode, arg2 is spellId
+        -- NORMAL_QUEUE_POPPED = 3
+        if arg1 ~= 3 then return end
 
-		local spellName = GetSpellNameAndRankForId(arg2)
-		if not (lastSpellName and lastButton and lastSpellName == spellName) then return end
+        local spellName = GetSpellNameAndRankForId(arg2)
+        if not (lastSpellName and lastButton and lastSpellName == spellName) then return end
 
-		-- If button unit no longer set, don't print
-		if not lastButton.unit or lastButton.unit == "" then return end
+        -- If button unit no longer set, don't print
+        if not lastButton.unit or lastButton.unit == "" then return end
 
-		local debuff = _G[lastButton:GetName().."Name"]:GetText()
-		ChatMessage(DebuffColor[lastButton.type].hex..debuff.."|r - "..ClassColors[lastButton.unitClass]..UnitName(lastButton.unit).."|r")
-	elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
-		-- print(event)
-		needUpdatePrio = true
-		prioTimer = 0.2
-	elseif event == "SPELLS_CHANGED" then
-		-- print(event)
-		UpdateSpells()
-	elseif event == "PLAYER_AURAS_CHANGED" then
-		-- print(event)
-		shadowform = HasShadowform()
-	elseif event == "PLAYER_ENTER_COMBAT" then
-		-- print(event)
-		autoattack = UnitName("target")
-	elseif event == "PLAYER_LEAVE_COMBAT" then
-		-- print(event)
-		autoattack = nil
-	elseif event == "CHAT_MSG_ADDON" then
-		if arg1 ~= "Rinse" or arg4 == UnitName("player") then return end
-		if arg2 == "REPORT_ADDON_VERSION" then
-			SendAddonMessage("Rinse", "V_"..GetAddOnMetadata("Rinse", "Version"), "RAID")
-		elseif versionsCheckTimer and strfind(arg2, "^V_") then
-			AddonVersions = AddonVersions or {}
-			local v = strsub(arg2, 3) or ""
-			tinsert(AddonVersions, { name = arg4, vString = format("%s: %s", arg4, v), vValue = tonumber((gsub(v, "%.", "0"))) or 0 })
-		end
-	elseif event == "UNIT_AURA" then
-		if arg1 == "target" or arrcontains(Prio, arg1) then
-			-- print(event, arg1)
-			aurasChanged = true
-		end
-	elseif event == "PLAYER_TARGET_CHANGED" then
-		-- print(event)
-		aurasChanged = true
-	end
+        local debuff = _G[lastButton:GetName().."Name"]:GetText()
+        ChatMessage(DebuffColor[lastButton.type].hex..debuff.."|r - "..ClassColors[lastButton.unitClass]..UnitName(lastButton.unit).."|r")
+    elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
+        -- print(event)
+        needUpdatePrio = true
+        prioTimer = 0.2
+    elseif event == "SPELLS_CHANGED" then
+        -- print(event)
+        UpdateSpells()
+    elseif event == "PLAYER_AURAS_CHANGED" then
+        -- print(event)
+        shadowform = HasShadowform()
+    elseif event == "PLAYER_ENTER_COMBAT" then
+        -- print(event)
+        autoattack = UnitName("target")
+    elseif event == "PLAYER_LEAVE_COMBAT" then
+        -- print(event)
+        autoattack = nil
+    elseif event == "CHAT_MSG_ADDON" then
+        if arg1 ~= "Rinse" or arg4 == UnitName("player") then return end
+        if arg2 == "REPORT_ADDON_VERSION" then
+            SendAddonMessage("Rinse", "V_"..GetAddOnMetadata("Rinse", "Version"), "RAID")
+        elseif versionsCheckTimer and strfind(arg2, "^V_") then
+            AddonVersions = AddonVersions or {}
+            local v = strsub(arg2, 3) or ""
+            tinsert(AddonVersions, { name = arg4, vString = format("%s: %s", arg4, v), vValue = tonumber((gsub(v, "%.", "0"))) or 0 })
+        end
+    elseif event == "UNIT_AURA" then
+        if arg1 == "target" or arrcontains(Prio, arg1) then
+            -- print(event, arg1)
+            aurasChanged = true
+        end
+    elseif event == "PLAYER_TARGET_CHANGED" then
+        -- print(event)
+        aurasChanged = true
+    end
 end
 
 local function GetDebuffInfo(unit, i)
-	local debuffName
-	local debuffType
-	local texture
-	local applications
-	if C_UnitAuras then
-		debuffName, texture, applications, debuffType = C_UnitAuras.UnitAura(unit, i, "HARMFUL")
-	elseif superwow then
-		local spellId
-		texture, applications, debuffType, spellId = UnitDebuff(unit, i)
-		if spellId then debuffName = SpellInfo(spellId) end
-	else
-		RinseScanTooltipTextLeft1:SetText("")
-		RinseScanTooltip:SetUnitDebuff(unit, i)
-		debuffName = RinseScanTooltipTextLeft1:GetText() or ""
-		texture, applications, debuffType = UnitDebuff(unit, i)
-	end
-	if debuffName and SnareDebuffs[debuffName] then
-		debuffType = L["Snare"]
-	end
-	return debuffType, debuffName, texture, applications
+    local debuffName
+    local debuffType
+    local texture
+    local applications
+    if C_UnitAuras then
+        debuffName, texture, applications, debuffType = C_UnitAuras.UnitAura(unit, i, "HARMFUL")
+    elseif superwow then
+        local spellId
+        texture, applications, debuffType, spellId = UnitDebuff(unit, i)
+        if spellId then debuffName = SpellInfo(spellId) end
+    else
+        RinseScanTooltipTextLeft1:SetText("")
+        RinseScanTooltip:SetUnitDebuff(unit, i)
+        debuffName = RinseScanTooltipTextLeft1:GetText() or ""
+        texture, applications, debuffType = UnitDebuff(unit, i)
+    end
+    if debuffName and SnareDebuffs[debuffName] then
+        debuffType = L["Snare"]
+    end
+    return debuffType, debuffName, texture, applications
 end
 
 local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
-	-- If unit is a pet and PETS is disabled, only save priority debuffs
-	if strfind(unit, "pet", 1, true) and not RINSE_CONFIG.PETS and not PriorityDebuffs[debuffName] then
-		return false
-	end
-	-- Check if debuff can be removed and respect abolish setting
-	if UsableSpells[debuffType] and (RINSE_CONFIG.IGNORE_ABOLISH or not HasAbolish(unit, debuffType)) then
-		local d = Debuffs[debuffIndex]
-		d.name = debuffName or ""
-		d.type = debuffType or ""
-		d.texture = texture or ""
-		d.stacks = applications or 0
-		d.unit = unit
-		d.unitName = UnitName(unit) or ""
-		d.unitClass = class or ""
-		d.debuffIndex = i
-		return true
-	end
-	return false
+    -- If unit is a pet and PETS is disabled, only save priority debuffs
+    if strfind(unit, "pet", 1, true) and not RINSE_CONFIG.PETS and not PriorityDebuffs[debuffName] then
+        return false
+    end
+    -- Check if debuff can be removed and respect abolish setting
+    if UsableSpells[debuffType] and (RINSE_CONFIG.IGNORE_ABOLISH or not HasAbolish(unit, debuffType)) then
+        local d = Debuffs[debuffIndex]
+        d.name = debuffName or ""
+        d.type = debuffType or ""
+        d.texture = texture or ""
+        d.stacks = applications or 0
+        d.unit = unit
+        d.unitName = UnitName(unit) or ""
+        d.unitClass = class or ""
+        d.debuffIndex = i
+        return true
+    end
+    return false
 end
 
 local function GoodUnit(unit)
-	if not (unit and UnitExists(unit) and UnitIsVisible(unit)) then return false end
-	local name = UnitName(unit)
-	if not name or SkipNames[name] then return false end
-	return UnitCanAssist("player", unit) and not UnitIsCharmed(unit) or not UnitCanAssist("player", unit) and UnitIsCharmed(unit)
+    if not (unit and UnitExists(unit) and UnitIsVisible(unit)) then return false end
+    local name = UnitName(unit)
+    if not name or SkipNames[name] then return false end
+    return UnitCanAssist("player", unit) and not UnitIsCharmed(unit) or not UnitCanAssist("player", unit) and UnitIsCharmed(unit)
 end
 
 function RinseFrame_OnUpdate(elapsed)
-	timeElapsed = timeElapsed + elapsed
-	errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
-	stopCastCooldown = (stopCastCooldown > 0) and (stopCastCooldown - elapsed) or 0
-	prioTimer = (prioTimer > 0) and (prioTimer - elapsed) or 0
-	if needUpdatePrio and prioTimer <= 0 then
-		UpdatePrio()
-		needUpdatePrio = false
-	end
-	if versionsCheckTimer then
-		versionsCheckTimer = versionsCheckTimer - elapsed
-		if versionsCheckTimer <= 0 then
-			versionsCheckTimer = nil
-			Rinse_OutputVersionsCheckResults()
-		end
-	end
+    timeElapsed = timeElapsed + elapsed
+    errorCooldown = (errorCooldown > 0) and (errorCooldown - elapsed) or 0
+    stopCastCooldown = (stopCastCooldown > 0) and (stopCastCooldown - elapsed) or 0
+    prioTimer = (prioTimer > 0) and (prioTimer - elapsed) or 0
+    if needUpdatePrio and prioTimer <= 0 then
+        UpdatePrio()
+        needUpdatePrio = false
+    end
+    if versionsCheckTimer then
+        versionsCheckTimer = versionsCheckTimer - elapsed
+        if versionsCheckTimer <= 0 then
+            versionsCheckTimer = nil
+            Rinse_OutputVersionsCheckResults()
+        end
+    end
 
-	if timeElapsed < updateInterval then return end
+    if timeElapsed < updateInterval then return end
 
-	timeElapsed = 0
-	if aurasChanged then
-		aurasChanged = false
-		-- Clear only entries that were used last tick
-		for i = 1, lastDebuffCount do
-			local d = Debuffs[i]
-			d.name = ""
-			d.type = ""
-			d.texture = ""
-			d.stacks = 0
-			d.unit = ""
-			d.unitName = ""
-			d.unitClass = ""
-			d.hidden = false
-			d.debuffIndex = 0
-		end
-		local debuffIndex = 1
-		-- Get new info
-		-- Target is highest prio
-		if GoodUnit("target") then
-			local _, class = UnitClass("target")
-			for i = 1, 16 do
-				local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
-				if not texture then break end
-				if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture, applications) then
-					debuffIndex = debuffIndex + 1
-				end
-				if debuffIndex > DEBUFFS_MAX then break end
-			end
-		end
-		-- Scan units in Prio array (pets are included, filtered in SaveDebuffInfo)
-		local prioCount = getn(Prio)
-		for index = 1, prioCount do
-			local unit = Prio[index]
-			if GoodUnit(unit) and not UnitIsUnit("target", unit) then
-				local _, class = UnitClass(unit)
-				for i = 1, 16 do
-					local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
-					if not texture then break end
-					if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications) then
-						debuffIndex = debuffIndex + 1
-					end
-					if debuffIndex > DEBUFFS_MAX then break end
-				end
-			end
-		end
-		-- Process debuffs: blacklist, priority, shadowform, and filter logic
-		-- Only iterate up to debuffIndex (actual found debuffs), cache table lookups
-		local debuffCount = debuffIndex - 1
-		if debuffCount < 0 then debuffCount = 0 end
-		lastDebuffCount = debuffCount
-		for i = 1, debuffCount do
-			local d = Debuffs[i]
-			local dName, dType, dUnitName, dUnitClass = d.name, d.type, d.unitName, d.unitClass
-			-- Check if this debuff is blacklisted
-			if Blacklist[dName] then
-				-- Hide all debuffs of same type on same unit
-				for j = 1, debuffCount do
-					local d2 = Debuffs[j]
-					if d2.unitName == dUnitName and (d2.type == dType or UsableSpells[dType] == L["Cleanse"]) then
-						d2.hidden = true
-					end
-				end
-			end
-			-- Shadowform: hide diseases
-			if shadowform and RINSE_CONFIG.SHADOWFORM and dType == L["Disease"] then
-				d.hidden = true
-			end
-			-- Player filter (includes class-specific filters)
-			local classFilter = ClassFilter[dUnitClass]
-			if Filter[dName] or Filter[dType] or (classFilter and classFilter[dName]) then
-				d.hidden = true
-			-- Check if this is a priority debuff
-			elseif PriorityDebuffs[dName] then
-				-- Hide all non-priority debuffs on same unit
-				for j = 1, debuffCount do
-					local d2 = Debuffs[j]
-					if d2.unitName == dUnitName and not PriorityDebuffs[d2.name] and d2 ~= d then
-						d2.hidden = true
-					end
-				end
-			end
-		end
-		-- Move priority debuffs to the front of the list
-		-- This is CRITICAL so that priority debuffs are removed first raidwide
-		-- TODO: this does not respect prio and target, should it?
-		local frontIndex = 1
-		for i = 1, debuffCount do
-			local d = Debuffs[i]
-			if not d.hidden and PriorityDebuffs[d.name] then
-				if i ~= frontIndex then
-					-- Swap priority debuff to front
-					Debuffs[frontIndex], Debuffs[i] = Debuffs[i], Debuffs[frontIndex]
-				end
-				frontIndex = frontIndex + 1
-			end
-		end
-		-- Don't show other debuffs from the same unit
-		for i = 1, debuffCount do
-			local d = Debuffs[i]
-			if not d.hidden then
-				for _, d2 in pairs(Debuffs) do
-					if d2.unitName == d.unitName and d ~= d2 then d2.hidden = true end
-				end
-			end
-		end
-		-- Update buttons
-		for i = 1, BUTTONS_MAX do
-			local btn = _G["RinseFrameDebuff"..i]
-			btn:Hide()
-			btn.unit = nil
-		end
-		local buttonIndex = 1
-		for i = 1, debuffCount do
-			local d = Debuffs[i]
-			local name = d.name
-			if name ~= "" and not d.hidden then
-				local unit = d.unit
-				local unitName = d.unitName
-				local class = d.unitClass
-				local debuffType = d.type
-				local button = _G["RinseFrameDebuff"..buttonIndex]
-				button.Icon:SetTexture(d.texture)
-				button.DebuffName:SetText(name)
-				button.PlayerName:SetText(ClassColors[class]..unitName.."|r")
-				button.Count:SetText(d.stacks)
-				local color = DebuffColor[debuffType]
-				button.Border:SetVertexColor(color.r, color.g, color.b)
-				button.unit = unit
-				button.unitName = unitName
-				button.unitClass = class
-				button.type = debuffType
-				button.debuffIndex = d.debuffIndex
-				button:Show()
-				if buttonIndex == 1 and playNoticeSound then
-					playsound(noticeSound)
-					playNoticeSound = false
-				end
-				if PriorityDebuffs[name] then
-					button.Priority:Show()
-				else
-					button.Priority:Hide()
-				end
-				buttonIndex = buttonIndex + 1
-				if buttonIndex > BUTTONS_MAX then break end
-			end
-		end
-		if not RinseFrameDebuff1:IsShown() then
-			playNoticeSound = true
-		end
-	end
-	for i = 1, BUTTONS_MAX do
-		local button = _G["RinseFrameDebuff"..i]
-		if not button:IsShown() then break end
-		button:SetAlpha(CanCast(button.unit, UsableSpells[button.type]) and 1 or 0.5)
-	end
+    timeElapsed = 0
+    if aurasChanged then
+        aurasChanged = false
+        -- Clear only entries that were used last tick
+        for i = 1, lastDebuffCount do
+            local d = Debuffs[i]
+            d.name = ""
+            d.type = ""
+            d.texture = ""
+            d.stacks = 0
+            d.unit = ""
+            d.unitName = ""
+            d.unitClass = ""
+            d.hidden = false
+            d.debuffIndex = 0
+        end
+        local debuffIndex = 1
+        -- Get new info
+        -- Target is highest prio
+        if GoodUnit("target") then
+            local _, class = UnitClass("target")
+            for i = 1, 16 do
+                local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
+                if not texture then break end
+                if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture, applications) then
+                    debuffIndex = debuffIndex + 1
+                end
+                if debuffIndex > DEBUFFS_MAX then break end
+            end
+        end
+        -- Scan units in Prio array (pets are included, filtered in SaveDebuffInfo)
+        local prioCount = getn(Prio)
+        for index = 1, prioCount do
+            local unit = Prio[index]
+            if GoodUnit(unit) and not UnitIsUnit("target", unit) then
+                local _, class = UnitClass(unit)
+                for i = 1, 16 do
+                    local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
+                    if not texture then break end
+                    if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications) then
+                        debuffIndex = debuffIndex + 1
+                    end
+                    if debuffIndex > DEBUFFS_MAX then break end
+                end
+            end
+        end
+        -- Process debuffs: blacklist, priority, shadowform, and filter logic
+        -- Only iterate up to debuffIndex (actual found debuffs), cache table lookups
+        local debuffCount = debuffIndex - 1
+        if debuffCount < 0 then debuffCount = 0 end
+        lastDebuffCount = debuffCount
+        for i = 1, debuffCount do
+            local d = Debuffs[i]
+            local dName, dType, dUnitName, dUnitClass = d.name, d.type, d.unitName, d.unitClass
+            -- Check if this debuff is blacklisted
+            if Blacklist[dName] then
+                -- Hide all debuffs of same type on same unit
+                for j = 1, debuffCount do
+                    local d2 = Debuffs[j]
+                    if d2.unitName == dUnitName and (d2.type == dType or UsableSpells[dType] == L["Cleanse"]) then
+                        d2.hidden = true
+                    end
+                end
+            end
+            -- Shadowform: hide diseases
+            if shadowform and RINSE_CONFIG.SHADOWFORM and dType == L["Disease"] then
+                d.hidden = true
+            end
+            -- Player filter (includes class-specific filters)
+            local classFilter = ClassFilter[dUnitClass]
+            if Filter[dName] or Filter[dType] or (classFilter and classFilter[dName]) then
+                d.hidden = true
+            -- Check if this is a priority debuff
+            elseif PriorityDebuffs[dName] then
+                -- Hide all non-priority debuffs on same unit
+                for j = 1, debuffCount do
+                    local d2 = Debuffs[j]
+                    if d2.unitName == dUnitName and not PriorityDebuffs[d2.name] and d2 ~= d then
+                        d2.hidden = true
+                    end
+                end
+            end
+        end
+        -- Move priority debuffs to the front of the list
+        -- This is CRITICAL so that priority debuffs are removed first raidwide
+        -- TODO: this does not respect prio and target, should it?
+        local frontIndex = 1
+        for i = 1, debuffCount do
+            local d = Debuffs[i]
+            if not d.hidden and PriorityDebuffs[d.name] then
+                if i ~= frontIndex then
+                    -- Swap priority debuff to front
+                    Debuffs[frontIndex], Debuffs[i] = Debuffs[i], Debuffs[frontIndex]
+                end
+                frontIndex = frontIndex + 1
+            end
+        end
+        -- Don't show other debuffs from the same unit
+        for i = 1, debuffCount do
+            local d = Debuffs[i]
+            if not d.hidden then
+                for _, d2 in pairs(Debuffs) do
+                    if d2.unitName == d.unitName and d ~= d2 then d2.hidden = true end
+                end
+            end
+        end
+        -- Update buttons
+        for i = 1, BUTTONS_MAX do
+            local btn = _G["RinseFrameDebuff"..i]
+            btn:Hide()
+            btn.unit = nil
+        end
+        local buttonIndex = 1
+        for i = 1, debuffCount do
+            local d = Debuffs[i]
+            local name = d.name
+            if name ~= "" and not d.hidden then
+                local unit = d.unit
+                local unitName = d.unitName
+                local class = d.unitClass
+                local debuffType = d.type
+                local button = _G["RinseFrameDebuff"..buttonIndex]
+                button.Icon:SetTexture(d.texture)
+                button.DebuffName:SetText(name)
+                button.PlayerName:SetText(ClassColors[class]..unitName.."|r")
+                button.Count:SetText(d.stacks)
+                local color = DebuffColor[debuffType]
+                button.Border:SetVertexColor(color.r, color.g, color.b)
+                button.unit = unit
+                button.unitName = unitName
+                button.unitClass = class
+                button.type = debuffType
+                button.debuffIndex = d.debuffIndex
+                button:Show()
+                if buttonIndex == 1 and playNoticeSound then
+                    playsound(noticeSound)
+                    playNoticeSound = false
+                end
+                if PriorityDebuffs[name] then
+                    button.Priority:Show()
+                else
+                    button.Priority:Hide()
+                end
+                buttonIndex = buttonIndex + 1
+                if buttonIndex > BUTTONS_MAX then break end
+            end
+        end
+        if not RinseFrameDebuff1:IsShown() then
+            playNoticeSound = true
+        end
+    end
+    for i = 1, BUTTONS_MAX do
+        local button = _G["RinseFrameDebuff"..i]
+        if not button:IsShown() then break end
+        button:SetAlpha(CanCast(button.unit, UsableSpells[button.type]) and 1 or 0.5)
+    end
 end
 
 function Rinse_Cleanse(button, attemptedCast)
-	button = button or this
-	if not button.unit or button.unit == "" then
-		return false
-	end
-	local spellName = UsableSpells[button.type]
-	local spellSlot = UsableSpellBookIDs[spellName]
-	-- Check if on gcd
-	-- If gcd active this will return 1.5 for all the relevant spells
-	local _, duration = GetSpellCooldown(spellSlot, bookType)
-	local onGcd = duration > 0
-	-- Allow attempting 1 spell even if gcd active so that it can be queued
-	if attemptedCast and onGcd then
-		-- Otherwise don't bother trying to cast
-		return false
-	end
-	if not CanCast(button.unit, spellName) then
-		if errorCooldown <= 0 then
-			playsound(errorSound)
-			errorCooldown = 0.1
-		end
-		return false
-	end
-	local castingInterruptableSpell = true
-	-- If nampower available, check if we are actually casting something
-	-- to avoid needlessly calling SpellStopCasting and wiping spell queue
-	if GetCurrentCastingInfo then
-		local _, _, _, casting, channeling = GetCurrentCastingInfo()
-		if casting == 0 and channeling == 0 then
-			castingInterruptableSpell = false
-		end
-	elseif C_Spell then
-		local cast, _, _, _, _, _, _, notInterruptibleCast = C_Spell.CastingInfo()
-		local channel, _, _, _, _, _, notInterruptibleChannel = C_Spell.ChannelInfo()
-		castingInterruptableSpell = (cast and not notInterruptibleCast) or (channel and not notInterruptibleChannel)
-	end
-	if castingInterruptableSpell and stopCastCooldown <= 0 then
-		SpellStopCasting()
-		stopCastCooldown = 0.2
-	end
-	if not onGcd then
-		local debuff = button.DebuffName:GetText()
-		ChatMessage(DebuffColor[button.type].hex..debuff.."|r - "..ClassColors[button.unitClass]..UnitName(button.unit).."|r")
-	else
-		-- Save spellId, spellName and target so we can output chat message if it was queued
-		lastSpellName = spellName
-		lastButton = button
-	end
-	if superwow then
-		CastSpellByName(spellName, button.unit)
-	elseif C_Spell then
-		C_Spell.CastAtUnit(spellName, button.unit)
-	else
-		local selfcast = GetCVar("autoselfcast")
-		local assist = GetCVar("assistattack")
-		local lastTarget = UnitName("target")
-		local restore = lastTarget and autoattack and autoattack == lastTarget
-		SetCVar("autoselfcast", 0)
-		SetCVar("assistattack", 1)
-		TargetUnit(button.unit)
-		if UnitExists("target") and UnitIsUnit("target", button.unit) then
-			CastSpellByName(spellName)
-			if lastTarget ~= UnitName("target") then
-				-- If we didnt have target or it was someone else
-				TargetLastTarget()
-			end
-		end
-		if restore and lastTarget and UnitExists("target") and UnitName("target") == lastTarget then
-			AssistUnit("player")
-		end
-		SetCVar("autoselfcast", selfcast)
-		SetCVar("assistattack", assist)
-	end
-	return true
+    button = button or this
+    if not button.unit or button.unit == "" then
+        return false
+    end
+    local spellName = UsableSpells[button.type]
+    local spellSlot = UsableSpellBookIDs[spellName]
+    -- Check if on gcd
+    -- If gcd active this will return 1.5 for all the relevant spells
+    local _, duration = GetSpellCooldown(spellSlot, bookType)
+    local onGcd = duration > 0
+    -- Allow attempting 1 spell even if gcd active so that it can be queued
+    if attemptedCast and onGcd then
+        -- Otherwise don't bother trying to cast
+        return false
+    end
+    if not CanCast(button.unit, spellName) then
+        if errorCooldown <= 0 then
+            playsound(errorSound)
+            errorCooldown = 0.1
+        end
+        return false
+    end
+    local castingInterruptableSpell = true
+    -- If nampower available, check if we are actually casting something
+    -- to avoid needlessly calling SpellStopCasting and wiping spell queue
+    if GetCurrentCastingInfo then
+        local _, _, _, casting, channeling = GetCurrentCastingInfo()
+        if casting == 0 and channeling == 0 then
+            castingInterruptableSpell = false
+        end
+    elseif C_Spell then
+        local cast, _, _, _, _, _, _, notInterruptibleCast = C_Spell.CastingInfo()
+        local channel, _, _, _, _, _, notInterruptibleChannel = C_Spell.ChannelInfo()
+        castingInterruptableSpell = (cast and not notInterruptibleCast) or (channel and not notInterruptibleChannel)
+    end
+    if castingInterruptableSpell and stopCastCooldown <= 0 then
+        SpellStopCasting()
+        stopCastCooldown = 0.2
+    end
+    if not onGcd then
+        local debuff = button.DebuffName:GetText()
+        ChatMessage(DebuffColor[button.type].hex..debuff.."|r - "..ClassColors[button.unitClass]..UnitName(button.unit).."|r")
+    else
+        -- Save spellId, spellName and target so we can output chat message if it was queued
+        lastSpellName = spellName
+        lastButton = button
+    end
+    if superwow then
+        CastSpellByName(spellName, button.unit)
+    elseif C_Spell then
+        C_Spell.CastAtUnit(spellName, button.unit)
+    else
+        local selfcast = GetCVar("autoselfcast")
+        local assist = GetCVar("assistattack")
+        local lastTarget = UnitName("target")
+        local restore = lastTarget and autoattack and autoattack == lastTarget
+        SetCVar("autoselfcast", 0)
+        SetCVar("assistattack", 1)
+        TargetUnit(button.unit)
+        if UnitExists("target") and UnitIsUnit("target", button.unit) then
+            CastSpellByName(spellName)
+            if lastTarget ~= UnitName("target") then
+                -- If we didnt have target or it was someone else
+                TargetLastTarget()
+            end
+        end
+        if restore and lastTarget and UnitExists("target") and UnitName("target") == lastTarget then
+            AssistUnit("player")
+        end
+        SetCVar("autoselfcast", selfcast)
+        SetCVar("assistattack", assist)
+    end
+    return true
 end
 
 local function RunRinse()
-	local attemptedCast = false
-	for i = 1, BUTTONS_MAX do
-		if Rinse_Cleanse(_G["RinseFrameDebuff"..i], attemptedCast) then
-			attemptedCast = true
-		end
-	end
+    local attemptedCast = false
+    for i = 1, BUTTONS_MAX do
+        if Rinse_Cleanse(_G["RinseFrameDebuff"..i], attemptedCast) then
+            attemptedCast = true
+        end
+    end
 end
 
 setmetatable(Rinse, { __call = RunRinse })
 
 SLASH_RINSE1 = "/rinse"
 SlashCmdList["RINSE"] = function(cmd)
-	if cmd == "" then
-		RunRinse()
-	elseif cmd == "options" then
-		RinseFrameOptions_OnClick()
-	elseif cmd == "skip" then
-		RinseFrameSkipList_OnClick()
-	elseif cmd == "prio" then
-		RinseFramePrioList_OnClick()
-	elseif cmd == "versions" then
-		Rinse_StartVersionsCheck()
-	else
-		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["Unknown command. Use /rinse, /rinse options, /rinse skip, /rinse prio or /rinse versions."])
-	end
+    if cmd == "" then
+        RunRinse()
+    elseif cmd == "options" then
+        RinseFrameOptions_OnClick()
+    elseif cmd == "skip" then
+        RinseFrameSkipList_OnClick()
+    elseif cmd == "prio" then
+        RinseFramePrioList_OnClick()
+    elseif cmd == "versions" then
+        Rinse_StartVersionsCheck()
+    else
+        DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["Unknown command. Use /rinse, /rinse options, /rinse skip, /rinse prio or /rinse versions."])
+    end
 end
 
 function RinseOptionsFrame_OnLoad()
-	for i = 1, OptionsScrollMaxButtons do
-		local frame = CreateFrame("Button", "RinseOptionsBlacklistButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
-		frame:SetID(i)
-		frame:SetPoint("TOPLEFT", RinseOptionsFrameBlacklistScrollFrame, 0, -16 * (i-1))
-	end
-	for i = 1, OptionsScrollMaxButtons do
-		local frame = CreateFrame("Button", "RinseOptionsClassFilterButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
-		frame:SetID(i)
-		frame:SetPoint("TOPLEFT", RinseOptionsFrameClassFilterScrollFrame, 0, -16 * (i-1))
-	end
-	for i = 1, OptionsScrollMaxButtons do
-		local frame = CreateFrame("Button", "RinseOptionsFilterButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
-		frame:SetID(i)
-		frame:SetPoint("TOPLEFT", RinseOptionsFrameFilterScrollFrame, 0, -16 * (i-1))
-	end
+    for i = 1, OptionsScrollMaxButtons do
+        local frame = CreateFrame("Button", "RinseOptionsBlacklistButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
+        frame:SetID(i)
+        frame:SetPoint("TOPLEFT", RinseOptionsFrameBlacklistScrollFrame, 0, -16 * (i-1))
+    end
+    for i = 1, OptionsScrollMaxButtons do
+        local frame = CreateFrame("Button", "RinseOptionsClassFilterButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
+        frame:SetID(i)
+        frame:SetPoint("TOPLEFT", RinseOptionsFrameClassFilterScrollFrame, 0, -16 * (i-1))
+    end
+    for i = 1, OptionsScrollMaxButtons do
+        local frame = CreateFrame("Button", "RinseOptionsFilterButton"..i, RinseOptionsFrame, "RinseOptionsButtonTemplate")
+        frame:SetID(i)
+        frame:SetPoint("TOPLEFT", RinseOptionsFrameFilterScrollFrame, 0, -16 * (i-1))
+    end
 end
 
 function RinseOptionsFrameBlacklistScrollFrame_Update()
-	local frame = RinseOptionsFrameBlacklistScrollFrame or this
-	local offset = FauxScrollFrame_GetOffset(frame)
-	local arrayIndex = 1
-	wipe(BlacklistArray)
-	for k in pairs(Blacklist) do
-		if Blacklist[k] then
-			tinsert(BlacklistArray, k)
-		end
-	end
-	sort(BlacklistArray)
-	local numEntries = getn(BlacklistArray)
-	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
-	for i = 1, OptionsScrollMaxButtons do
-		local button = _G["RinseOptionsBlacklistButton"..i]
-		local buttonText = _G["RinseOptionsBlacklistButton"..i.."Text"]
-		arrayIndex = i + offset
-		if BlacklistArray[arrayIndex] then
-			buttonText:SetText(BlacklistArray[arrayIndex])
-			button:SetID(arrayIndex)
-			button:Show()
-		else
-			button:Hide()
-		end
-	end
+    local frame = RinseOptionsFrameBlacklistScrollFrame or this
+    local offset = FauxScrollFrame_GetOffset(frame)
+    local arrayIndex = 1
+    wipe(BlacklistArray)
+    for k in pairs(Blacklist) do
+        if Blacklist[k] then
+            tinsert(BlacklistArray, k)
+        end
+    end
+    sort(BlacklistArray)
+    local numEntries = getn(BlacklistArray)
+    FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
+    for i = 1, OptionsScrollMaxButtons do
+        local button = _G["RinseOptionsBlacklistButton"..i]
+        local buttonText = _G["RinseOptionsBlacklistButton"..i.."Text"]
+        arrayIndex = i + offset
+        if BlacklistArray[arrayIndex] then
+            buttonText:SetText(BlacklistArray[arrayIndex])
+            button:SetID(arrayIndex)
+            button:Show()
+        else
+            button:Hide()
+        end
+    end
 end
 
 function RinseOptionsFrameAddToBlacklist_OnClick()
-	local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 1)
-	if dialog then dialog.data = 1 end
+    local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 1)
+    if dialog then dialog.data = 1 end
 end
 
 function RinseOptionsFrameResetBlacklist_OnClick()
-	wipe(Blacklist)
-	wipe(RINSE_CHAR_CONFIG.BLACKLIST)
-	for k, v in pairs(DefaultBlacklist) do
-		Blacklist[k] = v
-		if k == L["Wyvern Sting"] then
-			RINSE_CHAR_CONFIG.BLACKLIST[k] = true
-			RinseOptionsFrameWyvernSting:SetChecked(false)
-		end
-		if k == L["Mutating Injection"] then
-			RINSE_CHAR_CONFIG.BLACKLIST[k] = true
-			RinseOptionsFrameMutatingInjection:SetChecked(false)
-		end
-	end
-	RinseOptionsFrameBlacklistScrollFrame:SetVerticalScroll(0)
-	RinseOptionsFrameBlacklistScrollFrame_Update()
+    wipe(Blacklist)
+    wipe(RINSE_CHAR_CONFIG.BLACKLIST)
+    for k, v in pairs(DefaultBlacklist) do
+        Blacklist[k] = v
+        if k == L["Wyvern Sting"] then
+            RINSE_CHAR_CONFIG.BLACKLIST[k] = true
+            RinseOptionsFrameWyvernSting:SetChecked(false)
+        end
+        if k == L["Mutating Injection"] then
+            RINSE_CHAR_CONFIG.BLACKLIST[k] = true
+            RinseOptionsFrameMutatingInjection:SetChecked(false)
+        end
+    end
+    RinseOptionsFrameBlacklistScrollFrame:SetVerticalScroll(0)
+    RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
 function RinseOptionsFrameClassFilterScrollFrame_Update()
-	local frame = RinseOptionsFrameClassFilterScrollFrame or this
-	local offset = FauxScrollFrame_GetOffset(frame)
-	local arrayIndex = 1
-	wipe(ClassFilterArray)
-	for k in pairs(ClassFilter[selectedClass]) do
-		if ClassFilter[selectedClass][k] then
-			tinsert(ClassFilterArray, k)
-		end
-	end
-	sort(ClassFilterArray)
-	local numEntries = getn(ClassFilterArray)
-	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
-	for i = 1, OptionsScrollMaxButtons do
-		local button = _G["RinseOptionsClassFilterButton"..i]
-		local buttonText = _G["RinseOptionsClassFilterButton"..i.."Text"]
-		arrayIndex = i + offset
-		if ClassFilterArray[arrayIndex] then
-			buttonText:SetText(ClassFilterArray[arrayIndex])
-			button:SetID(arrayIndex)
-			button:Show()
-		else
-			button:Hide()
-		end
-	end
+    local frame = RinseOptionsFrameClassFilterScrollFrame or this
+    local offset = FauxScrollFrame_GetOffset(frame)
+    local arrayIndex = 1
+    wipe(ClassFilterArray)
+    for k in pairs(ClassFilter[selectedClass]) do
+        if ClassFilter[selectedClass][k] then
+            tinsert(ClassFilterArray, k)
+        end
+    end
+    sort(ClassFilterArray)
+    local numEntries = getn(ClassFilterArray)
+    FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
+    for i = 1, OptionsScrollMaxButtons do
+        local button = _G["RinseOptionsClassFilterButton"..i]
+        local buttonText = _G["RinseOptionsClassFilterButton"..i.."Text"]
+        arrayIndex = i + offset
+        if ClassFilterArray[arrayIndex] then
+            buttonText:SetText(ClassFilterArray[arrayIndex])
+            button:SetID(arrayIndex)
+            button:Show()
+        else
+            button:Hide()
+        end
+    end
 end
 
 local function SelectClass()
-	selectedClass = this.value
-	local text = this:GetText()
-	RinseOptionsFrameSelectClassText:SetText(text)
-	RinseOptionsFrameClassFilterScrollFrame_Update()
+    selectedClass = this.value
+    local text = this:GetText()
+    RinseOptionsFrameSelectClassText:SetText(text)
+    RinseOptionsFrameClassFilterScrollFrame_Update()
 end
 
 local info2 = {}
@@ -1671,298 +1671,298 @@ info2.hasArrow = nil
 info2.func = SelectClass
 
 local function BlacklistClassMenu()
-	if UIDROPDOWNMENU_MENU_LEVEL == 1 then
-		info2.text = ClassColors["WARRIOR"]..L["Warriors"]
-		info2.value = "WARRIOR"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["DRUID"]..L["Druids"]
-		info2.value = "DRUID"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["PALADIN"]..L["Paladins"]
-		info2.value = "PALADIN"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["WARLOCK"]..L["Warlocks"]
-		info2.value = "WARLOCK"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["MAGE"]..L["Mages"]
-		info2.value = "MAGE"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["PRIEST"]..L["Priests"]
-		info2.value = "PRIEST"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["ROGUE"]..L["Rogues"]
-		info2.value = "ROGUE"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["HUNTER"]..L["Hunters"]
-		info2.value = "HUNTER"
-		UIDropDownMenu_AddButton(info2)
-		info2.text = ClassColors["SHAMAN"]..L["Shamans"]
-		info2.value = "SHAMAN"
-		UIDropDownMenu_AddButton(info2)
-	end
+    if UIDROPDOWNMENU_MENU_LEVEL == 1 then
+        info2.text = ClassColors["WARRIOR"]..L["Warriors"]
+        info2.value = "WARRIOR"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["DRUID"]..L["Druids"]
+        info2.value = "DRUID"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["PALADIN"]..L["Paladins"]
+        info2.value = "PALADIN"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["WARLOCK"]..L["Warlocks"]
+        info2.value = "WARLOCK"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["MAGE"]..L["Mages"]
+        info2.value = "MAGE"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["PRIEST"]..L["Priests"]
+        info2.value = "PRIEST"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["ROGUE"]..L["Rogues"]
+        info2.value = "ROGUE"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["HUNTER"]..L["Hunters"]
+        info2.value = "HUNTER"
+        UIDropDownMenu_AddButton(info2)
+        info2.text = ClassColors["SHAMAN"]..L["Shamans"]
+        info2.value = "SHAMAN"
+        UIDropDownMenu_AddButton(info2)
+    end
 end
 
 function RinseOptionsFrameSelectClass_OnClick()
-	UIDropDownMenu_Initialize(RinseClassesDropDown, BlacklistClassMenu, "MENU")
-	ToggleDropDownMenu(1, "RinseOptions", RinseClassesDropDown, this, 0, 0)
-	PlaySound("igMainMenuOptionCheckBoxOn")
+    UIDropDownMenu_Initialize(RinseClassesDropDown, BlacklistClassMenu, "MENU")
+    ToggleDropDownMenu(1, "RinseOptions", RinseClassesDropDown, this, 0, 0)
+    PlaySound("igMainMenuOptionCheckBoxOn")
 end
 
 function RinseOptionsFrameAddToClassFilter_OnClick()
-	local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 2)
-	if dialog then dialog.data = 2 end
+    local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 2)
+    if dialog then dialog.data = 2 end
 end
 
 function RinseOptionsFrameResetClassFilter_OnClick()
-	wipe(RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass])
-	wipe(ClassFilter[selectedClass])
-	for k, v in pairs(DefaultClassFilter[selectedClass]) do
-		ClassFilter[selectedClass][k] = v
-	end
-	RinseOptionsFrameClassFilterScrollFrame:SetVerticalScroll(0)
-	RinseOptionsFrameClassFilterScrollFrame_Update()
+    wipe(RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass])
+    wipe(ClassFilter[selectedClass])
+    for k, v in pairs(DefaultClassFilter[selectedClass]) do
+        ClassFilter[selectedClass][k] = v
+    end
+    RinseOptionsFrameClassFilterScrollFrame:SetVerticalScroll(0)
+    RinseOptionsFrameClassFilterScrollFrame_Update()
 end
 
 StaticPopupDialogs["RINSE_ADD_TO_BLACKLIST"] = {
-	text = L["Enter exact name of a debuff:"],
-	button1 = OKAY,
-	button2 = CANCEL,
-	hasEditBox = 1,
-	maxLetters = 90,
-	OnAccept = function()
-		local dialog = this:GetParent()
-		local text = _G[dialog:GetName().."EditBox"]:GetText()
-		if dialog.data == 1 then
-			RINSE_CHAR_CONFIG.BLACKLIST[text] = true
-			RinseOptionsFrameWyvernSting:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]])
-			RinseOptionsFrameMutatingInjection:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]])
-			UpdateBlacklist()
-		elseif dialog.data == 2 then
-			RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = true
-			UpdateFilter()
-		end
-		RinseOptionsFrameBlacklistScrollFrame_Update()
-		RinseOptionsFrameClassFilterScrollFrame_Update()
-	end,
-	EditBoxOnEnterPressed = function()
-		StaticPopupDialogs[this:GetParent().which].OnAccept()
-		this:GetParent():Hide()
-	end,
-	EditBoxOnEscapePressed = function()
-		this:GetParent():Hide()
-	end,
-	OnShow = function()
-		_G[this:GetName().."EditBox"]:SetFocus()
-	end,
-	OnHide = function()
-		_G[this:GetName().."EditBox"]:SetText("")
-	end,
-	timeout = 0,
-	exclusive = 1,
-	hideOnEscape = 1
+    text = L["Enter exact name of a debuff:"],
+    button1 = OKAY,
+    button2 = CANCEL,
+    hasEditBox = 1,
+    maxLetters = 90,
+    OnAccept = function()
+        local dialog = this:GetParent()
+        local text = _G[dialog:GetName().."EditBox"]:GetText()
+        if dialog.data == 1 then
+            RINSE_CHAR_CONFIG.BLACKLIST[text] = true
+            RinseOptionsFrameWyvernSting:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]])
+            RinseOptionsFrameMutatingInjection:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]])
+            UpdateBlacklist()
+        elseif dialog.data == 2 then
+            RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = true
+            UpdateFilter()
+        end
+        RinseOptionsFrameBlacklistScrollFrame_Update()
+        RinseOptionsFrameClassFilterScrollFrame_Update()
+    end,
+    EditBoxOnEnterPressed = function()
+        StaticPopupDialogs[this:GetParent().which].OnAccept()
+        this:GetParent():Hide()
+    end,
+    EditBoxOnEscapePressed = function()
+        this:GetParent():Hide()
+    end,
+    OnShow = function()
+        _G[this:GetName().."EditBox"]:SetFocus()
+    end,
+    OnHide = function()
+        _G[this:GetName().."EditBox"]:SetText("")
+    end,
+    timeout = 0,
+    exclusive = 1,
+    hideOnEscape = 1
 }
 
 function RinseOptionsScrollFrameButton_OnClick()
-	local text = this:GetText()
-	if DebuffColor[text] and Spells[playerClass][text] == nil then
-		return
-	end
-	local buttonType = gsub(gsub(this:GetName(), "^RinseOptions", ""), "Button%d+$", "")
-	local scrollFrame = "RinseOptionsFrame"..buttonType.."ScrollFrame"
-	if buttonType == "Blacklist" then
-		if text == L["Wyvern Sting"] then
-			if RinseOptionsFrameWyvernSting:IsEnabled() == 1 then
-				RinseOptionsFrameWyvernSting:Click()
-				return
-			end
-		end
-		if text == L["Mutating Injection"] then
-			if RinseOptionsFrameMutatingInjection:IsEnabled() == 1 then
-				RinseOptionsFrameMutatingInjection:Click()
-				return
-			end
-		end
-		RINSE_CHAR_CONFIG.BLACKLIST[text] = false
-		UpdateBlacklist()
-	elseif buttonType == "ClassFilter" then
-		RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = false
-		UpdateFilter()
-	elseif buttonType == "Filter" then
-		RINSE_CHAR_CONFIG.FILTER[text] = false
-		RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
-		RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
-		RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
-		RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
-		RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
-		UpdateFilter()
-	end
-	_G[scrollFrame.."_Update"]()
-	PlaySound("igMainMenuOptionCheckBoxOn")
+    local text = this:GetText()
+    if DebuffColor[text] and Spells[playerClass][text] == nil then
+        return
+    end
+    local buttonType = gsub(gsub(this:GetName(), "^RinseOptions", ""), "Button%d+$", "")
+    local scrollFrame = "RinseOptionsFrame"..buttonType.."ScrollFrame"
+    if buttonType == "Blacklist" then
+        if text == L["Wyvern Sting"] then
+            if RinseOptionsFrameWyvernSting:IsEnabled() == 1 then
+                RinseOptionsFrameWyvernSting:Click()
+                return
+            end
+        end
+        if text == L["Mutating Injection"] then
+            if RinseOptionsFrameMutatingInjection:IsEnabled() == 1 then
+                RinseOptionsFrameMutatingInjection:Click()
+                return
+            end
+        end
+        RINSE_CHAR_CONFIG.BLACKLIST[text] = false
+        UpdateBlacklist()
+    elseif buttonType == "ClassFilter" then
+        RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = false
+        UpdateFilter()
+    elseif buttonType == "Filter" then
+        RINSE_CHAR_CONFIG.FILTER[text] = false
+        RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
+        RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
+        RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
+        RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
+        RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
+        UpdateFilter()
+    end
+    _G[scrollFrame.."_Update"]()
+    PlaySound("igMainMenuOptionCheckBoxOn")
 end
 
 function RinseOptionsFrameFilterScrollFrame_Update()
-	local frame = RinseOptionsFrameFilterScrollFrame or this
-	local offset = FauxScrollFrame_GetOffset(frame)
-	local arrayIndex = 1
-	wipe(FilterArray)
-	for k in pairs(Filter) do
-		if Filter[k] then
-			if DebuffColor[k] then
-				tinsert(FilterArray, 1, k)
-			else
-				tinsert(FilterArray, k)
-			end
-		end
-	end
-	local numEntries = getn(FilterArray)
-	FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
-	for i = 1, OptionsScrollMaxButtons do
-		local button = _G["RinseOptionsFilterButton"..i]
-		local buttonText = _G["RinseOptionsFilterButton"..i.."Text"]
-		arrayIndex = i + offset
-		if FilterArray[arrayIndex] then
-			buttonText:SetText(FilterArray[arrayIndex])
-			button:SetID(arrayIndex)
-			button:Show()
-		else
-			button:Hide()
-		end
-	end
+    local frame = RinseOptionsFrameFilterScrollFrame or this
+    local offset = FauxScrollFrame_GetOffset(frame)
+    local arrayIndex = 1
+    wipe(FilterArray)
+    for k in pairs(Filter) do
+        if Filter[k] then
+            if DebuffColor[k] then
+                tinsert(FilterArray, 1, k)
+            else
+                tinsert(FilterArray, k)
+            end
+        end
+    end
+    local numEntries = getn(FilterArray)
+    FauxScrollFrame_Update(frame, numEntries, OptionsScrollMaxButtons, 16)
+    for i = 1, OptionsScrollMaxButtons do
+        local button = _G["RinseOptionsFilterButton"..i]
+        local buttonText = _G["RinseOptionsFilterButton"..i.."Text"]
+        arrayIndex = i + offset
+        if FilterArray[arrayIndex] then
+            buttonText:SetText(FilterArray[arrayIndex])
+            button:SetID(arrayIndex)
+            button:Show()
+        else
+            button:Hide()
+        end
+    end
 end
 
 function RinseOptionsFrameAddToFilter_OnClick()
-	StaticPopup_Show("RINSE_ADD_TO_FILTER")
+    StaticPopup_Show("RINSE_ADD_TO_FILTER")
 end
 
 function RinseOptionsFrameResetFilter_OnClick()
-	wipe(RINSE_CHAR_CONFIG.FILTER)
-	wipe(Filter)
-	for k, v in pairs(DefaultFilter) do
-		Filter[k] = v
-		RINSE_CHAR_CONFIG.FILTER[k] = v
-	end
-	RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
-	RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
-	RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
-	RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
-	RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
-	UpdateSpells()
-	RinseOptionsFrameFilterScrollFrame:SetVerticalScroll(0)
-	RinseOptionsFrameFilterScrollFrame_Update()
+    wipe(RINSE_CHAR_CONFIG.FILTER)
+    wipe(Filter)
+    for k, v in pairs(DefaultFilter) do
+        Filter[k] = v
+        RINSE_CHAR_CONFIG.FILTER[k] = v
+    end
+    RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
+    RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
+    RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
+    RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
+    RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
+    UpdateSpells()
+    RinseOptionsFrameFilterScrollFrame:SetVerticalScroll(0)
+    RinseOptionsFrameFilterScrollFrame_Update()
 end
 
 StaticPopupDialogs["RINSE_ADD_TO_FILTER"] = {
-	text = L["Enter exact name of a debuff (or a type):"],
-	button1 = OKAY,
-	button2 = CANCEL,
-	hasEditBox = 1,
-	maxLetters = 90,
-	OnAccept = function()
-		local text = _G[this:GetParent():GetName().."EditBox"]:GetText()
-		RINSE_CHAR_CONFIG.FILTER[text] = true
-		RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
-		RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
-		RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
-		RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
-		RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
-		UpdateFilter()
-		RinseOptionsFrameFilterScrollFrame_Update()
-	end,
-	EditBoxOnEnterPressed = function()
-		StaticPopupDialogs[this:GetParent().which].OnAccept()
-		this:GetParent():Hide()
-	end,
-	EditBoxOnEscapePressed = function()
-		this:GetParent():Hide()
-	end,
-	OnShow = function()
-		_G[this:GetName().."EditBox"]:SetFocus()
-	end,
-	OnHide = function()
-		_G[this:GetName().."EditBox"]:SetText("")
-	end,
-	timeout = 0,
-	exclusive = 1,
-	hideOnEscape = 1
+    text = L["Enter exact name of a debuff (or a type):"],
+    button1 = OKAY,
+    button2 = CANCEL,
+    hasEditBox = 1,
+    maxLetters = 90,
+    OnAccept = function()
+        local text = _G[this:GetParent():GetName().."EditBox"]:GetText()
+        RINSE_CHAR_CONFIG.FILTER[text] = true
+        RinseOptionsFrameFilterMagic:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Magic"]])
+        RinseOptionsFrameFilterSnare:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Snare"]])
+        RinseOptionsFrameFilterDisease:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Disease"]])
+        RinseOptionsFrameFilterPoison:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Poison"]])
+        RinseOptionsFrameFilterCurse:SetChecked(not RINSE_CHAR_CONFIG.FILTER[L["Curse"]])
+        UpdateFilter()
+        RinseOptionsFrameFilterScrollFrame_Update()
+    end,
+    EditBoxOnEnterPressed = function()
+        StaticPopupDialogs[this:GetParent().which].OnAccept()
+        this:GetParent():Hide()
+    end,
+    EditBoxOnEscapePressed = function()
+        this:GetParent():Hide()
+    end,
+    OnShow = function()
+        _G[this:GetName().."EditBox"]:SetFocus()
+    end,
+    OnHide = function()
+        _G[this:GetName().."EditBox"]:SetText("")
+    end,
+    timeout = 0,
+    exclusive = 1,
+    hideOnEscape = 1
 }
 
 function Rinse_StartVersionsCheck()
-	if versionsCheckTimer then
-		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["Version check is already in progress."])
-		return
-	end
-	local channel
-	if GetNumRaidMembers() > 0 then
-		channel = "RAID"
-	elseif GetNumPartyMembers() > 0 then
-		channel = "PARTY"
-	end
-	if channel then
-		SendAddonMessage("Rinse", "REPORT_ADDON_VERSION", channel)
-		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["Version check start..."])
-		versionsCheckTimer = 3
-	else
-		DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["You are not in a raid or party."])
-	end
+    if versionsCheckTimer then
+        DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["Version check is already in progress."])
+        return
+    end
+    local channel
+    if GetNumRaidMembers() > 0 then
+        channel = "RAID"
+    elseif GetNumPartyMembers() > 0 then
+        channel = "PARTY"
+    end
+    if channel then
+        SendAddonMessage("Rinse", "REPORT_ADDON_VERSION", channel)
+        DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["Version check start..."])
+        versionsCheckTimer = 3
+    else
+        DEFAULT_CHAT_FRAME:AddMessage(BLUE.."[Rinse]|r "..L["You are not in a raid or party."])
+    end
 end
 
 function Rinse_OutputVersionsCheckResults()
-	if not AddonVersions then
-		AddonVersions = {}
-	end
-	local myVersionString = GetAddOnMetadata("Rinse", "Version")
-	local myVersionValue = tonumber((gsub(myVersionString, "%.", "0")))
-	local myName = UnitName("player")
-	tinsert(AddonVersions, { name = myName, vString = format("%s: %s", myName, myVersionString), vValue = myVersionValue })
-	if GetNumRaidMembers() > 0 then
-		for i = 1, 40 do
-			local name = GetRaidRosterInfo(i)
-			if name then
-				if not arrcontains(AddonVersions, name) then
-					tinsert(AddonVersions, { name = name, vString = format("%s: %s", name, "unknown"), vValue = 0 })
-				end
-			end
-		end
-	elseif GetNumPartyMembers() > 0 then
-		for i = 1, 4 do
-			local name = UnitName("party"..i)
-			if name then
-				if not arrcontains(AddonVersions, name) then
-					tinsert(AddonVersions, { name = name, vString = format("%s: %s", name, "unknown"), vValue = 0 })
-				end
-			end
-		end
-	end
-	sort(AddonVersions, function(a, b)
-		return a.vValue > b.vValue
-	end)
-	local orange = "|cffff7f3f"
-	local green = "|cff3fbf3f"
-	local grey = "|cffff2020"
-	local msg = BLUE.."[Rinse]|r "..L["Version check results:"].."\n"
-	local size = getn(AddonVersions)
-	for i = 1, size do
-		local value = AddonVersions[i].vValue
-		if value > myVersionValue then
-			AddonVersions[i].vString = orange..AddonVersions[i].vString.."|r"
-		elseif value == myVersionValue then
-			AddonVersions[i].vString = green..AddonVersions[i].vString.."|r"
-		elseif value < myVersionValue then
-			AddonVersions[i].vString = grey..AddonVersions[i].vString.."|r"
-		end
-		msg = msg..AddonVersions[i].vString..(i ~= size and "\n" or "")
-	end
-	DEFAULT_CHAT_FRAME:AddMessage(msg)
-	AddonVersions = nil
+    if not AddonVersions then
+        AddonVersions = {}
+    end
+    local myVersionString = GetAddOnMetadata("Rinse", "Version")
+    local myVersionValue = tonumber((gsub(myVersionString, "%.", "0")))
+    local myName = UnitName("player")
+    tinsert(AddonVersions, { name = myName, vString = format("%s: %s", myName, myVersionString), vValue = myVersionValue })
+    if GetNumRaidMembers() > 0 then
+        for i = 1, 40 do
+            local name = GetRaidRosterInfo(i)
+            if name then
+                if not arrcontains(AddonVersions, name) then
+                    tinsert(AddonVersions, { name = name, vString = format("%s: %s", name, "unknown"), vValue = 0 })
+                end
+            end
+        end
+    elseif GetNumPartyMembers() > 0 then
+        for i = 1, 4 do
+            local name = UnitName("party"..i)
+            if name then
+                if not arrcontains(AddonVersions, name) then
+                    tinsert(AddonVersions, { name = name, vString = format("%s: %s", name, "unknown"), vValue = 0 })
+                end
+            end
+        end
+    end
+    sort(AddonVersions, function(a, b)
+        return a.vValue > b.vValue
+    end)
+    local orange = "|cffff7f3f"
+    local green = "|cff3fbf3f"
+    local grey = "|cffff2020"
+    local msg = BLUE.."[Rinse]|r "..L["Version check results:"].."\n"
+    local size = getn(AddonVersions)
+    for i = 1, size do
+        local value = AddonVersions[i].vValue
+        if value > myVersionValue then
+            AddonVersions[i].vString = orange..AddonVersions[i].vString.."|r"
+        elseif value == myVersionValue then
+            AddonVersions[i].vString = green..AddonVersions[i].vString.."|r"
+        elseif value < myVersionValue then
+            AddonVersions[i].vString = grey..AddonVersions[i].vString.."|r"
+        end
+        msg = msg..AddonVersions[i].vString..(i ~= size and "\n" or "")
+    end
+    DEFAULT_CHAT_FRAME:AddMessage(msg)
+    AddonVersions = nil
 end
 
 function Rinse_DebuffButton_OnLoad(self)
-	self:RegisterForClicks("LeftButtonDown")
-	local name = self:GetName()
-	self.Icon = _G[name.."Icon"]
-	self.DebuffName = _G[name.."Name"]
-	self.PlayerName = _G[name.."Player"]
-	self.Count = _G[name.."Count"]
-	self.Border = _G[name.."Border"]
-	self.Priority = _G[name.."Priority"]
+    self:RegisterForClicks("LeftButtonDown")
+    local name = self:GetName()
+    self.Icon = _G[name.."Icon"]
+    self.DebuffName = _G[name.."Name"]
+    self.PlayerName = _G[name.."Player"]
+    self.Count = _G[name.."Count"]
+    self.Border = _G[name.."Border"]
+    self.Priority = _G[name.."Priority"]
 end
