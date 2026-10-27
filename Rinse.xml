@@ -149,7 +149,7 @@
 				RinseFrame_OnLoad()
 			</OnLoad>
 			<OnEvent>
-				RinseFrame_OnEvent()
+				RinseFrame_OnEvent(event, arg1, arg2)
 			</OnEvent>
 			<OnMouseDown>
 				if this:IsMovable() then

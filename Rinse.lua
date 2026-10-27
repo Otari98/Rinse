@@ -23,6 +23,7 @@ local errorCooldown = 0
 local stopCastCooldown = 0
 local prioTimer = 0
 local needUpdatePrio = false
+local aurasChanged = true
 local shadowform
 local autoattack
 local selectedClass = "WARRIOR"
@@ -30,13 +31,9 @@ local BlacklistArray = {}
 local ClassFilterArray = {}
 local FilterArray = {}
 local OptionsScrollMaxButtons = 8
-local AddToList
-local AddToPlayerList
 local versionsCheckTimer
 local AddonVersions
-local movingInList
-local movingDestID
-local movingButtonID
+local Moving = { list = nil, sourceID = nil, destID = nil }
 
 -- Bindings
 BINDING_HEADER_RINSE_HEADER = "Rinse"
@@ -140,7 +137,7 @@ for i = 1, DEBUFFS_MAX do
 		unit = "",
 		unitName = "",
 		unitClass = "",
-		shown = false
+		hidden = false
 	}
 end
 
@@ -152,15 +149,14 @@ DefaultPrio[3] = "party2"
 DefaultPrio[4] = "party3"
 DefaultPrio[5] = "party4"
 for i = 1, 40 do tinsert(DefaultPrio, "raid"..i) end
+for i = 1, getn(DefaultPrio) do
+	local unit = DefaultPrio[i]
+	local pet = unit == "player" and "pet" or (gsub(unit, "(%a+)(%d*)", "%1pet%2"))
+	tinsert(DefaultPrio, pet)
+end
 
 -- Scan order
 local Prio = {}
-Prio[1] = "player"
-Prio[2] = "party1"
-Prio[3] = "party2"
-Prio[4] = "party3"
-Prio[5] = "party4"
-for i = 1, 40 do tinsert(Prio, "raid"..i) end
 
 -- Skip list hash for O(1) lookup (rebuilt when SKIP_ARRAY changes)
 local SkipNames = {}
@@ -257,14 +253,10 @@ SnareDebuffs[L["Encasing Webs"]] = true
 SnareDebuffs[L["Surge of Mana"]] = true
 SnareDebuffs[L["Hooked Net"]] = true
 
-local function wipe(array)
-	if type(array) ~= "table" then return end
-	for i = getn(array), 1, -1 do tremove(array, i) end
-end
-
-local function wipelist(list)
-	if type(list) ~= "table" then return end
-	for k in pairs(list) do list[k] = nil end
+local function wipe(t)
+	if type(t) ~= "table" then return end
+	for k in pairs(t) do t[k] = nil end
+	table.setn(t, 0)
 end
 
 local function arrcontains(array, value)
@@ -295,46 +287,30 @@ end
 
 local function NameToUnitID(name)
 	if not name then return nil end
-	if UnitName("player") == name then
-		return "player"
-	else
-		for i = 1, 4 do
-			if UnitName("party"..i) == name then
-				return "party"..i
-			end
-		end
-		for i = 1, 40 do
-			if UnitName("raid"..i) == name then
-				return "raid"..i
-			end
-		end
+	if UnitName("player") == name then return "player" end
+	for i = 1, 4 do
+		if UnitName("party"..i) == name then return "party"..i end
+	end
+	for i = 1, 40 do
+		if UnitName("raid"..i) == name then return "raid"..i end
 	end
 end
 
 local function HasAbolish(unit, debuffType)
-	if not UnitExists(unit) or not debuffType then
+	if not (UnitExists(unit) and debuffType and UsableSpells[debuffType] and (debuffType == L["Poison"] or debuffType == L["Disease"])) then
 		return false
 	end
-	if not UsableSpells[debuffType] then
-		return false
-	end
-	if not (debuffType == L["Poison"] or debuffType == L["Disease"]) then
-		return false
-	end
-	local i = 1
-	local buff, icon
+	local icon
 	if debuffType == L["Poison"] then
 		icon = "Interface\\Icons\\Spell_Nature_NullifyPoison_02"
 	elseif debuffType == L["Disease"] then
 		icon = "Interface\\Icons\\Spell_Nature_NullifyDisease"
 	end
-	repeat
-		buff = UnitBuff(unit, i)
-		if buff == icon then
-			return true
-		end
-		i = i + 1
-	until not buff
+	for i = 1, 32 do
+		local buff = UnitBuff(unit, i)
+		if not buff then break end
+		if buff == icon then return true end
+	end
 	return false
 end
 
@@ -356,10 +332,6 @@ local function CanCast(unit, spell)
 	local inRange
 
 	if UnitIsFriend("player", unit) and not UnitCanAttack("player", unit) then
-		-- https://gitea.com/avitasia/nampower/issues/56
-		-- if spell and IsSpellInRange then
-		-- 	inRange = IsSpellInRange(spell, unit) == 1
-		-- end
 		if C_Spell and spell then
 			inRange = C_Spell.IsSpellInRange(spell, unit)
 		elseif unitxp then
@@ -395,79 +367,32 @@ local function CanCast(unit, spell)
 	return false
 end
 
-local Seen = {}
-
 local function UpdatePrio()
 	wipe(Prio)
 	-- If there is a user defined prio, add it first
 	if RINSE_CONFIG.PRIO_ARRAY[1] then
 		for i = 1, getn(RINSE_CONFIG.PRIO_ARRAY) do
 			local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
-			if unit then
-				tinsert(Prio, unit)
-			end
+			if unit then tinsert(Prio, unit) end
 		end
 	end
 	-- Add default prio
 	for i = 1, getn(DefaultPrio) do
-		tinsert(Prio, DefaultPrio[i])
-	end
-	-- Always add pets to scan list (filtering happens during save based on RINSE_CONFIG.PETS)
-	for i = 1, getn(Prio) do
-		tinsert(Prio, (gsub(Prio[i], "(%a+)(%d*)", "%1pet%2")))
-	end
-	-- Get rid of duplicates and UnitIDs that we can't match to names in our raid/party
-	wipelist(Seen)
-	for i = 1, getn(Prio) do
-		local name = UnitName(Prio[i])
-		if not name or Seen[name] then
-			-- Don't delete yet, just flag
-			Prio[i] = false
-		else
-			Seen[name] = true
-		end
-	end
-	-- Delete now
-	for i = getn(Prio), 1, -1 do
-		if Prio[i] == false then
-			tremove(Prio, i)
-		end
-	end
-	-- Skip randomization if display is not empty
-	if RinseFrameDebuff1:IsShown() then
-		return
-	end
-	-- Randomize everything that is not in PRIO_ARRAY
-	local startIndex = 2
-	local endIndex = getn(Prio)
-	if RINSE_CONFIG.PRIO_ARRAY[1] then
-		-- PRIO_ARRAY can contain names that are not in our raid/party
-		-- To find index in Prio from where we can start randomization,
-		-- find last unitID from PRIO_ARRAY that can be matched to any member of our raid/party,
-		-- get index of that unitID in Prio and add 1 to it
-		for i = getn(RINSE_CONFIG.PRIO_ARRAY), 1, -1 do
-			local unit = NameToUnitID(RINSE_CONFIG.PRIO_ARRAY[i].name)
-			if unit then
-				for j = 1, endIndex do
-					if Prio[j] == unit then
-						startIndex = j + 1
-						break
-					end
-				end
-				break
+		local newUnit = DefaultPrio[i]
+		if UnitExists(newUnit) then
+			local insert = true
+			for _, oldUnit in pairs(Prio) do
+				if UnitIsUnit(oldUnit, newUnit) then insert = false; break end
 			end
+			if insert then tinsert(Prio, newUnit) end
 		end
 	end
-	for a = startIndex, endIndex do
-		local b = random(startIndex, endIndex)
-		if Prio[a] and Prio[b] then
-			Prio[a], Prio[b] = Prio[b], Prio[a]
-		end
-	end
+	aurasChanged = true
+	-- for i = 1, getn(Prio) do print(i, Prio[i]) end
 end
 
 local function RebuildSkipNames()
-	wipelist(SkipNames)
+	wipe(SkipNames)
 	local arr = RINSE_CONFIG.SKIP_ARRAY
 	for i = 1, getn(arr) do
 		if arr[i] and arr[i].name then
@@ -489,7 +414,7 @@ function RinseSkipListScrollFrame_Update()
 		if RINSE_CONFIG.SKIP_ARRAY[arrayIndex] then
 			buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.SKIP_ARRAY[arrayIndex].class]..RINSE_CONFIG.SKIP_ARRAY[arrayIndex].name)
 			button:SetID(arrayIndex)
-			if movingButtonID and movingButtonID == arrayIndex then
+			if Moving.sourceID and Moving.sourceID == arrayIndex then
 				buttonText:SetText("")
 			end
 			button:Show()
@@ -511,7 +436,7 @@ function RinsePrioListScrollFrame_Update()
 		if RINSE_CONFIG.PRIO_ARRAY[arrayIndex] then
 			buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.PRIO_ARRAY[arrayIndex].class]..RINSE_CONFIG.PRIO_ARRAY[arrayIndex].name)
 			button:SetID(arrayIndex)
-			if movingButtonID and movingButtonID == arrayIndex then
+			if Moving.sourceID and Moving.sourceID == arrayIndex then
 				buttonText:SetText("")
 			end
 			button:Show()
@@ -532,12 +457,13 @@ function RinseListButton_OnClick()
 			RinsePrioListScrollFrame_Update()
 			UpdatePrio()
 		end
+		aurasChanged = true
 	end
 end
 
 function RinseListButton_OnDragStart()
-	movingInList = this:GetParent()
-	movingButtonID = this:GetID()
+	Moving.list = this:GetParent()
+	Moving.sourceID = this:GetID()
 	local text = _G[this:GetName().."Text"]
 	RinseMovingButtonText:SetText(text:GetText())
 	text:SetText("")
@@ -546,42 +472,43 @@ function RinseListButton_OnDragStart()
 end
 
 function RinseListButton_OnDragStop()
-	if not movingInList then return end
+	if not Moving.list then return end
 	RinseMovingButton:StopMovingOrSizing()
 	RinseMovingButton:Hide()
 	local array, update
-	if movingInList == RinsePrioListFrame then
+	if Moving.list == RinsePrioListFrame then
 		array = RINSE_CONFIG.PRIO_ARRAY
 		update = RinsePrioListScrollFrame_Update
-	elseif movingInList == RinseSkipListFrame then
+	elseif Moving.list == RinseSkipListFrame then
 		array = RINSE_CONFIG.SKIP_ARRAY
 		update = RinseSkipListScrollFrame_Update
 	end
-	if movingDestID and movingButtonID and array and array[movingButtonID] and array[movingDestID] then
-		array[movingButtonID], array[movingDestID] = array[movingDestID], array[movingButtonID]
+	if Moving.destID and Moving.sourceID and array and array[Moving.sourceID] and array[Moving.destID] then
+		array[Moving.sourceID], array[Moving.destID] = array[Moving.destID], array[Moving.sourceID]
 	end
-	movingButtonID = nil
+	Moving.sourceID = nil
 	update()
-	movingInList = nil
+	UpdatePrio()
+	Moving.list = nil
 end
 
 function RinseMovingButton_OnUpdate()
-	if not movingInList then return end
+	if not Moving.list then return end
 	local cursorX, cursorY = GetCursorPosition()
 	cursorX = cursorX / UIParent:GetScale()
 	cursorY = cursorY / UIParent:GetScale()
 	RinseMovingButton:ClearAllPoints()
 	RinseMovingButton:SetPoint("LEFT", nil, "BOTTOMLEFT", cursorX - 30, cursorY)
-	movingDestID = nil
+	Moving.destID = nil
 	for i = 1, 10 do
-		_G[movingInList:GetName().."Button"..i.."Highlight"]:Hide()
+		_G[Moving.list:GetName().."Button"..i.."Highlight"]:Hide()
 	end
 	for i = 1, 10 do
-		local button = _G[movingInList:GetName().."Button"..i]
-		local highlight = _G[movingInList:GetName().."Button"..i.."Highlight"]
+		local button = _G[Moving.list:GetName().."Button"..i]
+		local highlight = _G[Moving.list:GetName().."Button"..i.."Highlight"]
 		if button:IsShown() and MouseIsOver(button) then
 			highlight:Show()
-			movingDestID = button:GetID()
+			Moving.destID = button:GetID()
 		end
 	end
 end
@@ -598,6 +525,7 @@ function Rinse_AddUnitToList(array, unit)
 		RinsePrioListScrollFrame_Update()
 		UpdatePrio()
 	end
+	aurasChanged = true
 end
 
 local function AddGroupOrClass()
@@ -609,43 +537,31 @@ local function AddGroupOrClass()
 	end
 	if type(this.value) == "number" then
 		-- This is group number
-		if UnitInRaid("player") then
+		if GetNumRaidMembers() > 0 then
 			for i = 1 , 40 do
 				local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
-				local unit = NameToUnitID(name)
-				if name and unit and subgroup == this.value then
-					Rinse_AddUnitToList(array, unit)
-				end
+				if name and subgroup == this.value then Rinse_AddUnitToList(array, "raid"..i) end
 			end
-		elseif UnitInParty("player") then
+		elseif GetNumPartyMembers() > 0 then
 			if this.value == 1 then
 				Rinse_AddUnitToList(array, "player")
 				for i = 1, 4 do
-					if UnitName("party"..i) then
-						Rinse_AddUnitToList(array, "party"..i)
-					end
+					if UnitName("party"..i) then Rinse_AddUnitToList(array, "party"..i) end
 				end
 			end
 		end
 	elseif type(this.value) == "string" then
 		-- This is class
-		if UnitInRaid("player") then
+		if GetNumRaidMembers() > 0 then
 			for i = 1 , 40 do
 				local name, rank, subgroup, level, class, classFileName, zone, online, isDead = GetRaidRosterInfo(i)
-				local unit = NameToUnitID(name)
-				if name and unit and classFileName == this.value then
-					Rinse_AddUnitToList(array, unit)
-				end
+				if name and classFileName == this.value then Rinse_AddUnitToList(array, "raid"..i) end
 			end
-		elseif UnitInParty("player") then
-			if this.value == playerClass then
-				Rinse_AddUnitToList(array, "player")
-			end
+		elseif GetNumPartyMembers() > 0 then
+			if this.value == playerClass then Rinse_AddUnitToList(array, "player") end
 			for i = 1, 4 do
 				local _, class = UnitClass("party"..i)
-				if UnitName("party"..i) and class == this.value then
-					Rinse_AddUnitToList(array, "party"..i)
-				end
+				if UnitName("party"..i) and class == this.value then Rinse_AddUnitToList(array, "party"..i) end
 			end
 		end
 	end
@@ -720,31 +636,6 @@ function RinsePrioListAddClass_OnClick()
 	ToggleDropDownMenu(1, "Rinse_PrioList", RinseClassesDropDown, this, 0, 0)
 end
 
-local function AddNameToPlayerList(name)
-	if not name or name == "" then return end
-	local array
-	if AddToPlayerList == "skip" then
-		array = RINSE_CONFIG.SKIP_ARRAY
-	elseif AddToPlayerList == "prio" then
-		array = RINSE_CONFIG.PRIO_ARRAY
-	end
-	if not array then return end
-	if arrcontains(array, name) then return end
-	local class = "UNKNOWN"
-	local unit = NameToUnitID(name)
-	if unit then
-		local _, c = UnitClass(unit)
-		if c then class = c end
-	end
-	tinsert(array, {name = name, class = class})
-	if array == RINSE_CONFIG.SKIP_ARRAY then
-		RinseSkipListScrollFrame_Update()
-	elseif array == RINSE_CONFIG.PRIO_ARRAY then
-		RinsePrioListScrollFrame_Update()
-		UpdatePrio()
-	end
-end
-
 StaticPopupDialogs["RINSE_ADD_PLAYER_TO_LIST"] = {
 	text = "Enter player name:",
 	button1 = OKAY,
@@ -752,8 +643,30 @@ StaticPopupDialogs["RINSE_ADD_PLAYER_TO_LIST"] = {
 	hasEditBox = 1,
 	maxLetters = 12,
 	OnAccept = function()
-		local text = _G[this:GetParent():GetName().."EditBox"]:GetText()
-		AddNameToPlayerList(text)
+		local dialog = this:GetParent()
+		local name = _G[dialog:GetName().."EditBox"]:GetText()
+		if not name or name == "" then return end
+		local array
+		if dialog.data == "skip" then
+			array = RINSE_CONFIG.SKIP_ARRAY
+		elseif dialog.data == "prio" then
+			array = RINSE_CONFIG.PRIO_ARRAY
+		end
+		if not array then return end
+		if arrcontains(array, name) then return end
+		local class = "UNKNOWN"
+		local unit = NameToUnitID(name)
+		if unit then
+			local _, c = UnitClass(unit)
+			if c then class = c end
+		end
+		tinsert(array, {name = name, class = class})
+		if array == RINSE_CONFIG.SKIP_ARRAY then
+			RinseSkipListScrollFrame_Update()
+		elseif array == RINSE_CONFIG.PRIO_ARRAY then
+			RinsePrioListScrollFrame_Update()
+			UpdatePrio()
+		end
 	end,
 	EditBoxOnEnterPressed = function()
 		StaticPopupDialogs[this:GetParent().which].OnAccept()
@@ -774,13 +687,13 @@ StaticPopupDialogs["RINSE_ADD_PLAYER_TO_LIST"] = {
 }
 
 function RinseSkipListAddName_OnClick()
-	AddToPlayerList = "skip"
-	StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST")
+	local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "skip")
+	if dialog then dialog.data = "skip" end
 end
 
 function RinsePrioListAddName_OnClick()
-	AddToPlayerList = "prio"
-	StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST")
+	local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "prio")
+	if dialog then dialog.data = "prio" end
 end
 
 function Rinse_ClearButton_OnClick()
@@ -791,6 +704,7 @@ function Rinse_ClearButton_OnClick()
 		wipe(RINSE_CONFIG.PRIO_ARRAY)
 		RinsePrioListScrollFrame_Update()
 	end
+	UpdatePrio()
 end
 
 local bookType = BOOKTYPE_SPELL
@@ -805,7 +719,7 @@ local function UpdateSpells()
 		return
 	end
 	-- Gather all spells and their spellBookID
-	wipelist(AllSpells)
+	wipe(AllSpells)
 	for tab = 1, GetNumSpellTabs() do
 		local _, _, offset, numSpells = GetSpellTabInfo(tab)
 		for spellBookID = offset + 1, offset + numSpells do
@@ -893,6 +807,7 @@ local function UpdateBlacklist()
 	for k, v in pairs(RINSE_CHAR_CONFIG.BLACKLIST) do
 		Blacklist[k] = v
 	end
+	aurasChanged = true
 end
 
 local function UpdateFilter()
@@ -906,6 +821,7 @@ local function UpdateFilter()
 		end
 	end
 	UpdateSpells()
+	aurasChanged = true
 end
 
 function Rinse_ToggleFilter(filter)
@@ -1117,6 +1033,8 @@ function RinseFrame_OnLoad()
 	RinseFrame:RegisterEvent("PARTY_MEMBERS_CHANGED")
 	RinseFrame:RegisterEvent("SPELLS_CHANGED")
 	RinseFrame:RegisterEvent("CHAT_MSG_ADDON")
+	RinseFrame:RegisterEvent("UNIT_AURA")
+	RinseFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
 	if GetNampowerVersion then
 		-- Announce queued decurses
 		RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
@@ -1132,12 +1050,13 @@ function RinseFrame_OnLoad()
 	RinseFrameTitle:SetText("Rinse "..GetAddOnMetadata("Rinse", "Version"))
 end
 
-function RinseFrame_OnEvent()
-	if event == "ADDON_LOADED" and arg1 == "Rinse" then
+function RinseFrame_OnEvent(event, arg1, arg2)
+	if event == "ADDON_LOADED" then
+		if arg1 ~= "Rinse" then return end
+		RinseFrame:UnregisterEvent(event)
 		tinsert(UISpecialFrames, "RinsePrioListFrame")
 		tinsert(UISpecialFrames, "RinseSkipListFrame")
 		tinsert(UISpecialFrames, "RinseOptionsFrame")
-		RinseFrame:UnregisterEvent("ADDON_LOADED")
 		RINSE_CONFIG = RINSE_CONFIG or {}
 		RINSE_CHAR_CONFIG = RINSE_CHAR_CONFIG or {}
 		RINSE_CONFIG.SKIP_ARRAY = RINSE_CONFIG.SKIP_ARRAY or {}
@@ -1275,17 +1194,23 @@ function RinseFrame_OnEvent()
 		local debuff = _G[lastButton:GetName().."Name"]:GetText()
 		ChatMessage(DebuffColor[lastButton.type].hex..debuff.."|r - "..ClassColors[lastButton.unitClass]..UnitName(lastButton.unit).."|r")
 	elseif event == "RAID_ROSTER_UPDATE" or event == "PARTY_MEMBERS_CHANGED" then
+		-- print(event)
 		needUpdatePrio = true
-		prioTimer = 2
+		prioTimer = 0.2
 	elseif event == "SPELLS_CHANGED" then
+		-- print(event)
 		UpdateSpells()
 	elseif event == "PLAYER_AURAS_CHANGED" then
+		-- print(event)
 		shadowform = HasShadowform()
 	elseif event == "PLAYER_ENTER_COMBAT" then
+		-- print(event)
 		autoattack = UnitName("target")
 	elseif event == "PLAYER_LEAVE_COMBAT" then
+		-- print(event)
 		autoattack = nil
-	elseif event == "CHAT_MSG_ADDON" and arg1 == "Rinse" and arg4 ~= UnitName("player") then
+	elseif event == "CHAT_MSG_ADDON" then
+		if arg1 ~= "Rinse" or arg4 == UnitName("player") then return end
 		if arg2 == "REPORT_ADDON_VERSION" then
 			SendAddonMessage("Rinse", "V_"..GetAddOnMetadata("Rinse", "Version"), "RAID")
 		elseif versionsCheckTimer and strfind(arg2, "^V_") then
@@ -1293,6 +1218,14 @@ function RinseFrame_OnEvent()
 			local v = strsub(arg2, 3) or ""
 			tinsert(AddonVersions, { name = arg4, vString = format("%s: %s", arg4, v), vValue = tonumber((gsub(v, "%.", "0"))) or 0 })
 		end
+	elseif event == "UNIT_AURA" then
+		if arg1 == "target" or arrcontains(Prio, arg1) then
+			-- print(event, arg1)
+			aurasChanged = true
+		end
+	elseif event == "PLAYER_TARGET_CHANGED" then
+		-- print(event)
+		aurasChanged = true
 	end
 end
 
@@ -1309,10 +1242,8 @@ local function GetDebuffInfo(unit, i)
 		if spellId then debuffName = SpellInfo(spellId) end
 	else
 		RinseScanTooltipTextLeft1:SetText("")
-		RinseScanTooltipTextRight1:SetText("")
 		RinseScanTooltip:SetUnitDebuff(unit, i)
 		debuffName = RinseScanTooltipTextLeft1:GetText() or ""
-		debuffType = RinseScanTooltipTextRight1:GetText() or ""
 		texture, applications, debuffType = UnitDebuff(unit, i)
 	end
 	if debuffName and SnareDebuffs[debuffName] then
@@ -1322,32 +1253,28 @@ local function GetDebuffInfo(unit, i)
 end
 
 local function SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications)
-	local isPriority = PriorityDebuffs[debuffName]
-	local isPet = strfind(unit, "pet") ~= nil
-
 	-- If unit is a pet and PETS is disabled, only save priority debuffs
-	if isPet and not RINSE_CONFIG.PETS and not isPriority then
+	if strfind(unit, "pet", 1, true) and not RINSE_CONFIG.PETS and not PriorityDebuffs[debuffName] then
 		return false
 	end
-
 	-- Check if debuff can be removed and respect abolish setting
 	if UsableSpells[debuffType] and (RINSE_CONFIG.IGNORE_ABOLISH or not HasAbolish(unit, debuffType)) then
-		Debuffs[debuffIndex].name = debuffName or ""
-		Debuffs[debuffIndex].type = debuffType or ""
-		Debuffs[debuffIndex].texture = texture or ""
-		Debuffs[debuffIndex].stacks = applications or 0
-		Debuffs[debuffIndex].unit = unit
-		Debuffs[debuffIndex].unitName = UnitName(unit) or ""
-		Debuffs[debuffIndex].unitClass = class or ""
-		Debuffs[debuffIndex].debuffIndex = i
+		local d = Debuffs[debuffIndex]
+		d.name = debuffName or ""
+		d.type = debuffType or ""
+		d.texture = texture or ""
+		d.stacks = applications or 0
+		d.unit = unit
+		d.unitName = UnitName(unit) or ""
+		d.unitClass = class or ""
+		d.debuffIndex = i
 		return true
 	end
 	return false
 end
 
 local function GoodUnit(unit)
-	if not (unit and UnitExists(unit)) then return false end
-	if not UnitIsVisible(unit) then return false end
+	if not (unit and UnitExists(unit) and UnitIsVisible(unit)) then return false end
 	local name = UnitName(unit)
 	if not name or SkipNames[name] then return false end
 	return UnitCanAssist("player", unit) and not UnitIsCharmed(unit) or not UnitCanAssist("player", unit) and UnitIsCharmed(unit)
@@ -1369,184 +1296,178 @@ function RinseFrame_OnUpdate(elapsed)
 			Rinse_OutputVersionsCheckResults()
 		end
 	end
-	if timeElapsed < updateInterval then
-		return
-	end
+
+	if timeElapsed < updateInterval then return end
+
 	timeElapsed = 0
-	-- Clear only entries that were used last tick
-	for i = 1, lastDebuffCount do
-		local d = Debuffs[i]
-		d.name = ""
-		d.type = ""
-		d.texture = ""
-		d.stacks = 0
-		d.unit = ""
-		d.unitName = ""
-		d.unitClass = ""
-		d.shown = false
-		d.debuffIndex = 0
-	end
-	local debuffIndex = 1
-	-- Get new info
-	-- Target is highest prio
-	if GoodUnit("target") then
-		local _, class = UnitClass("target")
-		local i = 1
-		while debuffIndex < DEBUFFS_MAX do
-			local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
-			if not texture then
-				break
-			end
-			if debuffType and debuffName and class then
+	if aurasChanged then
+		aurasChanged = false
+		-- Clear only entries that were used last tick
+		for i = 1, lastDebuffCount do
+			local d = Debuffs[i]
+			d.name = ""
+			d.type = ""
+			d.texture = ""
+			d.stacks = 0
+			d.unit = ""
+			d.unitName = ""
+			d.unitClass = ""
+			d.hidden = false
+			d.debuffIndex = 0
+		end
+		local debuffIndex = 1
+		-- Get new info
+		-- Target is highest prio
+		if GoodUnit("target") then
+			local _, class = UnitClass("target")
+			for i = 1, 16 do
+				local debuffType, debuffName, texture, applications = GetDebuffInfo("target", i)
+				if not texture then break end
 				if SaveDebuffInfo("target", debuffIndex, i, class, debuffType, debuffName, texture, applications) then
 					debuffIndex = debuffIndex + 1
 				end
+				if debuffIndex > DEBUFFS_MAX then break end
 			end
-			i = i + 1
 		end
-	end
-	-- Scan units in Prio array (pets are included, filtered in SaveDebuffInfo)
-	local prioCount = getn(Prio)
-	for index = 1, prioCount do
-		local unit = Prio[index]
-		if GoodUnit(unit) and not UnitIsUnit("target", unit) then
-			local _, class = UnitClass(unit)
-			local i = 1
-			while debuffIndex < DEBUFFS_MAX do
-				local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
-				if not texture then
-					break
-				end
-				if debuffType and debuffName and class then
+		-- Scan units in Prio array (pets are included, filtered in SaveDebuffInfo)
+		local prioCount = getn(Prio)
+		for index = 1, prioCount do
+			local unit = Prio[index]
+			if GoodUnit(unit) and not UnitIsUnit("target", unit) then
+				local _, class = UnitClass(unit)
+				for i = 1, 16 do
+					local debuffType, debuffName, texture, applications = GetDebuffInfo(unit, i)
+					if not texture then break end
 					if SaveDebuffInfo(unit, debuffIndex, i, class, debuffType, debuffName, texture, applications) then
 						debuffIndex = debuffIndex + 1
 					end
-				end
-				i = i + 1
-			end
-		end
-	end
-	-- Process debuffs: blacklist, priority, shadowform, and filter logic
-	-- Only iterate up to debuffIndex (actual found debuffs), cache table lookups
-	local debuffCount = debuffIndex - 1
-	if debuffCount < 0 then debuffCount = 0 end
-	lastDebuffCount = debuffCount
-	for i = 1, debuffCount do
-		local d = Debuffs[i]
-		local dName, dType, dUnitName, dUnitClass = d.name, d.type, d.unitName, d.unitClass
-		-- Check if this debuff is blacklisted
-		if Blacklist[dName] then
-			-- Hide all debuffs of same type on same unit
-			for j = 1, debuffCount do
-				local d2 = Debuffs[j]
-				if d2.unitName == dUnitName and (d2.type == dType or UsableSpells[dType] == L["Cleanse"]) then
-					d2.shown = true
+					if debuffIndex > DEBUFFS_MAX then break end
 				end
 			end
 		end
-		-- Check if this is a priority debuff
-		if PriorityDebuffs[dName] and dType ~= "" then
-			-- Hide all non-priority debuffs on same unit
-			for j = 1, debuffCount do
-				local d2 = Debuffs[j]
-				if d2.unitName == dUnitName and not PriorityDebuffs[d2.name] then
-					d2.shown = true
+		-- Process debuffs: blacklist, priority, shadowform, and filter logic
+		-- Only iterate up to debuffIndex (actual found debuffs), cache table lookups
+		local debuffCount = debuffIndex - 1
+		if debuffCount < 0 then debuffCount = 0 end
+		lastDebuffCount = debuffCount
+		for i = 1, debuffCount do
+			local d = Debuffs[i]
+			local dName, dType, dUnitName, dUnitClass = d.name, d.type, d.unitName, d.unitClass
+			-- Check if this debuff is blacklisted
+			if Blacklist[dName] then
+				-- Hide all debuffs of same type on same unit
+				for j = 1, debuffCount do
+					local d2 = Debuffs[j]
+					if d2.unitName == dUnitName and (d2.type == dType or UsableSpells[dType] == L["Cleanse"]) then
+						d2.hidden = true
+					end
+				end
+			end
+			-- Shadowform: hide diseases
+			if shadowform and RINSE_CONFIG.SHADOWFORM and dType == L["Disease"] then
+				d.hidden = true
+			end
+			-- Player filter (includes class-specific filters)
+			local classFilter = ClassFilter[dUnitClass]
+			if Filter[dName] or Filter[dType] or (classFilter and classFilter[dName]) then
+				d.hidden = true
+			-- Check if this is a priority debuff
+			elseif PriorityDebuffs[dName] then
+				-- Hide all non-priority debuffs on same unit
+				for j = 1, debuffCount do
+					local d2 = Debuffs[j]
+					if d2.unitName == dUnitName and not PriorityDebuffs[d2.name] and d2 ~= d then
+						d2.hidden = true
+					end
 				end
 			end
 		end
-		-- Shadowform: hide diseases
-		if shadowform and RINSE_CONFIG.SHADOWFORM and dType == L["Disease"] then
-			d.shown = true
-		end
-		-- Player filter (includes class-specific filters)
-		local classFilter = ClassFilter[dUnitClass]
-		if Filter[dName] or Filter[dType] or (classFilter and classFilter[dName]) then
-			d.shown = true
-		end
-	end
-	-- Move priority debuffs to the front of the list
-	-- This is CRITICAL so that priority debuffs are removed first raidwide
-	local frontIndex = 1
-	for i = 1, debuffCount do
-		local d = Debuffs[i]
-		if not d.shown and PriorityDebuffs[d.name] then
-			if i ~= frontIndex then
-				-- Swap priority debuff to front
-				Debuffs[frontIndex], Debuffs[i] = Debuffs[i], Debuffs[frontIndex]
+		-- Move priority debuffs to the front of the list
+		-- This is CRITICAL so that priority debuffs are removed first raidwide
+		-- TODO: this does not respect prio and target, should it?
+		local frontIndex = 1
+		for i = 1, debuffCount do
+			local d = Debuffs[i]
+			if not d.hidden and PriorityDebuffs[d.name] then
+				if i ~= frontIndex then
+					-- Swap priority debuff to front
+					Debuffs[frontIndex], Debuffs[i] = Debuffs[i], Debuffs[frontIndex]
+				end
+				frontIndex = frontIndex + 1
 			end
-			frontIndex = frontIndex + 1
 		end
-	end
-	-- Hide all buttons
-	for i = 1, BUTTONS_MAX do
-		local btn = _G["RinseFrameDebuff"..i]
-		btn:Hide()
-		btn.unit = nil
-	end
-	debuffIndex = 1
-	for buttonIndex = 1, BUTTONS_MAX do
-		-- Find next debuff to show
-		while debuffIndex < DEBUFFS_MAX and Debuffs[debuffIndex].shown do
-			debuffIndex = debuffIndex + 1
-		end
-		local name = Debuffs[debuffIndex].name
-		local unit = Debuffs[debuffIndex].unit
-		local unitName = Debuffs[debuffIndex].unitName
-		local class = Debuffs[debuffIndex].unitClass
-		local debuffType = Debuffs[debuffIndex].type
-		if name ~= "" then
-			local button = _G["RinseFrameDebuff"..buttonIndex]
-			local icon = _G["RinseFrameDebuff"..buttonIndex.."Icon"]
-			local debuffName = _G["RinseFrameDebuff"..buttonIndex.."Name"]
-			local playerName = _G["RinseFrameDebuff"..buttonIndex.."Player"]
-			local count = _G["RinseFrameDebuff"..buttonIndex.."Count"]
-			local border = _G["RinseFrameDebuff"..buttonIndex.."Border"]
-			icon:SetTexture(Debuffs[debuffIndex].texture)
-			debuffName:SetText(name)
-			playerName:SetText(ClassColors[class]..unitName)
-			count:SetText(Debuffs[debuffIndex].stacks)
-			border:SetVertexColor(DebuffColor[debuffType].r, DebuffColor[debuffType].g, DebuffColor[debuffType].b)
-			button.unit = unit
-			button.unitName = unitName
-			button.unitClass = class
-			button.type = debuffType
-			button.debuffIndex = Debuffs[debuffIndex].debuffIndex
-			button:Show()
-			if buttonIndex == 1 and playNoticeSound then
-				playsound(noticeSound)
-				playNoticeSound = false
-			end
-			Debuffs[debuffIndex].shown = true
-			-- Don't show other debuffs from the same unit
-			for i in pairs(Debuffs) do
-				if Debuffs[i].unitName == unitName then
-					Debuffs[i].shown = true
+		-- Don't show other debuffs from the same unit
+		for i = 1, debuffCount do
+			local d = Debuffs[i]
+			if not d.hidden then
+				for _, d2 in pairs(Debuffs) do
+					if d2.unitName == d.unitName and d ~= d2 then d2.hidden = true end
 				end
 			end
-			if not CanCast(unit, UsableSpells[button.type]) then
-				button:SetAlpha(0.5)
-			else
-				button:SetAlpha(1)
+		end
+		-- Update buttons
+		for i = 1, BUTTONS_MAX do
+			local btn = _G["RinseFrameDebuff"..i]
+			btn:Hide()
+			btn.unit = nil
+		end
+		local buttonIndex = 1
+		for i = 1, debuffCount do
+			local d = Debuffs[i]
+			local name = d.name
+			if name ~= "" and not d.hidden then
+				local unit = d.unit
+				local unitName = d.unitName
+				local class = d.unitClass
+				local debuffType = d.type
+				local button = _G["RinseFrameDebuff"..buttonIndex]
+				button.Icon:SetTexture(d.texture)
+				button.DebuffName:SetText(name)
+				button.PlayerName:SetText(ClassColors[class]..unitName.."|r")
+				button.Count:SetText(d.stacks)
+				local color = DebuffColor[debuffType]
+				button.Border:SetVertexColor(color.r, color.g, color.b)
+				button.unit = unit
+				button.unitName = unitName
+				button.unitClass = class
+				button.type = debuffType
+				button.debuffIndex = d.debuffIndex
+				button:Show()
+				if buttonIndex == 1 and playNoticeSound then
+					playsound(noticeSound)
+					playNoticeSound = false
+				end
+				if PriorityDebuffs[name] then
+					button.Priority:Show()
+				else
+					button.Priority:Hide()
+				end
+				buttonIndex = buttonIndex + 1
+				if buttonIndex > BUTTONS_MAX then break end
 			end
 		end
 		if not RinseFrameDebuff1:IsShown() then
 			playNoticeSound = true
 		end
 	end
+	for i = 1, BUTTONS_MAX do
+		local button = _G["RinseFrameDebuff"..i]
+		if not button:IsShown() then break end
+		button:SetAlpha(CanCast(button.unit, UsableSpells[button.type]) and 1 or 0.5)
+	end
 end
 
 function Rinse_Cleanse(button, attemptedCast)
-	local button = button or this
+	button = button or this
 	if not button.unit or button.unit == "" then
 		return false
 	end
-	local debuff = _G[button:GetName().."Name"]:GetText()
 	local spellName = UsableSpells[button.type]
 	local spellSlot = UsableSpellBookIDs[spellName]
 	-- Check if on gcd
 	-- If gcd active this will return 1.5 for all the relevant spells
 	local _, duration = GetSpellCooldown(spellSlot, bookType)
-	local onGcd = duration == 1.5
+	local onGcd = duration > 0
 	-- Allow attempting 1 spell even if gcd active so that it can be queued
 	if attemptedCast and onGcd then
 		-- Otherwise don't bother trying to cast
@@ -1577,6 +1498,7 @@ function Rinse_Cleanse(button, attemptedCast)
 		stopCastCooldown = 0.2
 	end
 	if not onGcd then
+		local debuff = button.DebuffName:GetText()
 		ChatMessage(DebuffColor[button.type].hex..debuff.."|r - "..ClassColors[button.unitClass]..UnitName(button.unit).."|r")
 	else
 		-- Save spellId, spellName and target so we can output chat message if it was queued
@@ -1685,13 +1607,13 @@ function RinseOptionsFrameBlacklistScrollFrame_Update()
 end
 
 function RinseOptionsFrameAddToBlacklist_OnClick()
-	AddToList = 1
-	StaticPopup_Show("RINSE_ADD_TO_BLACKLIST")
+	local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 1)
+	if dialog then dialog.data = 1 end
 end
 
 function RinseOptionsFrameResetBlacklist_OnClick()
-	wipelist(Blacklist)
-	wipelist(RINSE_CHAR_CONFIG.BLACKLIST)
+	wipe(Blacklist)
+	wipe(RINSE_CHAR_CONFIG.BLACKLIST)
 	for k, v in pairs(DefaultBlacklist) do
 		Blacklist[k] = v
 		if k == L["Wyvern Sting"] then
@@ -1787,13 +1709,13 @@ function RinseOptionsFrameSelectClass_OnClick()
 end
 
 function RinseOptionsFrameAddToClassFilter_OnClick()
-	AddToList = 2
-	StaticPopup_Show("RINSE_ADD_TO_BLACKLIST")
+	local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 2)
+	if dialog then dialog.data = 2 end
 end
 
 function RinseOptionsFrameResetClassFilter_OnClick()
-	wipelist(RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass])
-	wipelist(ClassFilter[selectedClass])
+	wipe(RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass])
+	wipe(ClassFilter[selectedClass])
 	for k, v in pairs(DefaultClassFilter[selectedClass]) do
 		ClassFilter[selectedClass][k] = v
 	end
@@ -1808,13 +1730,14 @@ StaticPopupDialogs["RINSE_ADD_TO_BLACKLIST"] = {
 	hasEditBox = 1,
 	maxLetters = 90,
 	OnAccept = function()
-		local text = _G[this:GetParent():GetName().."EditBox"]:GetText()
-		if AddToList == 1 then
+		local dialog = this:GetParent()
+		local text = _G[dialog:GetName().."EditBox"]:GetText()
+		if dialog.data == 1 then
 			RINSE_CHAR_CONFIG.BLACKLIST[text] = true
 			RinseOptionsFrameWyvernSting:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Wyvern Sting"]])
 			RinseOptionsFrameMutatingInjection:SetChecked(not RINSE_CHAR_CONFIG.BLACKLIST[L["Mutating Injection"]])
 			UpdateBlacklist()
-		elseif AddToList == 2 then
+		elseif dialog.data == 2 then
 			RINSE_CHAR_CONFIG.FILTER_CLASS[selectedClass][text] = true
 			UpdateFilter()
 		end
@@ -1912,8 +1835,8 @@ function RinseOptionsFrameAddToFilter_OnClick()
 end
 
 function RinseOptionsFrameResetFilter_OnClick()
-	wipelist(RINSE_CHAR_CONFIG.FILTER)
-	wipelist(Filter)
+	wipe(RINSE_CHAR_CONFIG.FILTER)
+	wipe(Filter)
 	for k, v in pairs(DefaultFilter) do
 		Filter[k] = v
 		RINSE_CHAR_CONFIG.FILTER[k] = v
@@ -2031,4 +1954,15 @@ function Rinse_OutputVersionsCheckResults()
 	end
 	DEFAULT_CHAT_FRAME:AddMessage(msg)
 	AddonVersions = nil
+end
+
+function Rinse_DebuffButton_OnLoad(self)
+	self:RegisterForClicks("LeftButtonDown")
+	local name = self:GetName()
+	self.Icon = _G[name.."Icon"]
+	self.DebuffName = _G[name.."Name"]
+	self.PlayerName = _G[name.."Player"]
+	self.Count = _G[name.."Count"]
+	self.Border = _G[name.."Border"]
+	self.Priority = _G[name.."Priority"]
 end

@@ -127,8 +127,6 @@
 					<Color r="1" g="0" b="0"/>
 					<Shadow/>
 				</FontString>
-			</Layer>
-			<Layer level="OVERLAY">
 				<Texture name="$parentBorder" file="Interface\Buttons\UI-Debuff-Overlays">
 					<Size x="34" y="32"/>
 					<Anchors>
@@ -137,11 +135,19 @@
 					<TexCoords left="0.296875" right="0.5703125" top="0" bottom="0.515625"/>
 				</Texture>
 			</Layer>
+			<Layer level="OVERLAY">
+				<Texture name="$parentPriority" file="Interface\GossipFrame\AvailableQuestIcon">
+					<Size x="16" y="16"/>
+					<Anchors>
+						<Anchor point="TOPLEFT"><Offset x="3" y="-3"/></Anchor>
+					</Anchors>
+				</Texture>
+			</Layer>
 		</Layers>
 		<HighlightTexture inherits="DialogButtonHighlightTexture"/>
 		<Scripts>
 			<OnLoad>
-				this:RegisterForClicks("LeftButtonDown")
+				Rinse_DebuffButton_OnLoad(this)
 			</OnLoad>
 			<OnClick>
 				Rinse_Cleanse(this)
