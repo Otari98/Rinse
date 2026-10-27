@@ -1,30 +1,16 @@
 local _G = _G or getfenv(0)
 local L = Rinse.L
 local _, playerClass = UnitClass("player")
-local superwow = SUPERWOW_VERSION
 local unitxp = pcall(UnitXP, "nop", "nop")
-local UnitExists = UnitExists
-local UnitIsFriend = UnitIsFriend
-local UnitIsVisible = UnitIsVisible
-local UnitDebuff = UnitDebuff
-local UnitClass = UnitClass
-local UnitIsUnit = UnitIsUnit
-local UnitIsPlayer = UnitIsPlayer
-local UnitIsCharmed = UnitIsCharmed
-local UnitName = UnitName
-local CheckInteractDistance = CheckInteractDistance
 local updateInterval = 0.1
 local timeElapsed = 0
 local lastDebuffCount = 0
-local noticeSound = "Sound\\Doodad\\BellTollTribal.wav"
-local errorSound = "Sound\\Interface\\Error.wav"
 local playNoticeSound = true
 local errorCooldown = 0
 local stopCastCooldown = 0
 local prioTimer = 0
 local needUpdatePrio = false
 local aurasChanged = true
-local shadowform
 local autoattack
 local selectedClass = "WARRIOR"
 local BlacklistArray = {}
@@ -281,10 +267,6 @@ local function ChatMessage(msg)
     end
 end
 
-local function playsound(file)
-    if RINSE_CONFIG.SOUND then PlaySoundFile(file) end
-end
-
 local function NameToUnitID(name)
     if not name then return nil end
     if UnitName("player") == name then return "player" end
@@ -337,7 +319,7 @@ local function CanCast(unit, spell)
         elseif unitxp then
             -- Accounts for true reach. A tauren can dispell a male tauren at 38y!
             inRange = UnitXP("distanceBetween", "player", unit) < 30
-        elseif superwow then
+        elseif SUPERWOW_VERSION then
             local myX, myY, myZ = UnitPosition("player")
             local uX, uY, uZ = UnitPosition(unit)
             if uX then
@@ -1039,10 +1021,7 @@ function RinseFrame_OnLoad()
         -- Announce queued decurses
         RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
     end
-    if playerClass == "PRIEST" then
-        RinseFrame:RegisterEvent("PLAYER_AURAS_CHANGED")
-    end
-    if not superwow and not C_Spell then
+    if not SUPERWOW_VERSION and not C_Spell then
         -- For restoring auto attack
         RinseFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
         RinseFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
@@ -1200,9 +1179,6 @@ function RinseFrame_OnEvent(event, arg1, arg2)
     elseif event == "SPELLS_CHANGED" then
         -- print(event)
         UpdateSpells()
-    elseif event == "PLAYER_AURAS_CHANGED" then
-        -- print(event)
-        shadowform = HasShadowform()
     elseif event == "PLAYER_ENTER_COMBAT" then
         -- print(event)
         autoattack = UnitName("target")
@@ -1236,7 +1212,7 @@ local function GetDebuffInfo(unit, i)
     local applications
     if C_UnitAuras then
         debuffName, texture, applications, debuffType = C_UnitAuras.UnitAura(unit, i, "HARMFUL")
-    elseif superwow then
+    elseif SUPERWOW_VERSION then
         local spellId
         texture, applications, debuffType, spellId = UnitDebuff(unit, i)
         if spellId then debuffName = SpellInfo(spellId) end
@@ -1364,7 +1340,7 @@ function RinseFrame_OnUpdate(elapsed)
                 end
             end
             -- Shadowform: hide diseases
-            if shadowform and RINSE_CONFIG.SHADOWFORM and dType == L["Disease"] then
+            if RINSE_CONFIG.SHADOWFORM and dType == L["Disease"] and HasShadowform() then
                 d.hidden = true
             end
             -- Player filter (includes class-specific filters)
@@ -1434,7 +1410,7 @@ function RinseFrame_OnUpdate(elapsed)
                 button.debuffIndex = d.debuffIndex
                 button:Show()
                 if buttonIndex == 1 and playNoticeSound then
-                    playsound(noticeSound)
+                    if RINSE_CONFIG.SOUND then PlaySoundFile("Sound\\Doodad\\BellTollTribal.wav") end
                     playNoticeSound = false
                 end
                 if PriorityDebuffs[name] then
@@ -1475,7 +1451,7 @@ function Rinse_Cleanse(button, attemptedCast)
     end
     if not CanCast(button.unit, spellName) then
         if errorCooldown <= 0 then
-            playsound(errorSound)
+            if RINSE_CONFIG.SOUND then PlaySoundFile("Sound\\Interface\\Error.wav") end
             errorCooldown = 0.1
         end
         return false
@@ -1505,7 +1481,7 @@ function Rinse_Cleanse(button, attemptedCast)
         lastSpellName = spellName
         lastButton = button
     end
-    if superwow then
+    if SUPERWOW_VERSION then
         CastSpellByName(spellName, button.unit)
     elseif C_Spell then
         C_Spell.CastAtUnit(spellName, button.unit)
