@@ -26,7 +26,7 @@
                 </Texture>
             </Layer>
             <Layer level="BORDER">
-                <FontString name="$parentTitle" inherits="GameFontNormal">
+                <FontString name="RinseFrameTitle" inherits="GameFontNormal">
                     <Anchors>
                         <Anchor point="TOPLEFT">
                             <Offset x="12" y="-12"/>
@@ -327,7 +327,8 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        RinseSkipListAddName_OnClick()
+                        local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "skip")
+                        if dialog then dialog.data = "skip" end
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
@@ -347,9 +348,10 @@
                     </Anchor>
                 </Anchors>
                 <Scripts>
-                    <OnVerticalScroll>
-                        FauxScrollFrame_OnVerticalScroll(16, RinseSkipListScrollFrame_Update)
-                    </OnVerticalScroll>
+                    <OnLoad>
+                        ScrollFrame_OnLoad()
+                        this.Update = RinseSkipListScrollFrame_Update
+                    </OnLoad>
                 </Scripts>
             </ScrollFrame>
             <Button name="RinseSkipListFrameButton1" inherits="RinseListButtonTemplate" id="1">
@@ -554,7 +556,8 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        RinsePrioListAddName_OnClick()
+                        local dialog = StaticPopup_Show("RINSE_ADD_PLAYER_TO_LIST", nil, nil, "prio")
+                        if dialog then dialog.data = "prio" end
                     </OnClick>
                     <OnEnter>
                         GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT", 0, 0)
@@ -574,9 +577,10 @@
                     </Anchor>
                 </Anchors>
                 <Scripts>
-                    <OnVerticalScroll>
-                        FauxScrollFrame_OnVerticalScroll(16, RinsePrioListScrollFrame_Update)
-                    </OnVerticalScroll>
+                    <OnLoad>
+                        ScrollFrame_OnLoad()
+                        this.Update = RinsePrioListScrollFrame_Update
+                    </OnLoad>
                 </Scripts>
             </ScrollFrame>
             <Button name="RinsePrioListFrameButton1" inherits="RinseListButtonTemplate" id="1">
@@ -718,14 +722,14 @@
             </Layer>
         </Layers>
         <Frames>
-            <Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+            <Button name="RinseOptionsFrameCloseButton" inherits="UIPanelCloseButton">
                 <Anchors>
                     <Anchor point="TOPRIGHT">
                         <Offset x="-3" y="-3"/>
                     </Anchor>
                 </Anchors>
             </Button>
-            <Slider name="$parentScaleSlider" inherits="RinseOptionsSliderTemplate">
+            <Slider name="RinseOptionsFrameScaleSlider" inherits="RinseOptionsSliderTemplate">
                 <Size x="160" y="16"/>
                 <Anchors>
                     <Anchor point="TOPLEFT">
@@ -734,9 +738,9 @@
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(format(Rinse.L.FMT_SCALE, 0.85))
-                        getglobal(this:GetName().."Low"):SetText("0.5")
-                        getglobal(this:GetName().."High"):SetText("1.25")
+                        _G[this:GetName().."Text"]:SetText(format(Rinse.L.FMT_SCALE, 0.85))
+                        _G[this:GetName().."Low"]:SetText("0.5")
+                        _G[this:GetName().."High"]:SetText("1.25")
                         this:SetMinMaxValues(0.5, 1.25)
                         this:SetValueStep(0.01)
                     </OnLoad>
@@ -745,18 +749,18 @@
                     </OnValueChanged>
                 </Scripts>
             </Slider>
-            <Slider name="$parentOpacitySlider" inherits="RinseOptionsSliderTemplate">
+            <Slider name="RinseOptionsFrameOpacitySlider" inherits="RinseOptionsSliderTemplate">
                 <Size x="160" y="16"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentScaleSlider" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameScaleSlider" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-16"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(format(Rinse.L.FMT_OPACITY, 1.00))
-                        getglobal(this:GetName().."Low"):SetText("0")
-                        getglobal(this:GetName().."High"):SetText("1")
+                        _G[this:GetName().."Text"]:SetText(format(Rinse.L.FMT_OPACITY, 1.00))
+                        _G[this:GetName().."Low"]:SetText("0")
+                        _G[this:GetName().."High"]:SetText("1")
                         this:SetMinMaxValues(0, 1)
                         this:SetValueStep(0.01)
                     </OnLoad>
@@ -764,19 +768,19 @@
                         local alpha = format("%.2f", this:GetValue())
                         RINSE_CONFIG.OPACITY = tonumber(alpha)
                         RinseFrame:SetAlpha(alpha)
-                        getglobal(this:GetName().."Text"):SetText(format(Rinse.L.FMT_OPACITY, alpha))
+                        _G[this:GetName().."Text"]:SetText(format(Rinse.L.FMT_OPACITY, alpha))
                     </OnValueChanged>
                 </Scripts>
             </Slider>
-            <CheckButton name="$parentWyvernSting" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameWyvernSting" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentOpacitySlider" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameOpacitySlider" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-24"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure \"Wyvern Sting\""])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure \"Wyvern Sting\""])
                         this.tooltipText = Rinse.L["Cure \"Wyvern Sting\" poison."]
                     </OnLoad>
                     <OnClick>
@@ -785,15 +789,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentMutatingInjection" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameMutatingInjection" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentWyvernSting" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameWyvernSting" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure \"Mutating Injection\""])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure \"Mutating Injection\""])
                         this.tooltipText = Rinse.L["Cure \"Mutating Injection\" disease."]
                     </OnLoad>
                     <OnClick>
@@ -802,15 +806,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentIgnoreAbolish" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameIgnoreAbolish" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentMutatingInjection" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameMutatingInjection" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Ignore Abolish"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Ignore Abolish"])
                         this.tooltipText = Rinse.L["Dispel even when an abolish is present."]
                     </OnLoad>
                     <OnClick>
@@ -819,15 +823,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentShadowform" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameShadowform" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentIgnoreAbolish" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameIgnoreAbolish" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Shadowform Filter"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Shadowform Filter"])
                         this.tooltipText = Rinse.L["Check to only dispel magic debuffs while in Shadowform."]
                     </OnLoad>
                     <OnClick>
@@ -836,15 +840,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentPets" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFramePets" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentShadowform" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameShadowform" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure Pets"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure Pets"])
                         this.tooltipText = Rinse.L["Scan pets for debuffs."]
                     </OnLoad>
                     <OnClick>
@@ -853,15 +857,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentPrint" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFramePrint" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentPets" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFramePets" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Enable Chat Messages"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Enable Chat Messages"])
                         this.tooltipText = Rinse.L["Enable notification and error chat messages."]
                     </OnLoad>
                     <OnClick>
@@ -870,15 +874,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentMSBT" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameMSBT" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentPrint" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFramePrint" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Use MSBT for Messages"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Use MSBT for Messages"])
                         this.tooltipText = Rinse.L["Output messages as Mik's Scrolling Battle text notifications instead of default chat window if MSBT is available."]
                     </OnLoad>
                     <OnClick>
@@ -887,15 +891,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentSound" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameSound" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentMSBT" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameMSBT" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Enable Sounds"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Enable Sounds"])
                         this.tooltipText = Rinse.L["Enable notification and error sounds."]
                     </OnLoad>
                     <OnClick>
@@ -904,15 +908,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentBackdrop" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameBackdrop" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentSound" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameSound" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Show Backdrop"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Show Backdrop"])
                         this.tooltipText = Rinse.L["Show or hide backdrop texture."]
                     </OnLoad>
                     <OnClick>
@@ -921,15 +925,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentShowHeader" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameShowHeader" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentBackdrop" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameBackdrop" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Show Header"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Show Header"])
                         this.tooltipText = Rinse.L["Show or hide header."]
                     </OnLoad>
                     <OnClick>
@@ -938,15 +942,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentLock" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameLock" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentShowHeader" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameShowHeader" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Lock Frame Position"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Lock Frame Position"])
                         this.tooltipText = Rinse.L["Prevent window from moving."]
                     </OnLoad>
                     <OnClick>
@@ -955,15 +959,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentFlip" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameFlip" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentLock" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameLock" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-4"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Invert Direction"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Invert Direction"])
                         this.tooltipText = Rinse.L["Check this to invert debuffs growth direction."]
                     </OnLoad>
                     <OnClick>
@@ -972,18 +976,18 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <Slider name="$parentButtonsSlider" inherits="RinseOptionsSliderTemplate">
+            <Slider name="RinseOptionsFrameButtonsSlider" inherits="RinseOptionsSliderTemplate">
                 <Size x="160" y="16"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentFlip" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameFlip" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-12"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(format(Rinse.L.FMT_DEBUFFS_SHOWN, 5))
-                        getglobal(this:GetName().."Low"):SetText("1")
-                        getglobal(this:GetName().."High"):SetText("15")
+                        _G[this:GetName().."Text"]:SetText(format(Rinse.L.FMT_DEBUFFS_SHOWN, 5))
+                        _G[this:GetName().."Low"]:SetText("1")
+                        _G[this:GetName().."High"]:SetText("15")
                         this:SetMinMaxValues(1, 15)
                         this:SetValueStep(1)
                     </OnLoad>
@@ -992,7 +996,7 @@
                     </OnValueChanged>
                 </Scripts>
             </Slider>
-            <ScrollFrame name="$parentFilterScrollFrame" inherits="RinseScrollFrameTemplate">
+            <ScrollFrame name="RinseOptionsFrameFilterScrollFrame" inherits="RinseScrollFrameTemplate">
                 <Size x="150" y="128"/>
                 <Anchors>
                     <Anchor point="TOP">
@@ -1000,31 +1004,29 @@
                     </Anchor>
                 </Anchors>
                 <Scripts>
-                    <OnVerticalScroll>
-                        FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameFilterScrollFrame_Update)
-                    </OnVerticalScroll>
-                    <OnShow>
-                        RinseOptionsFrameFilterScrollFrame_Update()
-                    </OnShow>
+                    <OnLoad>
+                        ScrollFrame_OnLoad()
+                        this.Update = RinseOptionsFrameFilterScrollFrame_Update
+                    </OnLoad>
                 </Scripts>
             </ScrollFrame>
             <Button name="RinseOptionsFrameAddToFilter" inherits="UIPanelButtonTemplate2">
                 <Size x="93" y="22"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameFilterScrollFrame" relativePoint="BOTTOMLEFT">
                         <Offset x="-5" y="-5"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        RinseOptionsFrameAddToFilter_OnClick()
+                        StaticPopup_Show("RINSE_ADD_TO_FILTER")
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="$parentResetFilter" inherits="UIPanelButtonTemplate2" text="RESET">
+            <Button name="RinseOptionsFrameResetFilter" inherits="UIPanelButtonTemplate2" text="RESET">
                 <Size x="93" y="22"/>
                 <Anchors>
-                    <Anchor point="TOPRIGHT" relativeTo="$parentFilterScrollFrame" relativePoint="BOTTOMRIGHT">
+                    <Anchor point="TOPRIGHT" relativeTo="RinseOptionsFrameFilterScrollFrame" relativePoint="BOTTOMRIGHT">
                         <Offset x="30" y="-5"/>
                     </Anchor>
                 </Anchors>
@@ -1034,7 +1036,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <ScrollFrame name="$parentClassFilterScrollFrame" inherits="RinseScrollFrameTemplate">
+            <ScrollFrame name="RinseOptionsFrameClassFilterScrollFrame" inherits="RinseScrollFrameTemplate">
                 <Size x="150" y="128"/>
                 <Anchors>
                     <Anchor point="TOP">
@@ -1042,40 +1044,38 @@
                     </Anchor>
                 </Anchors>
                 <Scripts>
-                    <OnVerticalScroll>
-                        FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameClassFilterScrollFrame_Update)
-                    </OnVerticalScroll>
-                    <OnShow>
-                        RinseOptionsFrameClassFilterScrollFrame_Update()
-                    </OnShow>
+                    <OnLoad>
+                        ScrollFrame_OnLoad()
+                        this.Update = RinseOptionsFrameClassFilterScrollFrame_Update
+                    </OnLoad>
                 </Scripts>
             </ScrollFrame>
-            <Button name="$parentSelectClass">
+            <Button name="RinseOptionsFrameSelectClass">
                 <Size x="24" y="24"/>
                 <Anchors>
-                    <Anchor point="BOTTOM" relativeTo="$parentClassFilterScrollFrame" relativePoint="TOP">
+                    <Anchor point="BOTTOM" relativeTo="RinseOptionsFrameClassFilterScrollFrame" relativePoint="TOP">
                         <Offset x="38" y="7"/>
                     </Anchor>
                 </Anchors>
-                <NormalTexture name="$parentNormalTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up">
+                <NormalTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up">
                     <Size x="24" y="24"/>
                     <Anchors>
                         <Anchor point="RIGHT"/>
                     </Anchors>
                 </NormalTexture>
-                <PushedTexture name="$parentPushedTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down">
+                <PushedTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down">
                     <Size x="24" y="24"/>
                     <Anchors>
                         <Anchor point="RIGHT"/>
                     </Anchors>
                 </PushedTexture>
-                <DisabledTexture name="$parentDisabledTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled">
+                <DisabledTexture file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled">
                     <Size x="24" y="24"/>
                     <Anchors>
                         <Anchor point="RIGHT"/>
                     </Anchors>
                 </DisabledTexture>
-                <HighlightTexture name="$parentHighlightTexture" file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
+                <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
                     <Size x="24" y="24"/>
                     <Anchors>
                         <Anchor point="RIGHT"/>
@@ -1083,7 +1083,7 @@
                 </HighlightTexture>
                 <Layers>
                     <Layer level="BACKGROUND">
-                        <FontString name="$parentText" inherits="GameFontNormalSmall">
+                        <FontString name="RinseOptionsFrameSelectClassText" inherits="GameFontNormalSmall">
                             <Anchors>
                                 <Anchor point="RIGHT" relativePoint="LEFT"/>
                             </Anchors>
@@ -1096,23 +1096,24 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="$parentAddToClassFilter" inherits="UIPanelButtonTemplate2">
+            <Button name="RinseOptionsFrameAddToClassFilter" inherits="UIPanelButtonTemplate2">
                 <Size x="93" y="22"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentClassFilterScrollFrame" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameClassFilterScrollFrame" relativePoint="BOTTOMLEFT">
                         <Offset x="-5" y="-5"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        RinseOptionsFrameAddToClassFilter_OnClick()
+                        local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 2)
+                        if dialog then dialog.data = 2 end
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="$parentResetClassFilter" inherits="UIPanelButtonTemplate2" text="RESET">
+            <Button name="RinseOptionsFrameResetClassFilter" inherits="UIPanelButtonTemplate2" text="RESET">
                 <Size x="93" y="22"/>
                 <Anchors>
-                    <Anchor point="TOPRIGHT" relativeTo="$parentClassFilterScrollFrame" relativePoint="BOTTOMRIGHT">
+                    <Anchor point="TOPRIGHT" relativeTo="RinseOptionsFrameClassFilterScrollFrame" relativePoint="BOTTOMRIGHT">
                         <Offset x="30" y="-5"/>
                     </Anchor>
                 </Anchors>
@@ -1122,7 +1123,7 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <ScrollFrame name="$parentBlacklistScrollFrame" inherits="RinseScrollFrameTemplate">
+            <ScrollFrame name="RinseOptionsFrameBlacklistScrollFrame" inherits="RinseScrollFrameTemplate">
                 <Size x="150" y="128"/>
                 <Anchors>
                     <Anchor point="BOTTOM">
@@ -1130,31 +1131,30 @@
                     </Anchor>
                 </Anchors>
                 <Scripts>
-                    <OnVerticalScroll>
-                        FauxScrollFrame_OnVerticalScroll(16, RinseOptionsFrameBlacklistScrollFrame_Update)
-                    </OnVerticalScroll>
-                    <OnShow>
-                        RinseOptionsFrameBlacklistScrollFrame_Update()
-                    </OnShow>
+                    <OnLoad>
+                        ScrollFrame_OnLoad()
+                        this.Update = RinseOptionsFrameBlacklistScrollFrame_Update
+                    </OnLoad>
                 </Scripts>
             </ScrollFrame>
             <Button name="RinseOptionsFrameAddToBlacklist" inherits="UIPanelButtonTemplate2">
                 <Size x="93" y="22"/>
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameBlacklistScrollFrame" relativePoint="BOTTOMLEFT">
                         <Offset x="-5" y="-5"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        RinseOptionsFrameAddToBlacklist_OnClick()
+                        local dialog = StaticPopup_Show("RINSE_ADD_TO_BLACKLIST", nil, nil, 1)
+                        if dialog then dialog.data = 1 end
                     </OnClick>
                 </Scripts>
             </Button>
-            <Button name="$parentResetBlacklist" inherits="UIPanelButtonTemplate2" text="RESET">
+            <Button name="RinseOptionsFrameResetBlacklist" inherits="UIPanelButtonTemplate2" text="RESET">
                 <Size x="93" y="22"/>
                 <Anchors>
-                    <Anchor point="TOPRIGHT" relativeTo="$parentBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
+                    <Anchor point="TOPRIGHT" relativeTo="RinseOptionsFrameBlacklistScrollFrame" relativePoint="BOTTOMRIGHT">
                         <Offset x="30" y="-5"/>
                     </Anchor>
                 </Anchors>
@@ -1164,15 +1164,15 @@
                     </OnClick>
                 </Scripts>
             </Button>
-            <CheckButton name="$parentFilterMagic" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameFilterMagic" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentButtonsSlider" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameButtonsSlider" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="-27"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure Magic"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure Magic"])
                         this.tooltipText = Rinse.L["Check this to cure magic debuffs."]
                     </OnLoad>
                     <OnClick>
@@ -1181,15 +1181,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentFilterDisease" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameFilterDisease" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentFilterMagic" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameFilterMagic" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure Disease"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure Disease"])
                         this.tooltipText = Rinse.L["Check this to cure diseases."]
                     </OnLoad>
                     <OnClick>
@@ -1198,15 +1198,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentFilterPoison" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameFilterPoison" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentFilterDisease" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameFilterDisease" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure Poison"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure Poison"])
                         this.tooltipText = Rinse.L["Check this to cure poisons."]
                     </OnLoad>
                     <OnClick>
@@ -1215,15 +1215,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentFilterCurse" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameFilterCurse" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentFilterPoison" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameFilterPoison" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure Curse"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure Curse"])
                         this.tooltipText = Rinse.L["Check this to cure curses."]
                     </OnLoad>
                     <OnClick>
@@ -1232,15 +1232,15 @@
                     </OnClick>
                 </Scripts>
             </CheckButton>
-            <CheckButton name="$parentFilterSnare" inherits="RinseOptionsCheckButtonTemplate">
+            <CheckButton name="RinseOptionsFrameFilterSnare" inherits="RinseOptionsCheckButtonTemplate">
                 <Anchors>
-                    <Anchor point="TOPLEFT" relativeTo="$parentFilterCurse" relativePoint="BOTTOMLEFT">
+                    <Anchor point="TOPLEFT" relativeTo="RinseOptionsFrameFilterCurse" relativePoint="BOTTOMLEFT">
                         <Offset x="0" y="7"/>
                     </Anchor>
                 </Anchors>
                 <Scripts>
                     <OnLoad>
-                        getglobal(this:GetName().."Text"):SetText(Rinse.L["Cure Snare"])
+                        _G[this:GetName().."Text"]:SetText(Rinse.L["Cure Snare"])
                         this.tooltipText = Rinse.L["Check this to cure some slow and root effects with Hand of Freedom."]
                     </OnLoad>
                     <OnClick>
@@ -1315,7 +1315,7 @@
     <GameTooltip name="RinseScanTooltip" inherits="GameTooltipTemplate">
     <Scripts>
         <Onload>
-            this:SetOwner(this, "ANCHOR_NONE")
+            this:SetOwner(WorldFrame, "ANCHOR_NONE")
         </Onload>
     </Scripts>
     </GameTooltip>

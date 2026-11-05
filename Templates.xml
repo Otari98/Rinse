@@ -37,12 +37,12 @@
                 RinseListButton_OnDragStop()
             </OnDragStop>
             <OnEnter>
-                getglobal(this:GetName().."Highlight"):Show()
+                _G[this:GetName().."Highlight"]:Show()
                 GameTooltip_SetDefaultAnchor(GameTooltip, this)
                 GameTooltip:SetText(Rinse.L["Left-click and drag to swap\nRight-click to remove"], nil, nil, nil, nil, 1)
             </OnEnter>
             <OnLeave>
-                getglobal(this:GetName().."Highlight"):Hide()
+                _G[this:GetName().."Highlight"]:Hide()
                 GameTooltip:Hide()
             </OnLeave>
         </Scripts>
@@ -78,10 +78,10 @@
                 RinseOptionsScrollFrameButton_OnClick()
             </OnClick>
             <OnEnter>
-                getglobal(this:GetName().."Highlight"):Show()
+                _G[this:GetName().."Highlight"]:Show()
             </OnEnter>
             <OnLeave>
-                getglobal(this:GetName().."Highlight"):Hide()
+                _G[this:GetName().."Highlight"]:Hide()
             </OnLeave>
         </Scripts>
     </Button>
@@ -103,7 +103,7 @@
                     </Anchors>
                 </Texture>
                 <FontString name="$parentPlayer" inherits="GameFontNormalLarge" justifyH="LEFT">
-                    <Size x="200" y="20"/>
+                    <Size x="150" y="20"/>
                     <Anchors>
                         <Anchor point="TOPLEFT" relativeTo="$parentIcon" relativePoint="TOPRIGHT">
                             <Offset x="5" y="3"/>
@@ -195,7 +195,7 @@
         </Frames>
         <Scripts>
             <OnEnter>
-                local text = getglobal(this:GetName().."Text")
+                local text = _G[this:GetName().."Text"]
                 this.r, this.g, this.b = text:GetTextColor()
                 text:SetTextColor(1, 1, 1)
                 if this.tooltipText then
@@ -208,7 +208,7 @@
                 end
             </OnEnter>
             <OnLeave>
-                getglobal(this:GetName().."Text"):SetTextColor(this.r, this.g, this.b)
+                _G[this:GetName().."Text"]:SetTextColor(this.r, this.g, this.b)
                 GameTooltip:Hide()
             </OnLeave>
         </Scripts>
@@ -216,7 +216,7 @@
     <Slider name="RinseOptionsSliderTemplate" inherits="OptionsSliderTemplate" virtual="true">
         <Scripts>
             <OnEnter>
-                local text = getglobal(this:GetName().."Text")
+                local text = _G[this:GetName().."Text"]
                 this.r, this.g, this.b = text:GetTextColor()
                 text:SetTextColor(1, 1, 1)
                 if this.tooltipText then
@@ -229,7 +229,7 @@
                 end
             </OnEnter>
             <OnLeave>
-                getglobal(this:GetName().."Text"):SetTextColor(this.r, this.g, this.b)
+                _G[this:GetName().."Text"]:SetTextColor(this.r, this.g, this.b)
                 GameTooltip:Hide()
             </OnLeave>
         </Scripts>
@@ -272,5 +272,13 @@
                 </Anchors>
             </Frame>
         </Frames>
+        <Scripts>
+            <OnVerticalScroll>
+                FauxScrollFrame_OnVerticalScroll(this.buttonHeight or 16, this.Update)
+            </OnVerticalScroll>
+            <OnShow>
+                this.Update()
+            </OnShow>
+        </Scripts>
     </ScrollFrame>
 </Ui>
