@@ -55,28 +55,28 @@ local BLUE = "|cff3399FF"
 -- Spells that remove stuff, for each class
 local Spells = {}
 Spells["PALADIN"] = {
-    [L["Magic"]] = {L["Cleanse"]},
-    [L["Poison"]] = {L["Cleanse"], L["Purify"]},
-    [L["Disease"]] = {L["Cleanse"], L["Purify"]},
-    [L["Snare"]] = {L["Hand of Freedom"]}
+    [L["Magic"]] = { L["Cleanse"] },
+    [L["Poison"]] = { L["Cleanse"], L["Purify"] },
+    [L["Disease"]] = { L["Cleanse"], L["Purify"] },
+    [L["Snare"]] = { L["Hand of Freedom"], L["Blessing of Freedom"] }
 }
 Spells["DRUID"] = {
-    [L["Curse"]] = {L["Remove Curse"]},
-    [L["Poison"]] = {L["Abolish Poison"], L["Cure Poison"]}
+    [L["Curse"]] = { L["Remove Curse"] },
+    [L["Poison"]] = { L["Abolish Poison"], L["Cure Poison"] }
 }
 Spells["PRIEST"] = {
-    [L["Magic"]] = {L["Dispel Magic"]},
-    [L["Disease"]] = {L["Abolish Disease"], L["Cure Disease"]}
+    [L["Magic"]] = { L["Dispel Magic"] },
+    [L["Disease"]] = { L["Abolish Disease"], L["Cure Disease"] }
 }
 Spells["SHAMAN"] = {
-    [L["Poison"]] = {L["Cure Poison"]},
-    [L["Disease"]] = {L["Cure Disease"]}
+    [L["Poison"]] = { L["Cure Poison"] },
+    [L["Disease"]] = { L["Cure Disease"] }
 }
 Spells["MAGE"] = {
-    [L["Curse"]] = {L["Remove Lesser Curse"]}
+    [L["Curse"]] = { L["Remove Lesser Curse"] }
 }
 Spells["WARLOCK"] = {
-    [L["Magic"]] = {L["Devour Magic"]}
+    [L["Magic"]] = { L["Devour Magic"] }
 }
 Spells["WARRIOR"] = {}
 Spells["ROGUE"]   = {}
@@ -703,19 +703,19 @@ function RinseFrameOptions_OnClick()
     end
 end
 
-local function DisableCheckBox(checkBox, requirement)
+local function SetCheckBoxEnabled(checkBox, enabled, requirement)
     if not checkBox then return end
-    checkBox:Disable()
-    _G[checkBox:GetName().."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
-    _G[checkBox:GetName().."TooltipPreserve"]:Show()
-    if requirement then checkBox.tooltipRequirement = requirement end
-end
-
-local function EnableCheckBox(checkBox)
-    if not checkBox then return end
-    checkBox:Enable()
-    _G[checkBox:GetName().."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
-    _G[checkBox:GetName().."TooltipPreserve"]:Hide()
+    local name = checkBox:GetName()
+    if enabled then
+        checkBox:Enable()
+        _G[name.."Text"]:SetTextColor(NORMAL_FONT_COLOR.r, NORMAL_FONT_COLOR.g, NORMAL_FONT_COLOR.b)
+        _G[name.."TooltipPreserve"]:Hide()
+    else
+        checkBox:Disable()
+        _G[name.."Text"]:SetTextColor(GRAY_FONT_COLOR.r, GRAY_FONT_COLOR.g, GRAY_FONT_COLOR.b)
+        _G[name.."TooltipPreserve"]:Show()
+        if requirement then checkBox.tooltipRequirement = requirement end
+    end
 end
 
 local function UpdateBlacklist()
@@ -773,11 +773,7 @@ end
 
 function Rinse_TogglePrint()
     RINSE_CONFIG.PRINT = not RINSE_CONFIG.PRINT
-    if RINSE_CONFIG.PRINT and MikSBT then
-        EnableCheckBox(RinseOptionsFrameMSBT)
-    else
-        DisableCheckBox(RinseOptionsFrameMSBT)
-    end
+    SetCheckBoxEnabled(RinseOptionsFrameMSBT, RINSE_CONFIG.PRINT and MikSBT)
 end
 
 function Rinse_ToggleMSBT()
@@ -956,7 +952,7 @@ function RinseFrame_OnLoad()
         -- Announce queued decurses
         RinseFrame:RegisterEvent("SPELL_QUEUE_EVENT")
     end
-    if not SUPERWOW_VERSION and not C_Spell then
+    if not (SUPERWOW_VERSION or GetNampowerVersion or C_Spell) then
         -- For restoring auto attack
         RinseFrame:RegisterEvent("PLAYER_ENTER_COMBAT")
         RinseFrame:RegisterEvent("PLAYER_LEAVE_COMBAT")
@@ -1038,36 +1034,15 @@ function RinseFrame_OnEvent(event, arg1, arg2)
         RinseOptionsFrameFilterPoison:SetChecked(not Filter[L["Poison"]])
         RinseOptionsFrameFilterSnare:SetChecked(not Filter[L["Snare"]])
         RinseOptionsFrameFilterCurse:SetChecked(not Filter[L["Curse"]])
-        for k in pairs(DebuffColors) do
-            local checkBox = _G["RinseOptionsFrameFilter"..k]
-            if checkBox then
-                if Spells[playerClass] and Spells[playerClass][k] then
-                    EnableCheckBox(checkBox)
-                else
-                    DisableCheckBox(checkBox, L["Not available to your class."])
-                end
-            end
-        end
-        if Spells[playerClass] and Spells[playerClass][L["Poison"]] then
-            EnableCheckBox(RinseOptionsFrameWyvernSting)
-        else
-            DisableCheckBox(RinseOptionsFrameWyvernSting, L["Not available to your class."])
-        end
-        if Spells[playerClass] and Spells[playerClass][L["Disease"]] then
-            EnableCheckBox(RinseOptionsFrameMutatingInjection)
-        else
-            DisableCheckBox(RinseOptionsFrameMutatingInjection, L["Not available to your class."])
-        end
-        if playerClass == "PRIEST" then
-            EnableCheckBox(RinseOptionsFrameShadowform)
-        else
-            DisableCheckBox(RinseOptionsFrameShadowform, L["Not available to your class."])
-        end
-        if RINSE_CONFIG.PRINT and MikSBT then
-            EnableCheckBox(RinseOptionsFrameMSBT)
-        else
-            DisableCheckBox(RinseOptionsFrameMSBT, not MikSBT and L["MSBT missing."] or nil)
-        end
+        SetCheckBoxEnabled(RinseOptionsFrameFilterMagic, Spells[playerClass] and Spells[playerClass][L["Magic"]], L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameFilterDisease, Spells[playerClass] and Spells[playerClass][L["Disease"]], L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameFilterPoison, Spells[playerClass] and Spells[playerClass][L["Poison"]], L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameFilterSnare, Spells[playerClass] and Spells[playerClass][L["Snare"]], L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameFilterCurse, Spells[playerClass] and Spells[playerClass][L["Curse"]], L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameWyvernSting, Spells[playerClass] and Spells[playerClass][L["Poison"]], L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameMutatingInjection, Spells[playerClass] and Spells[playerClass][L["Disease"]], L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameShadowform, playerClass == "PRIEST", L["Not available to your class."])
+        SetCheckBoxEnabled(RinseOptionsFrameMSBT, RINSE_CONFIG.PRINT and MikSBT, not MikSBT and L["MSBT missing."] or nil)
         UpdateBackdrop()
         UpdateFramesScale()
         UpdateDirection()
@@ -1206,6 +1181,7 @@ function RinseFrame_OnUpdate(elapsed)
                         RinseScanTooltip:SetUnitDebuff(unit, i)
                         debuffName = RinseScanTooltipTextLeft1:GetText() or ""
                     end
+                    debuffType = L[debuffType]
                     if debuffName and SnareDebuffs[debuffName] then
                         debuffType = L["Snare"]
                     end
