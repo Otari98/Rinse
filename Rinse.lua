@@ -140,6 +140,7 @@ local PriorityDebuffs = {}
 PriorityDebuffs[L["Tranquilizing Poison"]] = true -- warriors will thank you
 PriorityDebuffs[L["Wyrmkins Venom"]] = true
 PriorityDebuffs[L["Slowing Poison"]] = true
+PriorityDebuffs[L["Crippling Poison"]] = true
 PriorityDebuffs[L["Mana Buildup"]] = true
 PriorityDebuffs[L["Enveloped Flames"]] = true -- prio so it shows up for pets!
 PriorityDebuffs[L["Poison Charge"]] = true -- to prio it over curses for druids
