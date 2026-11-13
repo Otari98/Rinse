@@ -1122,6 +1122,20 @@ local function order(a, b)
     return a.weight > b.weight
 end
 
+-- Spell ID -> name cache (spell names never change during a session)
+local SpellNameCache = {}
+local function GetSpellNameByID(spellID)
+    local name = SpellNameCache[spellID]
+    if name then return name end
+    if SpellInfo then
+        name = SpellInfo(spellID)
+    elseif GetSpellNameAndRankForId then
+        name = GetSpellNameAndRankForId(spellID)
+    end
+    if name then SpellNameCache[spellID] = name end
+    return name
+end
+
 function RinseFrame_OnUpdate(elapsed)
     for _, timer in pairs(Timers) do
         if timer.count then
@@ -1169,13 +1183,7 @@ function RinseFrame_OnUpdate(elapsed)
                         texture, applications, debuffType, spellID = UnitDebuff(unit, i)
                     end
                     if not texture then break end
-                    if spellID then
-                        if SpellInfo then
-                            debuffName = SpellInfo(spellID)
-                        elseif GetSpellNameAndRankForId then
-                            debuffName = GetSpellNameAndRankForId(spellID)
-                        end
-                    end
+                    if spellID then debuffName = GetSpellNameByID(spellID) end
                     if not debuffName then
                         RinseScanTooltipTextLeft1:SetText("")
                         RinseScanTooltip:SetUnitDebuff(unit, i)
