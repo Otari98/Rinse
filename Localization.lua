@@ -73,6 +73,7 @@ local L = {
     ["Hooked Net"] = 1,
     ["Tendon Rip"] = 1,
     ["Crippling Poison"] = 1,
+    ["Dominate Mind"] = 1,
 
     -- UI
     ["Run Rinse"] = 1,
@@ -222,6 +223,7 @@ if locale == "koKR" then
     L["Hooked Net"] = "갈고리 그물"
     L["Tendon Rip"] = "힘줄 가격"
     L["Crippling Poison"] = "신경 마비 독"
+    L["Dominate Mind"] = "정신 지배"
 
 elseif locale == "frFR" then
     L["Magic"] = "Magie"
@@ -292,6 +294,7 @@ elseif locale == "frFR" then
     L["Hooked Net"] = "Filet lesté"
     L["Tendon Rip"] = "Déchirure du tendon"
     L["Crippling Poison"] = "Poison affaiblissant"
+    L["Dominate Mind"] = "Emprise"
 
 elseif locale == "deDE" then
     L["Magic"] = "Magie"
@@ -362,6 +365,7 @@ elseif locale == "deDE" then
     L["Hooked Net"] = "Hakennetz"
     L["Tendon Rip"] = "Sehnenriss"
     L["Crippling Poison"] = "Verkrüppelndes Gift"
+    L["Dominate Mind"] = "Gedanken beherrschen"
 
 elseif locale == "zhCN" then
     L["Magic"] = "魔法"
@@ -432,6 +436,7 @@ elseif locale == "zhCN" then
     L["Hooked Net"] = "钩网"
     L["Tendon Rip"] = "裂筋"
     L["Crippling Poison"] = "致残毒药"
+    L["Dominate Mind"] = "统御意志"
 
 elseif locale == "ruRU" then
     L["Magic"] = "Магия"
@@ -502,6 +507,7 @@ elseif locale == "ruRU" then
     L["Hooked Net"] = "Сеть с крючьями"
     L["Tendon Rip"] = "Повреждение сухожилий"
     L["Crippling Poison"] = "Калечащий яд"
+    L["Dominate Mind"] = "Господство над разумом"
 
 elseif locale == "esES" then
     L["Magic"] = "Mágico"
@@ -572,6 +578,7 @@ elseif locale == "esES" then
     L["Hooked Net"] = "Red con Ganchos"
     L["Tendon Rip"] = "Desgarre de Tendón"
     L["Crippling Poison"] = "Veneno Entorpecedor"
+    L["Dominate Mind"] = "Dominar Mente"
 
 elseif locale == "ptBR" then
     L["Magic"] = "Magia"
@@ -642,6 +649,7 @@ elseif locale == "ptBR" then
     L["Hooked Net"] = "Rede com Ganchos"
     L["Tendon Rip"] = "Rasgar Tendão"
     L["Crippling Poison"] = "Veneno Debilitante"
+    L["Dominate Mind"] = "Dominar Mente"
 end
 
 for str in pairs(L) do
