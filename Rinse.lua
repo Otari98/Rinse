@@ -1356,25 +1356,25 @@ function Rinse_Cleanse(button, attemptedCast)
     elseif C_Spell then
         C_Spell.CastAtUnit(spellName, button.unit)
     else
-        local selfcast = GetCVar("autoselfcast")
-        local assist = GetCVar("assistattack")
         local lastTarget = UnitName("target")
         local restore = lastTarget and autoattack and autoattack == lastTarget
-        SetCVar("autoselfcast", 0)
-        SetCVar("assistattack", 1)
         TargetUnit(button.unit)
         if UnitExists("target") and UnitIsUnit("target", button.unit) then
+            local selfcast = GetCVar("autoselfcast")
+            SetCVar("autoselfcast", 0)
             CastSpellByName(spellName)
+            SetCVar("autoselfcast", selfcast)
             if lastTarget ~= UnitName("target") then
                 -- If we didnt have target or it was someone else
                 TargetLastTarget()
             end
         end
         if restore and lastTarget and UnitExists("target") and UnitName("target") == lastTarget then
+            local assist = GetCVar("assistattack")
+            SetCVar("assistattack", 1)
             AssistUnit("player")
+            SetCVar("assistattack", assist)
         end
-        SetCVar("autoselfcast", selfcast)
-        SetCVar("assistattack", assist)
     end
     return true
 end
