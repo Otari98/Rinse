@@ -349,11 +349,13 @@ function RinseSkipListScrollFrame_Update()
         local button = _G["RinseSkipListFrameButton"..i]
         local buttonText = _G["RinseSkipListFrameButton"..i.."Text"]
         arrayIndex = i + offset
-        if RINSE_CONFIG.SKIP_ARRAY[arrayIndex] then
-            buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.SKIP_ARRAY[arrayIndex].class]..RINSE_CONFIG.SKIP_ARRAY[arrayIndex].name)
+        local data = RINSE_CONFIG.SKIP_ARRAY[arrayIndex]
+        if data then
             button:SetID(arrayIndex)
-            if DragInfo.sourceID and DragInfo.sourceID == arrayIndex then
+            if DragInfo.list == RinseSkipListFrame and DragInfo.sourceID == arrayIndex then
                 buttonText:SetText("")
+            else
+                buttonText:SetText(arrayIndex.." - "..ClassColors[data.class]..data.name)
             end
             button:Show()
         else
@@ -371,11 +373,13 @@ function RinsePrioListScrollFrame_Update()
         local button = _G["RinsePrioListFrameButton"..i]
         local buttonText = _G["RinsePrioListFrameButton"..i.."Text"]
         arrayIndex = i + offset
-        if RINSE_CONFIG.PRIO_ARRAY[arrayIndex] then
-            buttonText:SetText(arrayIndex.." - "..ClassColors[RINSE_CONFIG.PRIO_ARRAY[arrayIndex].class]..RINSE_CONFIG.PRIO_ARRAY[arrayIndex].name)
+        local data = RINSE_CONFIG.PRIO_ARRAY[arrayIndex]
+        if data then
             button:SetID(arrayIndex)
-            if DragInfo.sourceID and DragInfo.sourceID == arrayIndex then
+            if DragInfo.list == RinsePrioListFrame and DragInfo.sourceID == arrayIndex then
                 buttonText:SetText("")
+            else
+                buttonText:SetText(arrayIndex.." - "..ClassColors[data.class]..data.name)
             end
             button:Show()
         else
